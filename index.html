@@ -9,48 +9,48 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="anonymous"/>
   <!-- Font Awesome -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer"/>
-<!-- IOM digital typeface per brand guide -->
-<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <!-- IOM digital typeface per brand guide -->
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 
   <style>
     :root{
-  /* IOM primary + shades */
-  --iom-blue:#0033A0;         /* Primary IOM blue */
-  --iom-blue-60:#4066B8;
-  --iom-blue-40:#8099D0;
-  --iom-blue-20:#B3C2E3;
-  --iom-blue-10:#D9E0F1;
-  --blue-box:#E9EBF6;         /* Lightest box bg for callouts */
+      /* IOM primary + shades */
+      --iom-blue:#0033A0;         /* Primary IOM blue */
+      --iom-blue-60:#4066B8;
+      --iom-blue-40:#8099D0;
+      --iom-blue-20:#B3C2E3;
+      --iom-blue-10:#D9E0F1;
+      --blue-box:#E9EBF6;         /* Lightest box bg for callouts */
 
-  /* IOM secondary set */
-  --un-blue:#418FDE;          /* Light blue (UN blue) */
-  --yellow:#FFB81C;           /* brand yellow */
-  --orange:#FF671F;           /* brand orange */
-  --red:#D22630;              /* brand red */
-  --mint:#5CB8B2;             /* brand mint */
+      /* IOM secondary set */
+      --un-blue:#418FDE;          /* Light blue (UN blue) */
+      --yellow:#FFB81C;           /* brand yellow */
+      --orange:#FF671F;           /* brand orange */
+      --red:#D22630;              /* brand red */
+      --mint:#5CB8B2;             /* brand mint */
 
-  /* Map/UI tokens (repointed to brand) */
-  --brand-primary:var(--iom-blue);
-  --brand-accent:var(--un-blue);
-  --brand-amber:var(--yellow);
+      /* Map/UI tokens */
+      --brand-primary:var(--iom-blue);
+      --brand-accent:var(--un-blue);
+      --brand-amber:var(--yellow);
 
-  --surface:#f5f7fa;
+      --surface:#f5f7fa;
 
-  /* Flow ramp (kept) */
-  --line1:var(--yellow);
-  --line2:var(--orange);
-  --line3:var(--red);
+      /* Flow ramp */
+      --line1:var(--yellow);
+      --line2:var(--orange);
+      --line3:var(--red);
 
-  /* Scenario routes — use a single secondary (mint) */
-  --potential:var(--mint);
-}
-
+      /* Scenario routes — a single secondary (mint) */
+      --potential:var(--mint);
+    }
 
     html, body { height:100%; }
     body{
       margin:0; background:var(--surface); color:#1d2a36;
-      font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,Helvetica,Arial,"Apple Color Emoji","Segoe UI Emoji";
+      font-family:'Open Sans', system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
       display:flex; flex-direction:column; min-height:100vh;
+      -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
     }
 
     /* ─── Header & Footer ─────────────────────────────────────────────── */
@@ -65,12 +65,12 @@
     .brand{ display:flex; align-items:center; gap:10px; min-width:0; }
     .brand .logo{ width:36px; height:24px; border-radius:4px; overflow:hidden; display:block; box-shadow:0 0 0 1px #d1dbe7 inset; }
     .brand .logo svg{ width:100%; height:100%; display:block; }
-    .brand h1{ font-size:16px; line-height:1.15; margin:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-    .brand .sub{ font-size:12px; color:#5a7086; font-weight:500; }
+    .brand h1{ font-size:16px; line-height:1.15; margin:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-weight:800; color:#0e2a5a; }
+    .brand .sub{ font-size:12px; color:#5a7086; font-weight:600; letter-spacing:.2px; }
     .toolbar{ display:flex; align-items:center; flex-wrap:wrap; gap:6px; }
     .btn{
       display:inline-flex; align-items:center; gap:8px; border:1px solid #d1dbe7; background:#fff; color:#1d2a36;
-      padding:6px 10px; border-radius:10px; font-size:12px; font-weight:600; cursor:pointer; user-select:none; transition:.2s ease;
+      padding:6px 10px; border-radius:10px; font-size:12px; font-weight:700; cursor:pointer; user-select:none; transition:.2s ease;
     }
     .btn:hover{ border-color:#b7c6da; box-shadow:0 1px 0 rgba(0,0,0,.03); }
     .btn.active{ border-color:var(--brand-accent); background:#eef6ff; }
@@ -98,15 +98,7 @@
     }
     @keyframes spin{ to{ transform:rotate(360deg); } }
 
-    /* Admin1 labels */
-    .leaflet-tooltip.state-label{
-      background:transparent; border:none; box-shadow:none; padding:0;
-      color:#244b6b; font-weight:600; font-size:12px; letter-spacing:.2px;
-      text-shadow:0 0 2px #fff, 0 0 3px #fff, 0 0 4px #fff, 0 0 5px #fff;
-      pointer-events:none;
-    }
-
-    /* ─── Pulsing origin points ─────────────────────────────────────── */
+    /* ─── Origin pulsing points ──────────────────────────────────────── */
     .origin-pulse-icon{ pointer-events:auto; }
     .origin-pulse-icon .pulse{
       position:relative; width:var(--d,24px); height:var(--d,24px); border-radius:50%;
@@ -126,7 +118,7 @@
       100% { transform:translate(-50%,-50%) scale(2.1); opacity:0; }
     }
 
-    /* ─── Destination points ────────────────────────────────────────── */
+    /* ─── Destination points ─────────────────────────────────────────── */
     .dest-icon{ pointer-events:auto; transition:transform .12s ease; }
     .dest-icon .dot{
       position:relative; width:var(--d,18px); height:var(--d,18px); border-radius:50%;
@@ -140,11 +132,8 @@
     .dest-icon:hover{ transform:scale(1.1); }
     .dest-icon.focus{ transform:scale(1.18); box-shadow:0 0 0 2px rgba(65,143,222,.25); }
 
-    /* Top destination labels */
-    .leaflet-tooltip.dest-label{
-      background:#fff; color:#1d2a36; border:1px solid #d1dbe7; box-shadow:0 2px 8px rgba(0,0,0,.08);
-      border-radius:8px; padding:4px 8px; font-size:12px; font-weight:600;
-    }
+    /* ─── Legend ─────────────────────────────────────────────────────── */
+    .legend * { box-sizing:border-box; }
 
     /* ─── Crisis facts UI ───────────────────────────────────────────── */
     .kpi-icon, .donut-icon, .note-icon { pointer-events:auto; }
@@ -153,7 +142,7 @@
       padding:6px 10px; min-width:120px; text-align:left;
     }
     .kpi-card .kpi{ font-size:18px; font-weight:800; color:#1d2a36; line-height:1.1; }
-    .kpi-card .label{ font-size:12px; color:#46607a; font-weight:600; margin-top:2px; }
+    .kpi-card .label{ font-size:12px; color:#46607a; font-weight:700; margin-top:2px; }
     .note-card{ font-size:12px; color:#1d2a36; }
     .note-card strong{ color:#d22630; }
 
@@ -223,7 +212,7 @@
       <button id="btn-flows" class="btn active" title="Toggle flow lines (F)"><i class="fa-solid fa-wave-square"></i><span>Flows</span></button>
       <button id="btn-points" class="btn active" title="Toggle points (P)"><i class="fa-solid fa-circle"></i><span>Points</span></button>
 
-      <!-- NEW: Potential routes toggle -->
+      <!-- Potential routes toggle -->
       <button id="btn-routes" class="btn" title="Toggle Potential Routes from El Fasher (O)"><i class="fa-solid fa-route"></i><span>Routes</span></button>
 
       <button id="btn-story" class="btn"        title="Open story / slideshow (S)"><i class="fa-solid fa-book-open"></i><span>Story</span></button>
@@ -286,7 +275,7 @@
       preferCanvas:true, zoomControl:false, minZoom:4, maxZoom:11, zoomSnap:0.5, zoomDelta:0.5, attributionControl:true
     }).setView([16,30], 5.5);
 
-    // Basemaps (Mapbox Satellite default)
+    // Basemaps (Mapbox Light default for clarity)
     const cartoLight = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
       attribution:'&copy; OpenStreetMap & CartoDB'
     });
@@ -316,7 +305,7 @@
       const div = L.DomUtil.create('div','legend');
       div.innerHTML = `
         <div style="background:#fff;border:1px solid #d1dbe7;border-radius:10px;padding:8px 10px;box-shadow:0 2px 10px rgba(0,0,0,.06);min-width:220px">
-          <div style="font-weight:700;color:#1d2a36;margin-bottom:5px">Flow volume (e_Volume)</div>
+          <div style="font-weight:800;color:#0e2a5a;margin-bottom:6px">Flow volume (e_Volume)</div>
           <div style="display:grid;grid-template-columns:18px 1fr;gap:8px;align-items:center;font-size:12px;color:#3c4f62;margin-bottom:6px">
             <span style="height:4px;background:var(--line1);"></span><span>1 — 50,000</span>
             <span style="height:4px;background:var(--line2);"></span><span>50,000 — 100,000</span>
@@ -340,11 +329,11 @@
     }
 
     // ─── State ────────────────────────────────────────────────────────
-    let stateBoundariesLayer, admin1Labels, flowmapLayer, originPulseLayer, destLabelsLayer;
+    let stateBoundariesLayer, flowmapLayer, originPulseLayer;
     let crisisLayer, campsLayer;
     let kpiMarker, donutMarker, noteMarker, siegeRing;
 
-    // NEW: Potential routes state
+    // Potential routes state
     let routesGroup = null, routesLayer = null, routesMarkers = null, routesOrigin = null, routesVisible = false;
 
     let campsData = []; // parsed camps
@@ -374,7 +363,7 @@
       if (e.code === 'Space'){ e.preventDefault(); toggleAnimation(); }
       else if (k === 'f') toggleFlows();
       else if (k === 'p') togglePoints();
-      else if (k === 'o') toggleRoutes();            // NEW shortcut
+      else if (k === 'o') toggleRoutes();
       else if (k === 's') window.toggleStory?.(true);
       else if (k === 'r') map.setView([16,30], 5.5);
     });
@@ -383,7 +372,7 @@
       btnPlay.classList.toggle('active', isAnimationPlaying);
       btnFlows.classList.toggle('active', showFlows);
       btnPoints.classList.toggle('active', showPoints);
-      btnRoutes.classList.toggle('active', routesVisible); // NEW
+      btnRoutes.classList.toggle('active', routesVisible);
     }
 
     function toggleAnimation(){
@@ -405,17 +394,12 @@
         if (showPoints && !map.hasLayer(originPulseLayer)) originPulseLayer.addTo(map);
         if (!showPoints && map.hasLayer(originPulseLayer)) map.removeLayer(originPulseLayer);
       }
-      if (destLabelsLayer){
-        // keep dest labels hidden by default (respecting earlier request)
-        if (showPoints && map.hasLayer(destLabelsLayer) === false) {/* do nothing; user can enable from Layers */}
-        if (!showPoints && map.hasLayer(destLabelsLayer)) map.removeLayer(destLabelsLayer);
-      }
       updateBtnStates();
     }
 
-    // --- Load data
     const overlay = document.getElementById('loading-overlay');
 
+    // Load data
     Promise.all([
       fetch('./data/ADMIN1.json').then(r => (r.ok ? r.json() : null)).catch(() => null),
       fetch('./data/sudan_states.geojson').then(r => (r.ok ? r.json() : null)).catch(() => null),
@@ -434,7 +418,7 @@
         .map(r => normalizeRow(r))
         .filter(r => Number.isFinite(r.s_lat) && Number.isFinite(r.s_lon) && Number.isFinite(r.e_lat) && Number.isFinite(r.e_lon) && Number.isFinite(r.e_Volume) && r.e_Volume > 0);
 
-      const { destinationTotals, originTotals, destAgg } = computeTotals(data);
+      const { destinationTotals, originTotals } = computeTotals(data);
       data.forEach(d => {
         d.e_totalVolume = destinationTotals.get(d.e_locality_id) || d.e_Volume;
         d.s_totalVolume = originTotals.get(d.s_state_id) || d.e_Volume;
@@ -442,26 +426,24 @@
 
       addOriginPulseLayer(data);
       initFlowmap(data);
-      addDestinationLabels(destAgg); // hidden by default (not added to map)
-
-      // Prepare the potential routes overlay (not shown yet)
-      setupPotentialRoutes();
 
       overlay.style.display = 'none';
 
-      // Crisis facts + optional Camps
+      // Crisis facts + optional Camps (visible only when Story is open)
       addCrisisFacts();
+
+      // Auto-open story on first load (after crisis markers exist)
+      setTimeout(()=> window.toggleStory?.(true), 400);
 
     }).catch(err => {
       overlay.innerHTML = '<div style="color:#b00020;text-align:center">Failed to load data. Check console.</div>';
       console.error(err);
     });
 
-    // ---- Admin1 styled layer
+    // ---- Admin1 styled layer (no permanent labels) ---------------------
     function addStyledAdmin1(states){
       map.createPane('admin1-casing');  map.getPane('admin1-casing').style.zIndex = 350;
       map.createPane('admin1-stroke');  map.getPane('admin1-stroke').style.zIndex = 351;
-      map.createPane('admin1-labels');  map.getPane('admin1-labels').style.zIndex = 352;
 
       function strokeWeightForZoom(z){ return Math.max(0.8, Math.min(2.4, (z - 4) * 0.35)); }
 
@@ -500,44 +482,25 @@
               }
             }
           });
+          // Hover tooltip only (no permanent labels)
           lyr.bindTooltip(nm, { sticky:true });
         }
       });
-
-      admin1Labels = L.layerGroup([], { pane:'admin1-labels' });
-
-      function rebuildLabels(){
-        admin1Labels.clearLayers();
-        if (map.getZoom() < 6) return;
-        admin1Stroke.eachLayer(l => {
-          const nm = getAdmin1Name(l.feature?.properties) || '';
-          if (!nm) return;
-          const c = safeCenter(l);
-          if (!c) return;
-          L.tooltip({ permanent:true, direction:'center', className:'state-label', pane:'admin1-labels' })
-            .setContent(nm).setLatLng(c).addTo(admin1Labels);
-        });
-      }
 
       stateBoundariesLayer = L.featureGroup([admin1Casing, admin1Stroke]).addTo(map);
       stateBoundariesLayer.bringToBack();
 
       try { map.fitBounds(stateBoundariesLayer.getBounds(), { padding:[20,20] }); } catch {}
 
-      rebuildLabels();
-      admin1Labels.addTo(map);
-
       layerControl.addOverlay(stateBoundariesLayer, 'Admin 1 Boundaries');
-      layerControl.addOverlay(admin1Labels, 'Admin 1 Labels');
 
       map.on('zoomend', ()=>{
         admin1Casing.setStyle(admin1CasingStyle());
         admin1Stroke.setStyle(admin1StrokeStyle());
-        rebuildLabels();
       });
     }
 
-    // ---- Origin pulsing layer
+    // ---- Origin pulsing layer ------------------------------------------
     function addOriginPulseLayer(rows){
       map.createPane('origin-pulses'); map.getPane('origin-pulses').style.zIndex = 460;
 
@@ -572,7 +535,7 @@
           })
           .bindPopup(`
             <div style="min-width:220px">
-              <h4 style="margin:0 0 8px;color:var(--brand-primary);font-weight:600">Displacement Origin</h4>
+              <h4 style="margin:0 0 8px;color:var(--brand-primary);font-weight:800">Displacement Origin</h4>
               <p style="margin:0 0 6px"><strong>State:</strong> ${escapeHtml(v.name)}</p>
               <p style="margin:0 0 0"><strong>Total Displaced:</strong> ${formatNumber(v.total)}</p>
             </div>`);
@@ -584,48 +547,7 @@
       layerControl.addOverlay(originPulseLayer, 'Origin points (pulsing)');
     }
 
-    // ---- Destination labels overlay (Top N by zoom & in-bounds)
-    function addDestinationLabels(destAgg){
-      map.createPane('dest-labels'); map.getPane('dest-labels').style.zIndex = 470;
-
-      destLabelsLayer = L.layerGroup([], { pane:'dest-labels' }); // NOT added to map by default
-      layerControl.addOverlay(destLabelsLayer, 'Top destination labels'); // user can toggle on from Layers
-
-      function topNForZoom(z){
-        if (z<5) return 3;
-        if (z<6) return 5;
-        if (z<7) return 8;
-        if (z<8) return 12;
-        return 18;
-      }
-
-      function rebuild(){
-        if (!destLabelsLayer) return;
-        destLabelsLayer.clearLayers();
-        if (!map.hasLayer(destLabelsLayer)) return; // only build when visible
-
-        const b = map.getBounds();
-        const inView = destAgg.filter(d => b.contains([d.lat,d.lon]));
-        inView.sort((a,b)=> b.total - a.total);
-        const N = topNForZoom(map.getZoom());
-
-        inView.slice(0, N).forEach(d => {
-          const marker = L.marker([d.lat, d.lon], { interactive:true })
-            .bindTooltip(`${escapeHtml(d.name)} • ${formatNumber(d.total)}`, {
-              permanent:true, direction:'top', className:'dest-label', offset:[0,-8]
-            })
-            .on('click', () => {
-              try { flowmapLayer?.selectFeaturesForPathDisplayById?.('e_locality_id', String(d.id), true, 'SELECTION_NEW'); } catch {}
-            });
-          destLabelsLayer.addLayer(marker);
-        });
-      }
-
-      map.on('moveend zoomend', rebuild);
-      rebuild();
-    }
-
-    // ---- Flowmap (improved destination markers)
+    // ---- Flowmap (destination markers with glow) ------------------------
     function initFlowmap(data){
       const originKeySet = new Set(data.map(d => latlonKey(d.s_lat, d.s_lon)));
 
@@ -706,7 +628,7 @@
 
       layer.bindPopup(`
         <div style="min-width:220px">
-          <h4 style="margin:0 0 8px;color:var(--brand-primary);font-weight:600">Location</h4>
+          <h4 style="margin:0 0 8px;color:var(--brand-primary);font-weight:800">Location</h4>
           <p style="margin:0 0 6px"><strong>Name:</strong> ${escapeHtml(name)}</p>
           <p style="margin:0 0 6px"><strong>Total linked displaced:</strong> ${formatNumber(total)}</p>
           ${feature.properties?.main_needs ? `<p style="margin:0 0 6px"><strong>Main Needs:</strong> ${escapeHtml(String(feature.properties.main_needs))}</p>` : ''}
@@ -714,7 +636,7 @@
         </div>`);
     }
 
-    /* === Crisis facts layer (Al Fasher) ================================== */
+    /* === Crisis facts layer (Al Fasher) — ONLY when Story open ========= */
     const AL_FASHER = [13.636, 25.349]; // adjust if you have a more precise point
     const SIEGE_START = new Date('2024-05-01');
     const FACT_ATTACKS = 240; // "More than 240 attacks"
@@ -732,8 +654,7 @@
 
     function addCrisisFacts(){
       map.createPane('crisis'); map.getPane('crisis').style.zIndex = 480;
-      crisisLayer = L.layerGroup([], { pane:'crisis' }).addTo(map);
-      layerControl.addOverlay(crisisLayer, 'Crisis facts');
+      crisisLayer = L.layerGroup([], { pane:'crisis' }); // not added here; Story toggles it
 
       // 1) Siege ring (dashed)
       siegeRing = L.circle(AL_FASHER, {
@@ -792,7 +713,6 @@
     */
     function addCampsLayer(){
       campsLayer = L.layerGroup([], { pane:'crisis' });
-      layerControl.addOverlay(campsLayer, 'Camps (status)');
 
       return new Promise(resolve=>{
         if (!window.Papa){ resolve([]); return; }
@@ -829,7 +749,6 @@
                 .addTo(campsLayer);
             });
 
-            if (rows.length){ campsLayer.addTo(map); }
             resolve(campsData);
           },
           error:()=>{ resolve([]); }
@@ -837,9 +756,8 @@
       });
     }
 
-    // ─── NEW: Potential routes overlay (El Fasher → Tawila, At Tina) ───
+    // ─── Potential routes overlay (El Fasher → Tawila, At Tina) ────────
     function setupPotentialRoutes(){
-      // Dedicated pane on top of regular flows
       map.createPane('potential'); map.getPane('potential').style.zIndex = 475;
 
       const origin = { id:'ELFASHER', name:'El Fasher', lat:AL_FASHER[0], lon:AL_FASHER[1] };
@@ -848,7 +766,6 @@
         { id:'SD02171', name:'At Tina', lat:15.167895, lon:23.127019 }
       ];
 
-      // CanvasFlowmap features
       const fc = {
         type:'FeatureCollection',
         features: dests.map((d,i)=>({
@@ -857,7 +774,7 @@
           properties:{
             s_state_id: origin.id, s_State: origin.name, s_lat: origin.lat, s_lon: origin.lon,
             e_locality_id: d.id, e_locality: d.name, e_lat: d.lat, e_lon: d.lon,
-            e_Volume: 100 + i*10 // small dummy volume
+            e_Volume: 100 + i*10
           }
         }))
       };
@@ -870,7 +787,7 @@
           destinationUniqueIdField:'e_locality_id',
           destinationGeometry:{ x:'e_lon', y:'e_lat' }
         },
-        pointToLayer:()=> L.circleMarker([0,0],{radius:0.01,opacity:0,fillOpacity:0}), // hide internal points
+        pointToLayer:()=> L.circleMarker([0,0],{radius:0.01,opacity:0,fillOpacity:0}),
         canvasBezierStyle:{
           type:'classBreaks', field:'e_Volume',
           classBreakInfos:[
@@ -885,7 +802,6 @@
         animationDuration:3000
       });
 
-      // Destination markers (glow)
       routesMarkers = L.layerGroup([], { pane:'potential' });
       dests.forEach(d=>{
         const icon = L.divIcon({
@@ -898,13 +814,11 @@
           .addTo(routesMarkers);
       });
 
-      // Origin marker (pulsing)
       routesOrigin = L.marker(AL_FASHER, {
         pane:'potential',
         icon: L.divIcon({ className:'origin-pulse-icon', html:'<div class="pulse" style="--d:28px"></div>', iconSize:[28,28], iconAnchor:[14,14] })
       }).bindTooltip('Origin: El Fasher', {direction:'top', offset:[0,-4]});
 
-      // Group for easy toggle
       routesGroup = L.featureGroup([routesLayer, routesMarkers, routesOrigin]);
       layerControl.addOverlay(routesGroup, 'Potential routes (El Fasher → Tawila, At Tina)');
     }
@@ -926,7 +840,7 @@
       updateBtnStates();
     }
 
-    // ─── Helpers
+    // ─── Helpers ---------------------------------------------------------
     function toGeoJSON(source){
       if (!source) return null;
       if (source.type === 'Topology' && window.topojson?.feature){
@@ -948,9 +862,6 @@
       const code = (candidates.find(x => x) || '').toString().trim();
       return code || null;
     }
-    function safeCenter(layer){
-      try { return layer.getBounds().getCenter(); } catch { return null; }
-    }
     function normalizeRow(r){
       return {
         s_state_id: String(r.s_state_id || r.origin_state_id || r.state_code || '').trim(),
@@ -967,17 +878,11 @@
     function computeTotals(data){
       const destinationTotals = new Map();
       const originTotals = new Map();
-      const destAggIndex = new Map(); // id -> {id, name, lat, lon, total}
       for (const d of data){
         destinationTotals.set(d.e_locality_id, (destinationTotals.get(d.e_locality_id) || 0) + d.e_Volume);
         originTotals.set(d.s_state_id, (originTotals.get(d.s_state_id) || 0) + d.e_Volume);
-        if (!destAggIndex.has(d.e_locality_id)){
-          destAggIndex.set(d.e_locality_id, { id:d.e_locality_id, name:d.e_locality||'Unknown', lat:d.e_lat, lon:d.e_lon, total:0 });
-        }
-        destAggIndex.get(d.e_locality_id).total += d.e_Volume;
       }
-      const destAgg = [...destAggIndex.values()];
-      return { destinationTotals, originTotals, destAgg };
+      return { destinationTotals, originTotals };
     }
     function scaleRadiusLog(value, minV, maxV, rMin, rMax){
       const v = Math.max(minV || 1, Math.min(maxV || value || 1, value || 1));
@@ -990,14 +895,14 @@
     function formatNumber(x){ try { return Number(x).toLocaleString(undefined); } catch { return x; } }
     function escapeHtml(str){ return String(str).replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[s])); }
 
-    /* ─── Story / Slideshow logic (REWRITTEN) ──────────────────────────── */
+    /* ─── Story / Slideshow logic ─────────────────────────────────────── */
     (()=>{
       const SLIDE_MS = 6000;    // autoplay per slide
       const FLY_DUR  = 1.4;     // flyTo seconds
-      const UI_DELAY = 420;     // ms delay after fly before UI/tooltip
+      const UI_DELAY = 420;     // ms delay after fly
       const TOUR_STEP = 3000;   // ms per camp during tour
 
-      // Grab story UI
+      // Story UI
       const storyPanel = document.getElementById('story-panel');
       const storyTitle = document.getElementById('story-title');
       const storyBody  = document.getElementById('story-body');
@@ -1029,17 +934,6 @@
       const addAttention = id => document.getElementById(id)?.classList.add('attention');
       const removeAttention = id => document.getElementById(id)?.classList.remove('attention');
 
-      function highlightById(field, candidateIds, additive = false){
-        if (!flowmapLayer || !flowmapLayer.selectFeaturesForPathDisplayById) return false;
-        const ids = Array.isArray(candidateIds) ? candidateIds : [candidateIds];
-        for (const id of ids) {
-          try {
-            flowmapLayer.selectFeaturesForPathDisplayById(field, String(id), !additive, 'SELECTION_NEW');
-            return true;
-          } catch {}
-        }
-        return false;
-      }
       function clearFlowSelection(){
         try {
           flowmapLayer?.clearAllPathSelections?.();
@@ -1140,7 +1034,6 @@
             cleanupSlide();
             pauseGlobalAnimationForStory();
             clearFlowSelection();
-            highlightById('s_state_id', ['SD09','SD07','SDNF','North Darfur']);
 
             const target = AL_FASHER || [13.636,25.349];
             await flyTo(target[0], target[1], 10);
@@ -1231,32 +1124,39 @@
         scheduleAutoplay();
       }
 
-     function toggleStory(open){
-  storyOpen = !!open;
-  storyPanel.style.display = storyOpen ? 'block' : 'none';
-  btnStory.classList.toggle('active', storyOpen);
-  updateBtnStates?.();
+      function toggleStory(open){
+        storyOpen = !!open;
+        storyPanel.style.display = storyOpen ? 'block' : 'none';
+        btnStory.classList.toggle('active', storyOpen);
+        updateBtnStates?.();
 
-  if (storyOpen){
-    // show crisis facts only while story is open
-    if (crisisLayer && !map.hasLayer(crisisLayer)) crisisLayer.addTo(map);
+        if (storyOpen){
+          // show crisis facts only while story is open
+          if (crisisLayer && !map.hasLayer(crisisLayer)) crisisLayer.addTo(map);
 
-    pauseGlobalAnimationForStory();
-    slideIdx = 0;
-    buildDots();
-    setDotsActive();
-    setAutoplay(true);
-    goToSlide(slideIdx, { userTriggered:false });
-  } else {
-    // hide crisis facts when story closes
-    if (crisisLayer && map.hasLayer(crisisLayer)) map.removeLayer(crisisLayer);
+          pauseGlobalAnimationForStory();
+          slideIdx = 0;
+          storyDots.innerHTML = '';
+          for (let i=0;i<slides.length;i++){
+            const d = document.createElement('div');
+            d.className = 'story-dot' + (i===slideIdx?' active':'');
+            d.title = `Slide ${i+1}`;
+            d.onclick = ()=> goToSlide(i, { userTriggered:true });
+            storyDots.appendChild(d);
+          }
+          setDotsActive();
+          setAutoplay(true);
+          goToSlide(slideIdx, { userTriggered:false });
+        } else {
+          // hide crisis facts when story closes
+          if (crisisLayer && map.hasLayer(crisisLayer)) map.removeLayer(crisisLayer);
 
-    stopAutoplay();
-    cleanupSlide();
-    clearFlowSelection();
-    restoreGlobalAnimationAfterStory();
-  }
-}
+          stopAutoplay();
+          cleanupSlide();
+          clearFlowSelection();
+          restoreGlobalAnimationAfterStory();
+        }
+      }
 
       // Bind controls
       btnPrev.onclick   = () => goToSlide(slideIdx - 1, { userTriggered:true });
