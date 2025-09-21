@@ -74,10 +74,8 @@
       <button class="control-btn" id="toggle-flows" title="Show/Hide flows (F)" aria-controls="map" aria-pressed="true">
         <i class="fas fa-wave-square" aria-hidden="true"></i> <span id="flows-text">Hide Flows</span>
       </button>
-      <button class="control-btn" id="toggle-points" title="Show/Hide points (P)" aria-controls="map" aria-pressed="true">
-        <i class="fas fa-map-marker-alt" aria-hidden="true"></i> <span id="points-text">Hide Points</span>
-      </button>
-      <div id="legend" class="legend" aria-label="Legend" style="display:none"></div>
+      $1<button class="control-btn" id="focus-alfasher" title="Show flows from Al Fasher"><i class="fas fa-location-arrow" aria-hidden="true"></i> Al Fasher → All</button>
+      $2
     </div>
 
     <div class="info-panel" id="info-panel">
@@ -137,6 +135,7 @@
     const flowsText= document.getElementById('flows-text');
     const btnPoints= document.getElementById('toggle-points');
     const pointsText= document.getElementById('points-text');
+    const btnFasher = document.getElementById('focus-alfasher');
     const helpClose= document.getElementById('close-info');
     const legendEl = document.getElementById('legend');
 
@@ -144,6 +143,7 @@
     btnAnim.addEventListener('click', toggleAnimation);
     btnFlows.addEventListener('click', toggleFlows);
     btnPoints.addEventListener('click', togglePoints);
+    btnFasher.addEventListener('click', focusAlFasher);
     helpClose.addEventListener('click', () => document.getElementById('info-panel').style.display = 'none');
 
     // Keyboard shortcuts
@@ -185,6 +185,15 @@
       setPointsButtonState();
     }
     function resetView(){ map.setView([16,30], 5.5); tryFitBounds(); }
+    function focusAlFasher(){
+      try {
+        const id = 'SD02114';
+        if (flowmapLayer && typeof flowmapLayer.selectFeaturesForPathDisplayById === 'function') {
+          flowmapLayer.selectFeaturesForPathDisplayById('s_state_id', id, true, 'SELECTION_NEW');
+          if (typeof flowmapLayer.setPathDisplayMode === 'function') flowmapLayer.setPathDisplayMode('selection');
+        }
+      } catch(e) { console.warn('Focus Al Fasher failed:', e); }
+    }
 
     // --- Load data ---
     const overlay = document.getElementById('loading-overlay');
@@ -314,9 +323,14 @@
         onEachFeature: (feature, layer) => attachInteractivity(feature, layer)
       }).addTo(map);
 
-      // Initial selection: pick the first origin present in the CSV (e.g., SD02114 for Al Fasher)
+      // Focus Al Fasher by default so the map shows its outbound flows
       try {
-        const firstOrigin = data[0]?.s_state_id; if (firstOrigin) flowmapLayer.selectFeaturesForPathDisplayById('s_state_id', firstOrigin, true, 'SELECTION_NEW');
+        const alFasherID = 'SD02114';
+        const exists = data.some(d => String(d.s_state_id) === alFasherID);
+        if (exists) {
+          flowmapLayer.selectFeaturesForPathDisplayById('s_state_id', alFasherID, true, 'SELECTION_NEW');
+          if (typeof flowmapLayer.setPathDisplayMode === 'function') flowmapLayer.setPathDisplayMode('selection');
+        }
       } catch {}
 
       // Hover highlight & click-to-select
