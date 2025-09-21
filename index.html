@@ -9,18 +9,42 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="anonymous"/>
   <!-- Font Awesome -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer"/>
+<!-- IOM digital typeface per brand guide -->
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 
   <style>
     :root{
-      --brand-primary:#2a5885;  /* IOM deep blue */
-      --brand-accent:#418FDE;   /* IOM accent blue */
-      --brand-amber:#ffb81c;    /* hover highlight */
-      --surface:#f5f7fa;        /* app bg */
-      --line1:#ffb81c;
-      --line2:#ff671f;
-      --line3:#d22630;          /* flow colors */
-      --potential:#0ea5e9;      /* cyan-blue for scenario routes */
-    }
+  /* IOM primary + shades */
+  --iom-blue:#0033A0;         /* Primary IOM blue */
+  --iom-blue-60:#4066B8;
+  --iom-blue-40:#8099D0;
+  --iom-blue-20:#B3C2E3;
+  --iom-blue-10:#D9E0F1;
+  --blue-box:#E9EBF6;         /* Lightest box bg for callouts */
+
+  /* IOM secondary set */
+  --un-blue:#418FDE;          /* Light blue (UN blue) */
+  --yellow:#FFB81C;           /* brand yellow */
+  --orange:#FF671F;           /* brand orange */
+  --red:#D22630;              /* brand red */
+  --mint:#5CB8B2;             /* brand mint */
+
+  /* Map/UI tokens (repointed to brand) */
+  --brand-primary:var(--iom-blue);
+  --brand-accent:var(--un-blue);
+  --brand-amber:var(--yellow);
+
+  --surface:#f5f7fa;
+
+  /* Flow ramp (kept) */
+  --line1:var(--yellow);
+  --line2:var(--orange);
+  --line3:var(--red);
+
+  /* Scenario routes — use a single secondary (mint) */
+  --potential:var(--mint);
+}
+
 
     html, body { height:100%; }
     body{
