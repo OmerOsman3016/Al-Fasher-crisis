@@ -15,28 +15,60 @@
       --brand-primary:#2a5885;  /* IOM deep blue */
       --brand-accent:#418FDE;   /* IOM accent blue */
       --brand-amber:#ffb81c;    /* hover highlight */
-      --line1:#ffb81c; --line2:#ff671f; --line3:#d22630;
+      --surface:#f5f7fa;        /* app bg */
+      --line1:#ffb81c; --line2:#ff671f; --line3:#d22630; /* flow colors */
     }
 
     html, body { height:100%; }
     body{
-      margin:0; background:#f5f7fa; color:#333;
+      margin:0; background:var(--surface); color:#1d2a36;
       font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,Helvetica,Arial,"Apple Color Emoji","Segoe UI Emoji";
-      display:flex; flex-direction:column;
+      display:flex; flex-direction:column; min-height:100vh;
     }
 
-    .map-container{ position:relative; flex:1 1 auto; }
+    /* ─── Header & Footer ─────────────────────────────────────────────── */
+    .app-header{
+      display:flex; align-items:center; justify-content:space-between;
+      gap:12px; padding:10px 16px; background:#fff; border-bottom:1px solid #e6edf5;
+      position:relative;
+    }
+    .app-header::after{ /* accent bar */
+      content:""; position:absolute; left:0; right:0; bottom:-2px; height:2px;
+      background:linear-gradient(90deg,var(--brand-primary),var(--brand-accent));
+    }
+    .brand{ display:flex; align-items:center; gap:10px; min-width:0; }
+    .brand .logo{ width:28px; height:28px; border-radius:6px; background:var(--brand-primary);
+      display:grid; place-items:center; color:#fff; font-weight:700; font-size:14px; }
+    .brand h1{ font-size:16px; line-height:1.15; margin:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .brand .sub{ font-size:12px; color:#5a7086; font-weight:500; }
+
+    .toolbar{ display:flex; align-items:center; flex-wrap:wrap; gap:6px; }
+    .btn{
+      display:inline-flex; align-items:center; gap:8px;
+      border:1px solid #d1dbe7; background:#fff; color:#1d2a36;
+      padding:6px 10px; border-radius:10px; font-size:12px; font-weight:600;
+      cursor:pointer; user-select:none; transition:.2s ease;
+    }
+    .btn:hover{ border-color:#b7c6da; box-shadow:0 1px 0 rgba(0,0,0,.03); }
+    .btn.active{ border-color:var(--brand-accent); background:#eef6ff; }
+
+    .app-footer{
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+      background:#fff; border-top:1px solid #e6edf5; padding:8px 12px; font-size:12px; color:#45607a;
+    }
+    .kbd{ font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace; border:1px solid #c9d5e6; border-bottom-width:2px; padding:0 6px; border-radius:6px; background:#f7faff; }
+
+    /* ─── Map container ───────────────────────────────────────────────── */
+    .map-wrap{ position:relative; flex:1 1 auto; min-height:0; }
     #map{ position:absolute; inset:0; }
 
     .loading-overlay{
       position:absolute; inset:0; z-index:1100;
       background:rgba(255,255,255,.85);
-      display:flex; flex-direction:column; align-items:center; justify-content:center;
+      display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center;
     }
-    .spinner{
-      width:44px; height:44px; border:4px solid #e7eef7; border-top-color:var(--brand-primary);
-      border-radius:50%; animation:spin 1s linear infinite; margin-bottom:12px;
-    }
+    .spinner{ width:44px; height:44px; border:4px solid #e7eef7; border-top-color:var(--brand-primary);
+      border-radius:50%; animation:spin 1s linear infinite; margin-bottom:10px; }
     @keyframes spin{ to{ transform:rotate(360deg); } }
 
     /* Admin1 labels */
@@ -47,11 +79,34 @@
       pointer-events:none;
     }
 
-    @media (max-width:768px){ .info-panel{ font-size:12px; } }
+    @media (max-width:768px){
+      .brand h1{ font-size:14px; }
+      .brand .sub{ display:none; }
+      .btn span{ display:none; } /* hide labels, keep icons */
+    }
   </style>
 </head>
 <body>
-  <div class="map-container">
+  <!-- Header -->
+  <header class="app-header" role="banner">
+    <div class="brand" title="Sudan | IDPs Pathways Across Sudan">
+      <div class="logo" aria-hidden="true">DTM</div>
+      <div>
+        <h1>Sudan | IDPs Pathways Across Sudan</h1>
+        <div class="sub">Flows between origin <strong>states</strong> and destination <strong>localities</strong></div>
+      </div>
+    </div>
+
+    <nav class="toolbar" aria-label="Map controls">
+      <button id="btn-play" class="btn active" title="Play/Pause animation (Space)"><i class="fa-solid fa-play"></i><span>Animation</span></button>
+      <button id="btn-flows" class="btn active" title="Toggle flow lines (F)"><i class="fa-solid fa-wave-square"></i><span>Flows</span></button>
+      <button id="btn-points" class="btn active" title="Toggle points (P)"><i class="fa-solid fa-circle"></i><span>Points</span></button>
+      <button id="btn-reset" class="btn" title="Reset view (R)"><i class="fa-solid fa-rotate"></i><span>Reset</span></button>
+    </nav>
+  </header>
+
+  <!-- Map -->
+  <div class="map-wrap">
     <div id="map" aria-label="IDPs Pathways map of Sudan" role="region"></div>
 
     <div class="loading-overlay" id="loading-overlay" aria-live="polite">
@@ -59,6 +114,20 @@
       <div>Loading displacement data…</div>
     </div>
   </div>
+
+  <!-- Footer -->
+  <footer class="app-footer" role="contentinfo">
+    <div>
+      <strong>Keyboard:</strong>
+      <span class="kbd">Space</span> Play/Pause ·
+      <span class="kbd">F</span> Flows ·
+      <span class="kbd">P</span> Points ·
+      <span class="kbd">R</span> Reset
+    </div>
+    <div>
+      <span>© IOM DTM — Visualization prototype. Basemap © Mapbox/OSM.</span>
+    </div>
+  </footer>
 
   <!-- JS libs -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
@@ -80,14 +149,14 @@
       attributionControl:true
     }).setView([16,30], 5.5);
 
-    // Basemaps
+    // Basemaps (Mapbox Satellite default)
     const cartoLight = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { attribution:'&copy; OpenStreetMap & CartoDB' });
     const mbLight   = L.tileLayer(`https://api.mapbox.com/styles/v1/mapbox/light-v10/tiles/{z}/{x}/{y}?access_token=${MAPBOX_TOKEN}`, { tileSize:512, zoomOffset:-1, attribution:'&copy; Mapbox & OpenStreetMap' });
     const mbStreets = L.tileLayer(`https://api.mapbox.com/styles/v1/mapbox/streets-v11/tiles/{z}/{x}/{y}?access_token=${MAPBOX_TOKEN}`, { tileSize:512, zoomOffset:-1, attribution:'&copy; Mapbox & OpenStreetMap' });
     const mbSat     = L.tileLayer(`https://api.mapbox.com/styles/v1/mapbox/satellite-v9/tiles/{z}/{x}/{y}?access_token=${MAPBOX_TOKEN}`, { tileSize:512, zoomOffset:-1, attribution:'&copy; Mapbox & OpenStreetMap' });
     const mbOutdoor = L.tileLayer(`https://api.mapbox.com/styles/v1/mapbox/outdoors-v11/tiles/{z}/{x}/{y}?access_token=${MAPBOX_TOKEN}`, { tileSize:512, zoomOffset:-1, attribution:'&copy; Mapbox & OpenStreetMap' });
     const mbCustom  = L.tileLayer('https://api.mapbox.com/styles/v1/omerosman/cm8oy6is4006101si7ll3bs4h/tiles/{z}/{x}/{y}?access_token=' + MAPBOX_TOKEN, { tileSize:512, zoomOffset:-1, attribution:'&copy; Mapbox & OpenStreetMap' });
-    mbSat.addTo(map);   // Make Mapbox Satellite the default
+    mbSat.addTo(map);
 
     const layerControl = L.control.layers({
       "Mapbox Custom": mbCustom,
@@ -101,8 +170,41 @@
     L.control.scale({ position:'bottomleft', metric:true, imperial:false }).addTo(map);
     L.control.zoom({ position:'bottomright' }).addTo(map);
 
+    // ─── Custom Legend ─────────────────────────────────────────────────
+    const legend = L.control({ position: 'bottomleft' });
+    legend.onAdd = function(){
+      const div = L.DomUtil.create('div','legend');
+      div.innerHTML = `
+        <div style="background:#fff;border:1px solid #d1dbe7;border-radius:10px;padding:8px 10px;box-shadow:0 2px 10px rgba(0,0,0,.06);min-width:180px">
+          <div style="font-weight:700;color:#1d2a36;margin-bottom:5px">Flow volume (e_Volume)</div>
+          <div style="display:grid;grid-template-columns:18px 1fr;gap:8px;align-items:center;font-size:12px;color:#3c4f62">
+            <span style="height:4px;background:var(--line1);"></span><span>1 — 50,000</span>
+            <span style="height:4px;background:var(--line2);"></span><span>50,000 — 100,000</span>
+            <span style="height:4px;background:var(--line3);"></span><span>100,000 — 1,600,000</span>
+          </div>
+        </div>`;
+      return div;
+    };
+    legend.addTo(map);
+
+    // Prevent map drag while interacting with legend
+    const legendEl = document.querySelector('.legend');
+    if (legendEl){ L.DomEvent.disableScrollPropagation(legendEl); L.DomEvent.disableClickPropagation(legendEl); }
+
+    // ─── State ────────────────────────────────────────────────────────
     let stateBoundariesLayer, admin1Labels, flowmapLayer;
     let isAnimationPlaying = true, showFlows = true, showPoints = true;
+
+    // Toolbar buttons
+    const btnPlay   = document.getElementById('btn-play');
+    const btnFlows  = document.getElementById('btn-flows');
+    const btnPoints = document.getElementById('btn-points');
+    const btnReset  = document.getElementById('btn-reset');
+
+    btnPlay.addEventListener('click', toggleAnimation);
+    btnFlows.addEventListener('click', toggleFlows);
+    btnPoints.addEventListener('click', togglePoints);
+    btnReset.addEventListener('click', ()=> map.setView([16,30], 5.5));
 
     // Keyboard shortcuts
     window.addEventListener('keydown', (e) => {
@@ -114,17 +216,26 @@
       else if (k === 'r') map.setView([16,30], 5.5);
     });
 
+    function updateBtnStates(){
+      btnPlay.classList.toggle('active', isAnimationPlaying);
+      btnFlows.classList.toggle('active', showFlows);
+      btnPoints.classList.toggle('active', showPoints);
+    }
+
     function toggleAnimation(){
       isAnimationPlaying = !isAnimationPlaying;
       if (flowmapLayer?.setAnimationStarted) flowmapLayer.setAnimationStarted(isAnimationPlaying);
+      updateBtnStates();
     }
     function toggleFlows(){
       showFlows = !showFlows;
       if (flowmapLayer?.setPathDisplayMode) flowmapLayer.setPathDisplayMode(showFlows ? 'all' : 'none');
+      updateBtnStates();
     }
     function togglePoints(){
       showPoints = !showPoints;
       if (flowmapLayer?.setPointVisibility) flowmapLayer.setPointVisibility(showPoints);
+      updateBtnStates();
     }
 
     // --- Load data
@@ -305,6 +416,8 @@
         else if (e.sharedDestinationFeatures?.length) flowmapLayer.selectFeaturesForPathDisplay(e.sharedDestinationFeatures, 'SELECTION_NEW');
       });
 
+      updateBtnStates();
+
       // Optional initial selection (safe no-op)
       try { flowmapLayer.selectFeaturesForPathDisplayById('s_state_id', 'SD02114', true, 'SELECTION_NEW'); } catch {}
     }
@@ -389,7 +502,7 @@
       return rMin + (rMax - rMin) * t;
     }
     function formatNumber(x){ try { return Number(x).toLocaleString(undefined); } catch { return x; } }
-    function escapeHtml(str){ return String(str).replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s])); }
+    function escapeHtml(str){ return String(str).replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[s])); }
   })();
   </script>
 </body>
