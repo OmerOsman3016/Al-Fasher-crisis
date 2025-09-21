@@ -23,9 +23,8 @@
   /* Flows */
   --line1:var(--yellow); --line2:var(--orange); --line3:var(--red); --potential:var(--mint);
 
-  /* Neutral UI border (requested gray) */
+  /* Neutral UI border (gray) */
   --ui-border:#cfd4da;
-  --ui-border-strong:#9aa4b2;
 }
 
 html,body{height:100%;}
@@ -115,17 +114,15 @@ small.hint{ color:#5a7086; }
 .bar{ height:8px; background:#eef2f7; border-radius:6px; overflow:hidden; border:1px solid var(--ui-border); }
 .bar > i{ display:block; height:100%; width:0%; background:linear-gradient(90deg, var(--brand-accent), #9cc7f5); }
 
-/* Story panel (manual open) */
+/* Story panel */
 .story-panel{ right:14px; bottom:14px; width:360px; max-width:85vw; display:none; }
 .story-body{ padding:16px; color:#334a62; font-size:14px; line-height:1.5; max-height:300px; overflow:auto; }
 .story-dots{ display:flex; gap:6px; align-items:center; padding:8px 12px; }
 .story-dot{ width:8px; height:8px; border-radius:50%; background:#dde6f2; cursor:pointer; }
 .story-dot.active{ background:var(--brand-accent); transform:scale(1.2); }
 
-/* Legend */
+/* Legend + map labels */
 .legend *{ box-sizing:border-box; }
-
-/* Admin 1 labels */
 .leaflet-tooltip.state-label{
   background:transparent; border:none; box-shadow:none; padding:0;
   color:#244b6b; font-weight:600; font-size:12px; letter-spacing:.2px;
@@ -147,7 +144,7 @@ small.hint{ color:#5a7086; }
 .origin-pulse-icon .pulse::after{ animation-delay:1.1s; }
 @keyframes pulseRing{ 0%{ transform:translate(-50%,-50%) scale(.7); opacity:.9; } 70%{ opacity:.2; } 100%{ transform:translate(-50%,-50%) scale(2.1); opacity:0; } }
 
-/* Destinations */
+/* Destination markers */
 .dest-icon{ pointer-events:auto; transition:transform .12s ease; }
 .dest-icon .dot{
   position:relative; width:var(--d,18px); height:var(--d,18px); border-radius:50%;
@@ -229,7 +226,7 @@ small.hint{ color:#5a7086; }
 
   <div class="loading-overlay" id="loading-overlay" aria-live="polite">
     <div class="spinner" aria-hidden="true"></div>
-    <div>Loading displacement data…</div>
+    <div>Loading displacement & routes…</div>
   </div>
 
   <!-- Timeline panel -->
@@ -264,12 +261,8 @@ small.hint{ color:#5a7086; }
     </div>
     <div class="body">
       <div class="grid">
-        <label class="full">Template</label>
-        <select id="scenario-template" class="full" style="padding:6px; border:1px solid var(--ui-border); border-radius:8px">
-          <option value="corridor_tawila">Humanitarian Corridor → Tawila</option>
-          <option value="escape_west_attina">West Escape → At Tina</option>
-          <option value="north_corridor_mellit">Northern Corridor → Mellit (alt)</option>
-        </select>
+        <label class="full">Route (built-in or from routes.csv)</label>
+        <select id="scenario-template" class="full" style="padding:6px; border:1px solid var(--ui-border); border-radius:8px"></select>
 
         <label>People</label>
         <input id="scenario-people" type="number" min="1000" step="1000" value="50000"
@@ -283,7 +276,7 @@ small.hint{ color:#5a7086; }
         <input id="scenario-capacity" type="number" min="500" step="100" value="2000"
                style="padding:6px;border:1px solid var(--ui-border);border-radius:8px" />
 
-        <label>Risk</label>
+        <label>Global risk</label>
         <input id="scenario-risk" type="range" min="0" max="100" value="45" />
 
         <label>Road cond.</label>
@@ -331,7 +324,7 @@ small.hint{ color:#5a7086; }
     </div>
   </div>
 
-  <!-- Story panel (unchanged behavior: manual open only) -->
+  <!-- Story panel (manual open) -->
   <div class="panel story-panel" id="story-panel" role="dialog" aria-modal="false" aria-live="polite">
     <div class="head">
       <div class="story-title" id="story-title">Understanding the Crisis in Al Fasher</div>
@@ -344,7 +337,7 @@ small.hint{ color:#5a7086; }
     </div>
     <div class="story-body" id="story-body"></div>
     <div class="story-dots" id="story-dots"></div>
-    <div style="padding:8px 12px;font-size:12px; color:#46607a;"><span id="story-count">1/5</span></div>
+    <div style="padding:8px 12px;font-size:12px; color:#46607a;"><span id="story-count">1/4</span></div>
   </div>
 </div>
 
@@ -458,7 +451,6 @@ small.hint{ color:#5a7086; }
   const timelineMode    = document.getElementById('timeline-mode');
   const timelineLabel   = document.getElementById('timeline-label');
   const btnTimelineClose= document.getElementById('btn-timeline-close');
-
   btnTimelineClose.addEventListener('click', ()=> panelTimeline.style.display='none');
 
   // Scenarios
@@ -471,10 +463,8 @@ small.hint{ color:#5a7086; }
   const scenarioRun      = document.getElementById('scenario-run');
   const scenarioSummary  = document.getElementById('scenario-summary');
   const scenarioRiskBadge= document.getElementById('scenario-risk-badge');
-
   scenarioRun.addEventListener('click', applyScenario);
   scenarioRisk.addEventListener('input', updateScenarioBadge);
-  updateScenarioBadge();
 
   // Keyboard
   window.addEventListener('keydown', (e) => {
@@ -495,19 +485,16 @@ small.hint{ color:#5a7086; }
     btnPoints.classList.toggle('active', showPoints);
     btnRoutes.classList.toggle('active', routesVisible);
   }
-
   function toggleAnimation(){
     isAnimationPlaying = !isAnimationPlaying;
     flowmapLayer?.setAnimationStarted?.(isAnimationPlaying);
     updateBtnStates();
   }
-
   function toggleFlows(){
     showFlows = !showFlows;
     flowmapLayer?.setPathDisplayMode?.(showFlows ? 'all' : 'none');
     updateBtnStates();
   }
-
   function togglePoints(){
     showPoints = !showPoints;
     flowmapLayer?.setPointVisibility?.(showPoints);
@@ -517,13 +504,12 @@ small.hint{ color:#5a7086; }
     }
     updateBtnStates();
   }
-
   function showHelp(){
     alert(`Dashboard help:
 - Use the timeline to filter flows by month or cumulatively.
-- Scenario panel lets you plan routes and see estimated days & risk.
-- Click states to focus flows; click markers for popups.
-- Toggle "Routes" to show built-in potential routes (El Fasher → Tawila / At Tina).`);
+- Scenario panel renders multi-leg routes from data/routes.csv or built-ins.
+- Summary shows distance, trips, estimated days, and risk.
+- Click states to focus flows; click markers for popups.`);
   }
 
   const overlay = document.getElementById('loading-overlay');
@@ -532,6 +518,9 @@ small.hint{ color:#5a7086; }
   let allRows = []; // full flows
   let months  = []; // sorted unique months (YYYY-MM)
   let monthToIndex = new Map();
+
+  // CSV routes store
+  let CSV_SCENARIOS = {}; // { key: {name, legs:[{coords:[[lat,lon]...], type, risk, condition, speed_kmh?}], id:'csv:<route_id>'}, ... }
 
   Promise.all([
     fetch('./data/ADMIN1.json').then(r => (r.ok ? r.json() : null)).catch(()=>null),
@@ -543,20 +532,25 @@ small.hint{ color:#5a7086; }
       });
     }),
     new Promise((resolve)=> {
-      // optional camps time
       Papa.parse('./data/camps_time.csv', {
         download:true, header:true, dynamicTyping:true, skipEmptyLines:true,
         complete: res => resolve(res.data||[]), error: ()=> resolve([])
       });
+    }),
+    new Promise((resolve)=> {
+      Papa.parse('./data/routes.csv', {
+        download:true, header:true, dynamicTyping:true, skipEmptyLines:true,
+        complete: res => resolve(res.data||[]), error: ()=> resolve([])
+      });
     })
-  ]).then(([admin1Maybe, fallbackStates, rows, campsTime]) => {
+  ]).then(([admin1Maybe, fallbackStates, rows, campsTime, routesRows]) => {
     const states = toGeoJSON(admin1Maybe) || toGeoJSON(fallbackStates);
     if (states) addStyledAdmin1(states);
 
     allRows = rows.map(r => normalizeRowWithDate(r))
       .filter(r => Number.isFinite(r.s_lat) && Number.isFinite(r.s_lon) && Number.isFinite(r.e_lat) && Number.isFinite(r.e_lon) && Number.isFinite(r.e_Volume) && r.e_Volume > 0);
 
-    // derive months
+    // months
     const monthSet = new Set(allRows.map(r => r.month).filter(Boolean));
     months = [...monthSet].sort();
     months.forEach((m,i)=> monthToIndex.set(m,i));
@@ -570,17 +564,13 @@ small.hint{ color:#5a7086; }
 
     addOriginPulseLayer(allRows);
     buildFlowLayer(allRows); // full
-
-    addCrisisFacts();        // crisis facts shown by default (can be hidden via layer control)
-
-    // Camps: static + time index for popups
+    addCrisisFacts();
     addCampsLayer(); // base (non-time)
-    indexCampsTime(campsTime); // time series -> popups
+    indexCampsTime(campsTime);
 
-    // Setup potential routes overlay; hidden until toggled
-    setupPotentialRoutes();
+    setupPotentialRoutes(); // toggleable overlay
 
-    // Timeline: only if we detected month values
+    // Timeline enable
     if (months.length){
       panelTimeline.style.display = 'block';
       timelineSlider.min = 0; timelineSlider.max = months.length-1; timelineSlider.value = months.length-1;
@@ -590,8 +580,11 @@ small.hint{ color:#5a7086; }
       onTimelineChange();
     }
 
-    overlay.style.display = 'none';
+    // Parse CSV routes -> scenario options
+    CSV_SCENARIOS = buildScenariosFromRoutesCSV(routesRows);
+    populateScenarioSelect(CSV_SCENARIOS);
 
+    overlay.style.display = 'none';
   }).catch(err => {
     overlay.innerHTML = '<div style="color:#b00020;text-align:center">Failed to load data. Check console.</div>';
     console.error(err);
@@ -615,13 +608,12 @@ small.hint{ color:#5a7086; }
   }
 
   function updateSiegeDash(idx){
-    // give siege ring a subtle dash "pulse" tied to timeline position
     if (!siegeRing) return;
     const off = (idx * 3) % 24;
     try { siegeRing.setStyle({ dashOffset:String(off) }); } catch {}
   }
 
-  // ===== Admin1 boundaries (gray border as requested) =====
+  // ===== Admin1 boundaries (gray border) =====
   function addStyledAdmin1(states){
     map.createPane('admin1-casing');  map.getPane('admin1-casing').style.zIndex = 350;
     map.createPane('admin1-stroke');  map.getPane('admin1-stroke').style.zIndex = 351;
@@ -630,7 +622,7 @@ small.hint{ color:#5a7086; }
     function strokeWeightForZoom(z){ return Math.max(0.8, Math.min(2.4, (z - 4) * 0.35)); }
 
     const admin1StrokeStyle = () => ({
-      pane:'admin1-stroke', color:'#9aa4b2', /* gray border */
+      pane:'admin1-stroke', color:'#9aa4b2',
       weight: strokeWeightForZoom(map.getZoom()), opacity:0.95,
       fillColor:'#f3f4f6', fillOpacity:0.25, lineJoin:'round', lineCap:'round', smoothFactor:0.4, interactive:true
     });
@@ -738,7 +730,7 @@ small.hint{ color:#5a7086; }
     layerControl.addOverlay(originPulseLayer, 'Origin points (pulsing)');
   }
 
-  // ===== Flow layer build/refresh (rebuild on timeline) =====
+  // ===== Flow layer build/refresh =====
   function buildFlowLayer(data){
     if (flowmapLayer){ try{ map.removeLayer(flowmapLayer); }catch{} }
 
@@ -783,7 +775,7 @@ small.hint{ color:#5a7086; }
       onEachFeature:(feature, layer)=>attachInteractivity(feature, layer)
     }).addTo(map);
 
-    // hover/click focus
+    // Hover/click focus
     let hoverLock = false;
     flowmapLayer.on('mouseover', (e) => {
       if (hoverLock) return;
@@ -806,7 +798,6 @@ small.hint{ color:#5a7086; }
   }
 
   function refreshFlowLayer(filtered){
-    // recompute totals for sizing within subset
     const { destinationTotals, originTotals } = computeTotals(filtered);
     const data = filtered.map(d => ({ ...d,
       e_totalVolume: destinationTotals.get(d.e_locality_id) || d.e_Volume,
@@ -830,7 +821,7 @@ small.hint{ color:#5a7086; }
       </div>`);
   }
 
-  // ===== Context (totals + bar lists) =====
+  // ===== Context totals + bar lists =====
   function refreshContextPanels(data){
     const { destinationTotals, originTotals } = computeTotals(data);
     const totalsDisplaced = Array.from(originTotals.values()).reduce((s,v)=>s+v,0);
@@ -844,16 +835,12 @@ small.hint{ color:#5a7086; }
       arr.sort((a,b)=>b.total - a.total);
       return arr.slice(0,6);
     };
-
-    // maps id->name from first appearance in data
-    const origNames = new Map();
-    const destNames = new Map();
+    const origNames = new Map(), destNames = new Map();
     for (const d of data){ if (!origNames.has(d.s_state_id)) origNames.set(d.s_state_id, d.s_State); if (!destNames.has(d.e_locality_id)) destNames.set(d.e_locality_id, d.e_locality); }
 
     renderBarList('bar-origins', topN(originTotals, origNames));
     renderBarList('bar-destinations', topN(destinationTotals, destNames));
   }
-
   function renderBarList(elId, items){
     const host = document.getElementById(elId);
     host.innerHTML = '';
@@ -869,7 +856,7 @@ small.hint{ color:#5a7086; }
     }
   }
 
-  // ===== Crisis facts (shown by default; you can hide via control) =====
+  // ===== Crisis facts =====
   const SIEGE_START = new Date('2024-05-01');
   const FACT_ATTACKS = 240;
   const FACT_DISPLACED_PCT = 0.80;
@@ -978,9 +965,7 @@ small.hint{ color:#5a7086; }
       if (!campsTimeIndex.has(key)) campsTimeIndex.set(key, []);
       campsTimeIndex.get(key).push(rec);
     });
-    for (const [k,arr] of campsTimeIndex){
-      arr.sort((a,b)=> (a.month<b.month?-1:1));
-    }
+    for (const [k,arr] of campsTimeIndex){ arr.sort((a,b)=> (a.month<b.month?-1:1)); }
   }
 
   function updateCampsStatusForMonth(month){
@@ -1004,7 +989,7 @@ small.hint{ color:#5a7086; }
     });
   }
 
-  // ===== Potential routes overlay (built-in) =====
+  // ===== Potential routes overlay (built-in visualization layer) =====
   function setupPotentialRoutes(){
     map.createPane('potential'); map.getPane('potential').style.zIndex = 475;
 
@@ -1066,7 +1051,6 @@ small.hint{ color:#5a7086; }
     routesGroup = L.featureGroup([routesLayer, routesMarkers, routesOrigin]);
     layerControl.addOverlay(routesGroup, 'Potential routes (El Fasher → Tawila, At Tina, Mellit)');
   }
-
   function toggleRoutes(){
     if (!routesGroup){ setupPotentialRoutes(); }
     routesVisible = !routesVisible;
@@ -1084,80 +1068,190 @@ small.hint{ color:#5a7086; }
     updateBtnStates();
   }
 
-  // ===== Scenarios (panel → polylines with scoring) =====
+  // ===== Scenario engine (built-ins + CSV) =====
   const scenarioPane = map.createPane('scenario'); scenarioPane.style.zIndex = 490;
   let scenarioLayerGroup = L.layerGroup([], { pane:'scenario' }).addTo(map);
 
-  const SCENARIOS = {
-    corridor_tawila: {
+  const BUILTIN = {
+    'builtin:corridor_tawila': {
       name: 'Humanitarian Corridor → Tawila',
-      legs: [
-        { coords:[AL_FASHER, [13.49,25.01], [13.38,24.92], [13.351266,24.856704]], type:'escorted' }
-      ]
+      legs: [ { coords:[AL_FASHER, [13.49,25.01], [13.38,24.92], [13.351266,24.856704]], type:'escorted', risk:40, condition:60 } ]
     },
-    escape_west_attina: {
+    'builtin:escape_west_attina': {
       name: 'West Escape → At Tina',
-      legs: [
-        { coords:[AL_FASHER, [13.91,24.58], [14.45,23.90], [15.167895,23.127019]], type:'highrisk' }
-      ]
+      legs: [ { coords:[AL_FASHER, [13.91,24.58], [14.45,23.90], [15.167895,23.127019]], type:'highrisk', risk:70, condition:45 } ]
     },
-    north_corridor_mellit: {
+    'builtin:north_corridor_mellit': {
       name: 'Northern Corridor → Mellit (alt)',
-      legs: [
-        { coords:[AL_FASHER, [13.90,25.40], [14.00,25.55], [14.129,25.685]], type:'planned' }
-      ]
+      legs: [ { coords:[AL_FASHER, [13.90,25.40], [14.00,25.55], [14.129,25.685]], type:'planned', risk:30, condition:65 } ]
     }
   };
+
+  function populateScenarioSelect(csvScenarios){
+    scenarioTemplate.innerHTML = '';
+    // CSV first (if any)
+    const csvKeys = Object.keys(csvScenarios);
+    if (csvKeys.length){
+      const grp = document.createElement('optgroup'); grp.label = 'Routes from routes.csv';
+      csvKeys.forEach(k=>{
+        const opt = document.createElement('option');
+        opt.value = k; opt.textContent = csvScenarios[k].name || k.replace(/^csv:/,'');
+        grp.appendChild(opt);
+      });
+      scenarioTemplate.appendChild(grp);
+    }
+    // Built-ins
+    const grp2 = document.createElement('optgroup'); grp2.label = 'Built-in routes';
+    Object.entries(BUILTIN).forEach(([k,v])=>{
+      const opt = document.createElement('option');
+      opt.value = k; opt.textContent = v.name;
+      grp2.appendChild(opt);
+    });
+    scenarioTemplate.appendChild(grp2);
+
+    // default select first CSV or first built-in
+    scenarioTemplate.value = csvKeys[0] || Object.keys(BUILTIN)[0];
+    updateScenarioBadge();
+  }
+
+  function buildScenariosFromRoutesCSV(rows){
+    // Expected columns:
+    // route_id,route_name,leg_id,seq,lat,lon,type,risk,condition,speed_kmh
+    const byRoute = new Map();
+    (rows||[]).forEach(r=>{
+      const rid = String(r.route_id||'').trim(); if (!rid) return;
+      const rname = r.route_name || rid;
+      if (!byRoute.has(rid)) byRoute.set(rid, { name:rname, legsMap:new Map() });
+
+      const legId = String(r.leg_id||'main');
+      const seq   = Number(r.seq)||0;
+      const lat   = Number(r.lat), lon = Number(r.lon);
+      if (!isFinite(lat) || !isFinite(lon)) return;
+
+      const type  = (r.type||'planned').toString().toLowerCase();
+      const risk  = clamp(Number(r.risk),0,100);
+      const cond  = clamp(Number(r.condition),0,100);
+      const spd   = Number(r.speed_kmh)||null;
+
+      const legsMap = byRoute.get(rid).legsMap;
+      if (!legsMap.has(legId)) legsMap.set(legId, { points:[], type, riskVals:[], condVals:[], speedVals:[] });
+      const leg = legsMap.get(legId);
+      leg.points.push({ seq, lat, lon });
+      leg.type = type; // last wins if varies
+      if (isFinite(risk)) leg.riskVals.push(risk);
+      if (isFinite(cond)) leg.condVals.push(cond);
+      if (isFinite(spd))  leg.speedVals.push(spd);
+    });
+
+    const out = {};
+    for (const [rid, obj] of byRoute.entries()){
+      const legs = [];
+      for (const [legId, l] of obj.legsMap.entries()){
+        l.points.sort((a,b)=> a.seq - b.seq);
+        const coords = l.points.map(p=> [p.lat, p.lon]);
+        const risk = avg(l.riskVals, 40), condition = avg(l.condVals, 60);
+        const speed_kmh = l.speedVals.length ? avg(l.speedVals, null) : null;
+        legs.push({ coords, type:l.type||'planned', risk, condition, speed_kmh });
+      }
+      out['csv:'+rid] = { id:'csv:'+rid, name: obj.name || rid, legs };
+    }
+    return out;
+  }
 
   function applyScenario(){
     scenarioLayerGroup.clearLayers();
 
-    const tpl = SCENARIOS[scenarioTemplate.value];
-    if (!tpl) return;
+    // choose scenario (CSV has priority if selected)
+    const key = scenarioTemplate.value;
+    const src = CSV_SCENARIOS[key] || BUILTIN[key];
+    if (!src) return;
 
     // parameters
     const people  = Math.max(0, Number(scenarioPeople.value)||0);
     const convoys = Math.max(1, Number(scenarioConvoys.value)||1);
     const capConv = Math.max(100, Number(scenarioCapacity.value)||100);
-    const risk    = Math.max(0, Math.min(100, Number(scenarioRisk.value)||0));
-    const road    = Math.max(0, Math.min(100, Number(scenarioCond.value)||0));
+    const riskGlobal = clamp(Number(scenarioRisk.value)||0, 0, 100);
+    const roadGlobal = clamp(Number(scenarioCond.value)||0, 0, 100);
 
-    const trips = Math.ceil(people / (convoys * capConv));
-    // crude speed factor: worse road & higher risk → slower; baseline 1.0 day per leg
-    const speedFactor = 1 + (100-road)/200 + risk/200; // 1.0..2.0+
-    const etaDays = Math.ceil(tpl.legs.length * speedFactor * Math.max(1, trips/5)); // simplistic ETA
+    // Draw legs and compute metrics
+    let totalKm = 0;
+    let weightedRiskSum = 0, weightSum = 0;
 
-    // draw
-    tpl.legs.forEach(leg=>{
-      const style = styleForLeg(leg.type, risk);
-      L.polyline(leg.coords, { ...style, pane:'scenario' })
-        .bindTooltip(`${tpl.name} (${leg.type})`, {direction:'top'})
+    src.legs.forEach(leg=>{
+      const coords = leg.coords;
+      const legKm = pathKm(coords);
+      totalKm += legKm;
+
+      const legRisk = Number.isFinite(leg.risk) ? leg.risk : riskGlobal;
+      const legCond = Number.isFinite(leg.condition) ? leg.condition : roadGlobal;
+
+      // weight risk by length
+      weightedRiskSum += legRisk * legKm; weightSum += legKm;
+
+      const style = styleForLeg(leg.type, legRisk);
+      L.polyline(coords, { ...style, pane:'scenario' })
+        .bindTooltip(`${src.name} (${leg.type}) • ${legKm.toFixed(1)} km`, {direction:'top'})
         .addTo(scenarioLayerGroup);
     });
-    L.marker(AL_FASHER, { pane:'scenario' })
-      .bindTooltip('Start: El Fasher', {direction:'top'}).addTo(scenarioLayerGroup);
+
+    // markers: start and end
+    const start = src.legs[0]?.coords?.[0] || AL_FASHER;
+    const end   = src.legs[src.legs.length-1]?.coords?.slice(-1)[0] || AL_FASHER;
+    L.marker(start, { pane:'scenario' }).bindTooltip('Start', {direction:'top'}).addTo(scenarioLayerGroup);
+    L.marker(end,   { pane:'scenario' }).bindTooltip('End',   {direction:'top'}).addTo(scenarioLayerGroup);
+
+    // Trips & ETA
+    const trips = Math.ceil(people / (convoys * capConv));
+    const avgRisk = weightSum ? (weightedRiskSum/weightSum) : riskGlobal;
+
+    // Average road condition across legs (length-weighted)
+    let condSum=0;
+    src.legs.forEach(leg=> {
+      const c = Number.isFinite(leg.condition) ? leg.condition : roadGlobal;
+      const km = pathKm(leg.coords);
+      condSum += km * c;
+    });
+    const avgCond = totalKm ? condSum/totalKm : roadGlobal;
+
+    // Speed estimation (km/h): either from CSV leg speed or from condition slider
+    const legSpeeds = [];
+    src.legs.forEach(leg=>{
+      const s = Number.isFinite(leg.speed_kmh) ? leg.speed_kmh : speedFromCondition(Number.isFinite(leg.condition)?leg.condition:roadGlobal);
+      legSpeeds.push({ km: pathKm(leg.coords), spd: s });
+    });
+    const avgSpeed = legSpeeds.length ? (legSpeeds.reduce((acc,v)=> acc + v.km * v.spd, 0) / Math.max(1, legSpeeds.reduce((acc,v)=> acc + v.km, 0))) : speedFromCondition(avgCond);
+
+    // Risk slows movement a bit
+    const speedWithRisk = avgSpeed * (1 - 0.003 * avgRisk); // up to -30% at risk=100
+    const hours = totalKm / Math.max(5, speedWithRisk);
+    const hoursPerDay = 8; // movement window
+    const daysOnePass = hours / hoursPerDay;
+    const etaDays = Math.ceil(daysOnePass * Math.max(1, trips/5)); // if many trips, extend
 
     scenarioSummary.innerHTML = `
-      <div><strong>${tpl.name}</strong></div>
-      <div style="margin-top:6px">People: <b>${people.toLocaleString()}</b> · Convoys/day: <b>${convoys}</b> · Capacity/convoy: <b>${capConv.toLocaleString()}</b></div>
+      <div><strong>${src.name}</strong></div>
+      <div style="margin-top:6px">Distance: <b>${totalKm.toFixed(1)} km</b> · Avg speed: <b>${Math.max(1, speedWithRisk).toFixed(1)} km/h</b></div>
+      <div>People: <b>${people.toLocaleString()}</b> · Convoys/day: <b>${convoys}</b> · Capacity/convoy: <b>${capConv.toLocaleString()}</b></div>
       <div>Trips needed: <b>${trips.toLocaleString()}</b> · Est. days: <b>${etaDays}</b></div>
-      <div>Risk: <b>${risk}</b> · Road condition: <b>${road}</b></div>
+      <div>Avg risk: <b>${Math.round(avgRisk)}</b> · Avg road: <b>${Math.round(avgCond)}</b></div>
     `;
 
-    updateScenarioBadge();
+    updateScenarioBadge(Math.round(avgRisk));
     try { map.fitBounds(scenarioLayerGroup.getBounds().pad(0.2)); } catch{}
   }
 
   function styleForLeg(type, risk){
-    if (type === 'highrisk') return { color:'#d22630', weight:4, opacity:0.9, dashArray:'6,6' };
-    if (type === 'escorted') return { color:'#1d4ed8', weight:4, opacity:0.9, dashArray:'2,6' };
-    // planned default (mint)
+    // type classes + risk tint
+    const r = clamp(risk||0,0,100);
+    if (type === 'highrisk') return { color:'#d22630', weight: 4 + (r>60?1:0), opacity:0.95, dashArray:'6,6' };
+    if (type === 'escorted') return { color:'#1d4ed8', weight:4, opacity:0.95, dashArray:'2,6' };
+    // planned/default
     const c = getCSS('--potential','#0ea5e9');
     return { color:c, weight:4, opacity:0.95 };
   }
 
-  function updateScenarioBadge(){
-    const r = Math.max(0, Math.min(100, Number(scenarioRisk.value)||0));
+  function updateScenarioBadge(val){
+    const r = clamp(Number.isFinite(val)?val:(Number(scenarioRisk.value)||0),0,100);
     scenarioRiskBadge.textContent = `Risk: ${r}`;
     scenarioRiskBadge.className = 'badge ' + (r<35?'risk-low':(r<65?'risk-med':'risk-high'));
   }
@@ -1214,7 +1308,6 @@ small.hint{ color:#5a7086; }
     if (!v) return null;
     try{
       const s = String(v).trim();
-      // accept YYYY-MM or YYYY/MM or full date
       const m = s.match(/^(\d{4})[-\/](\d{1,2})(?:[-\/]\d{1,2})?$/);
       if (m){ const yy=m[1], mm=String(m[2]).padStart(2,'0'); return `${yy}-${mm}`; }
       const d = new Date(s);
@@ -1222,7 +1315,6 @@ small.hint{ color:#5a7086; }
     }catch{}
     return null;
   }
-
   function computeTotals(data){
     const destinationTotals = new Map();
     const originTotals = new Map();
@@ -1233,9 +1325,26 @@ small.hint{ color:#5a7086; }
     return { destinationTotals, originTotals };
   }
 
-  // ===== Story engine (unchanged behavior; manual open) =====
+  // Haversine helpers (km)
+  function haversineKm(a, b){
+    const R=6371; const toRad=x=>x*Math.PI/180;
+    const dLat = toRad(b[0]-a[0]), dLon = toRad(b[1]-a[1]);
+    const s = Math.sin(dLat/2)**2 + Math.cos(toRad(a[0]))*Math.cos(toRad(b[0]))*Math.sin(dLon/2)**2;
+    return 2*R*Math.asin(Math.sqrt(s));
+  }
+  function pathKm(coords){
+    let km=0; for (let i=1;i<coords.length;i++) km += haversineKm(coords[i-1], coords[i]); return km;
+  }
+  function speedFromCondition(cond){ // rough: 20..80 km/h
+    const c = clamp(cond||0,0,100);
+    return 20 + 0.6*c;
+  }
+  function clamp(x, lo, hi){ x=Number(x); if (!isFinite(x)) return lo; return Math.max(lo, Math.min(hi, x)); }
+  function avg(arr, fallback){ if (!arr || !arr.length) return Number.isFinite(fallback)?fallback:0; return arr.reduce((a,b)=>a+b,0)/arr.length; }
+
+  // ===== Story engine (manual open) =====
   (()=> {
-    const SLIDE_MS = 6000, FLY_DUR = 1.4, UI_DELAY = 420, TOUR_STEP = 3000;
+    const SLIDE_MS = 6000, FLY_DUR = 1.4, UI_DELAY = 420;
 
     const storyPanel = document.getElementById('story-panel');
     const storyTitle = document.getElementById('story-title');
