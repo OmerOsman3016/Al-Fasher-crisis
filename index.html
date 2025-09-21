@@ -3,11 +3,11 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-  <title>Sudan | IDPs Pathways Across Sudan (Improved + Story)</title>
+  <title>Sudan | IDPs Pathways Across Sudan (Improved)</title>
 
   <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="anonymous"/>
-  <!-- Font Awesome -->
+  <!-- Font Awesome (optional) -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer"/>
 
   <style>
@@ -37,7 +37,10 @@
       background:linear-gradient(90deg,var(--brand-primary),var(--brand-accent));
     }
     .brand{ display:flex; align-items:center; gap:10px; min-width:0; }
-    .brand .logo{ width:36px; height:24px; border-radius:4px; overflow:hidden; display:block; box-shadow:0 0 0 1px #d1dbe7 inset; }
+    .brand .logo{
+      width:36px; height:24px; border-radius:4px; overflow:hidden; display:block;
+      box-shadow:0 0 0 1px #d1dbe7 inset;
+    }
     .brand .logo svg{ width:100%; height:100%; display:block; }
     .brand h1{ font-size:16px; line-height:1.15; margin:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
     .brand .sub{ font-size:12px; color:#5a7086; font-weight:500; }
@@ -79,7 +82,7 @@
       pointer-events:none;
     }
 
-    /* ─── Pulsing origin points (UNCHANGED) ──────────────────────────── */
+    /* ─── Pulsing origin points ──────────────────────────────────────── */
     .origin-pulse-icon{ pointer-events:auto; }
     .origin-pulse-icon .pulse{
       position:relative; width:var(--d,24px); height:var(--d,24px); border-radius:50%;
@@ -99,9 +102,13 @@
       animation:pulseRing 2.2s ease-out infinite;
     }
     .origin-pulse-icon .pulse::after{ animation-delay:1.1s; }
-    @keyframes pulseRing { 0%{transform:translate(-50%,-50%) scale(.7);opacity:.9;} 70%{opacity:.2;} 100%{transform:translate(-50%,-50%) scale(2.1);opacity:0;} }
+    @keyframes pulseRing {
+      0%   { transform:translate(-50%,-50%) scale(.7); opacity:.9; }
+      70%  { opacity:.2; }
+      100% { transform:translate(-50%,-50%) scale(2.1); opacity:0; }
+    }
 
-    /* ─── Destination points (IMPROVED) ──────────────────────────────── */
+    /* ─── Destination points (improved) ─────────────────────────────── */
     .dest-icon{ pointer-events:auto; transition:transform .12s ease; }
     .dest-icon .dot{
       position:relative; width:var(--d,18px); height:var(--d,18px); border-radius:50%;
@@ -111,88 +118,28 @@
         rgba(65,143,222,.92) 60%,
         rgba(65,143,222,.85) 100%);
       border:1px solid #fff;
-      box-shadow: 0 0 0 1px rgba(0,0,0,.06), 0 0 10px rgba(65,143,222,.35);
+      box-shadow:
+        0 0 0 1px rgba(0,0,0,.06),
+        0 0 10px rgba(65,143,222,.35); /* halo for satellite */
     }
-    .dest-icon .dot::after{
+    .dest-icon .dot::after{ /* small specular highlight */
       content:""; position:absolute; left:35%; top:28%; width:18%; height:18%;
       background:rgba(255,255,255,.9); border-radius:50%; filter:blur(.3px);
     }
     .dest-icon:hover{ transform:scale(1.1); }
     .dest-icon.focus{ transform:scale(1.18); box-shadow:0 0 0 2px rgba(65,143,222,.25); }
 
-    /* Top destination labels (will be hidden by default) */
+    /* Top destination labels */
     .leaflet-tooltip.dest-label{
       background:#fff; color:#1d2a36; border:1px solid #d1dbe7;
       box-shadow:0 2px 8px rgba(0,0,0,.08); border-radius:8px; padding:4px 8px;
       font-size:12px; font-weight:600;
     }
 
-    /* ─── Crisis facts UI ───────────────────────────────────────────── */
-    .kpi-icon, .donut-icon, .note-icon { pointer-events:auto; }
-    .kpi-card, .note-card{
-      background:#fff; border:1px solid #d1dbe7; border-radius:10px;
-      box-shadow:0 2px 10px rgba(0,0,0,.08);
-      padding:6px 10px; min-width:120px; text-align:left;
-    }
-    .kpi-card .kpi{ font-size:18px; font-weight:800; color:#1d2a36; line-height:1.1; }
-    .kpi-card .label{ font-size:12px; color:#46607a; font-weight:600; margin-top:2px; }
-    .note-card{ font-size:12px; color:#1d2a36; }
-    .note-card strong{ color:#d22630; }
-
-    .donut{
-      width:44px; height:44px; border-radius:50%;
-      background:conic-gradient(var(--donut-color,#418FDE) calc(var(--pct,0)*1deg), #e8eff7 0);
-      border:2px solid #fff; box-shadow:0 0 0 1px rgba(0,0,0,.06), 0 0 10px rgba(65,143,222,.28);
-      position:relative; display:inline-block; vertical-align:middle;
-    }
-    .donut::after{ content:""; position:absolute; inset:8px; background:#fff; border-radius:50%; box-shadow:inset 0 0 0 1px #e6eef6; }
-    .donut-wrap{ display:flex; align-items:center; gap:8px; }
-    .donut-wrap .txt .big{ font-weight:800; color:#1d2a36; }
-    .donut-wrap .txt .small{ font-size:12px; color:#46607a; }
-
-    .camp-icon{
-      width:18px; height:18px; border-radius:50%; background:#999;
-      border:1px solid #fff; box-shadow:0 0 0 1px rgba(0,0,0,.06);
-      position:relative; opacity:.65;
-    }
-    .camp-icon::after{
-      content:""; position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
-      width:10px; height:10px; clip-path:polygon(50% 0, 100% 70%, 0 70%);
-      background:#f4f4f4;
-    }
-    .camp-icon.bad{ background:#bbb; opacity:.45; }
-
-    /* ─── Story / Slideshow panel ───────────────────────────────────── */
-    .story-panel{
-      position:absolute; right:14px; bottom:14px; z-index:1200;
-      width:320px; max-width:85vw;
-      background:#fff; border:1px solid #d1dbe7; border-radius:14px;
-      box-shadow:0 10px 30px rgba(0,0,0,.12); overflow:hidden; display:none;
-    }
-    .story-header{
-      display:flex; align-items:center; justify-content:space-between; gap:8px;
-      padding:10px 12px; background:linear-gradient(0deg,#ffffff,#f8fbff);
-      border-bottom:1px solid #eaf0f7;
-    }
-    .story-title{ font-weight:800; color:#1d2a36; font-size:14px; }
-    .story-body{ padding:12px; color:#334a62; font-size:13px; line-height:1.35; }
-    .story-footer{
-      display:flex; align-items:center; justify-content:space-between; gap:10px;
-      padding:8px 10px; border-top:1px solid #eaf0f7; background:#fff;
-    }
-    .story-dots{ display:flex; gap:6px; align-items:center; }
-    .story-dot{ width:8px; height:8px; border-radius:50%; background:#dde6f2; }
-    .story-dot.active{ background:var(--brand-accent); }
-    .story-actions .btn{ padding:6px 8px; border-radius:8px; }
-
-    @keyframes ping { 0%{transform:scale(1);box-shadow:0 0 0 0 rgba(255,184,28,.0);} 50%{transform:scale(1.05);box-shadow:0 0 0 8px rgba(255,184,28,.25);} 100%{transform:scale(1);box-shadow:0 0 0 0 rgba(255,184,28,.0);} }
-    .attention{ animation: ping 1.2s ease-out 3; }
-
     @media (max-width:768px){
       .brand h1{ font-size:14px; }
       .brand .sub{ display:none; }
       .btn span{ display:none; }
-      .story-panel{ left:8px; right:8px; width:auto; }
     }
   </style>
 </head>
@@ -219,7 +166,6 @@
       <button id="btn-play" class="btn active" title="Play/Pause animation (Space)"><i class="fa-solid fa-play"></i><span>Animation</span></button>
       <button id="btn-flows" class="btn active" title="Toggle flow lines (F)"><i class="fa-solid fa-wave-square"></i><span>Flows</span></button>
       <button id="btn-points" class="btn active" title="Toggle points (P)"><i class="fa-solid fa-circle"></i><span>Points</span></button>
-      <button id="btn-story" class="btn" title="Open story / slideshow (S)"><i class="fa-solid fa-book-open"></i><span>Story</span></button>
       <button id="btn-reset" class="btn" title="Reset view (R)"><i class="fa-solid fa-rotate"></i><span>Reset</span></button>
     </nav>
   </header>
@@ -231,24 +177,6 @@
       <div class="spinner" aria-hidden="true"></div>
       <div>Loading displacement data…</div>
     </div>
-
-    <!-- Story / Slideshow Panel -->
-    <div class="story-panel" id="story-panel" role="dialog" aria-modal="false" aria-live="polite">
-      <div class="story-header">
-        <div class="story-title" id="story-title">Story</div>
-        <div class="story-actions">
-          <button id="story-prev" class="btn" title="Previous (←)"><i class="fa-solid fa-arrow-left"></i></button>
-          <button id="story-toggle" class="btn" title="Play/Pause (Space)"><i class="fa-solid fa-play"></i></button>
-          <button id="story-next" class="btn" title="Next (→)"><i class="fa-solid fa-arrow-right"></i></button>
-          <button id="story-close" class="btn" title="Close (Esc)"><i class="fa-solid fa-xmark"></i></button>
-        </div>
-      </div>
-      <div class="story-body" id="story-body"></div>
-      <div class="story-footer">
-        <div class="story-dots" id="story-dots"></div>
-        <div style="font-size:12px; color:#46607a;"><span id="story-count">1/5</span></div>
-      </div>
-    </div>
   </div>
 
   <!-- Footer -->
@@ -258,7 +186,6 @@
       <span class="kbd">Space</span> Play/Pause ·
       <span class="kbd">F</span> Flows ·
       <span class="kbd">P</span> Points ·
-      <span class="kbd">S</span> Story ·
       <span class="kbd">R</span> Reset
     </div>
     <div>
@@ -278,7 +205,6 @@
   (function(){
     const MAPBOX_TOKEN = 'pk.eyJ1Ijoib21lcm9zbWFuIiwiYSI6ImUxZDBkODBlNjQxMDE2M2Y3OTQ3MWIwNTJkMjgzZTI3In0.ekCHuxRflTOO0RpQ6rQR7Q';
 
-    // Map init
     const map = L.map('map', {
       preferCanvas:true, zoomControl:false,
       minZoom:4, maxZoom:11, zoomSnap:0.5, zoomDelta:0.5, attributionControl:true
@@ -327,15 +253,13 @@
       return div;
     };
     legend.addTo(map);
+
+    // Prevent map drag while interacting with legend
     const legendEl = document.querySelector('.legend');
     if (legendEl){ L.DomEvent.disableScrollPropagation(legendEl); L.DomEvent.disableClickPropagation(legendEl); }
 
     // ─── State ────────────────────────────────────────────────────────
     let stateBoundariesLayer, admin1Labels, flowmapLayer, originPulseLayer, destLabelsLayer;
-    let crisisLayer, campsLayer;
-    let kpiMarker, donutMarker, noteMarker, siegeRing;
-    let campsData = [];           // parsed camps
-    let campsReady = Promise.resolve([]); // set later
     let isAnimationPlaying = true, showFlows = true, showPoints = true;
 
     // Toolbar buttons
@@ -343,22 +267,18 @@
     const btnFlows  = document.getElementById('btn-flows');
     const btnPoints = document.getElementById('btn-points');
     const btnReset  = document.getElementById('btn-reset');
-    const btnStory  = document.getElementById('btn-story');
 
     btnPlay.addEventListener('click', toggleAnimation);
     btnFlows.addEventListener('click', toggleFlows);
     btnPoints.addEventListener('click', togglePoints);
     btnReset.addEventListener('click', ()=> map.setView([16,30], 5.5));
-    btnStory.addEventListener('click', () => toggleStory(true));
 
-    // Keyboard shortcuts
     window.addEventListener('keydown', (e) => {
       if (e.target && e.target.closest && e.target.closest('input, textarea, [contenteditable="true"]')) return;
       const k = (e.key || '').toLowerCase();
       if (e.code === 'Space'){ e.preventDefault(); toggleAnimation(); }
       else if (k === 'f') toggleFlows();
       else if (k === 'p') togglePoints();
-      else if (k === 's') toggleStory(true);
       else if (k === 'r') map.setView([16,30], 5.5);
     });
 
@@ -366,8 +286,8 @@
       btnPlay.classList.toggle('active', isAnimationPlaying);
       btnFlows.classList.toggle('active', showFlows);
       btnPoints.classList.toggle('active', showPoints);
-      btnStory.classList.toggle('active', storyOpen);
     }
+
     function toggleAnimation(){
       isAnimationPlaying = !isAnimationPlaying;
       flowmapLayer?.setAnimationStarted?.(isAnimationPlaying);
@@ -381,11 +301,18 @@
     function togglePoints(){
       showPoints = !showPoints;
       flowmapLayer?.setPointVisibility?.(showPoints);
-      // NOTE: Top destination labels are intentionally NOT auto-toggled here (kept hidden by default).
+
       if (originPulseLayer){
         if (showPoints && !map.hasLayer(originPulseLayer)) originPulseLayer.addTo(map);
         if (!showPoints && map.hasLayer(originPulseLayer)) map.removeLayer(originPulseLayer);
       }
+
+      // Keep destination labels manual via layer control:
+      if (destLabelsLayer){
+        if (!showPoints && map.hasLayer(destLabelsLayer)) map.removeLayer(destLabelsLayer);
+        // Do NOT add labels automatically when turning points back on
+      }
+
       updateBtnStates();
     }
 
@@ -418,23 +345,22 @@
         d.s_totalVolume = originTotals.get(d.s_state_id) || d.e_Volume;
       });
 
-      addOriginPulseLayer(data);         // UNCHANGED origin pulses
-      initFlowmap(data);                 // improved destination markers
-      addDestinationLabels(destAgg);     // created but HIDDEN by default
+      // Unique origin pulses
+      addOriginPulseLayer(data);
+
+      // Flowmap with improved destination markers
+      initFlowmap(data);
+
+      // Top destination labels overlay (HIDDEN BY DEFAULT; togglable from Layers)
+      addDestinationLabels(destAgg);
 
       overlay.style.display = 'none';
-
-      // Crisis facts + optional Camps
-      addCrisisFacts();
-      // 👉 Open Story automatically on page load
-      toggleStory(true);
-      campsReady.then(()=>{/* ready for story */});
     }).catch(err => {
       overlay.innerHTML = '<div style="color:#b00020;text-align:center">Failed to load data. Check console.</div>';
       console.error(err);
     });
 
-    // ---- Admin1 styled layer
+    // ---- Admin1 styled layer (casing + stroke + labels)
     function addStyledAdmin1(states){
       map.createPane('admin1-casing');  map.getPane('admin1-casing').style.zIndex = 350;
       map.createPane('admin1-stroke');  map.getPane('admin1-stroke').style.zIndex = 351;
@@ -443,7 +369,7 @@
       function strokeWeightForZoom(z){ return Math.max(0.8, Math.min(2.4, (z - 4) * 0.35)); }
       const admin1StrokeStyle = () => ({
         pane:'admin1-stroke',
-        color: getCSS('--brand-primary','#2a5885'),
+        color: getCSS('--brand-primary') || '#2a5885',
         weight: strokeWeightForZoom(map.getZoom()),
         opacity:0.95, fillColor:'#eaf2fb', fillOpacity:0.25,
         lineJoin:'round', lineCap:'round', smoothFactor:0.4, interactive:true
@@ -510,7 +436,7 @@
       });
     }
 
-    // ---- Origin pulsing layer (UNCHANGED)
+    // ---- Origin pulsing layer
     function addOriginPulseLayer(rows){
       map.createPane('origin-pulses');
       map.getPane('origin-pulses').style.zIndex = 460;
@@ -559,11 +485,13 @@
       layerControl.addOverlay(originPulseLayer, 'Origin points (pulsing)');
     }
 
-    // ---- Destination labels overlay (Top N) — HIDDEN BY DEFAULT
+    // ---- Destination labels overlay (Top N by zoom & in-bounds)
     function addDestinationLabels(destAgg){
       map.createPane('dest-labels');
       map.getPane('dest-labels').style.zIndex = 470;
-      destLabelsLayer = L.layerGroup([], { pane:'dest-labels' }); // NOTE: not added to map
+
+      // HIDDEN by default: do NOT add to map now
+      destLabelsLayer = L.layerGroup([], { pane:'dest-labels' });
       layerControl.addOverlay(destLabelsLayer, 'Top destination labels');
 
       function topNForZoom(z){ if (z<5) return 3; if (z<6) return 5; if (z<7) return 8; if (z<8) return 12; return 18; }
@@ -591,6 +519,7 @@
 
     // ---- Flowmap (improved destination markers)
     function initFlowmap(data){
+      // for origin detection to hide duplicate origin dots
       const originKeySet = new Set(data.map(d => latlonKey(d.s_lat, d.s_lon)));
 
       const fc = { type:'FeatureCollection', features: data.map(d => ({
@@ -607,8 +536,10 @@
         pointToLayer:(feature, latlng)=>{
           const isOriginSpot = originKeySet.has(latlonKey(latlng.lat, latlng.lng));
           if (isOriginSpot){
+            // hide origin here (we show the pulsing layer instead)
             return L.circleMarker(latlng, { radius:0.1, opacity:0, fillOpacity:0 });
           }
+          // Destination marker (divIcon with halo)
           const vol = feature.properties?.e_totalVolume || feature.properties?.e_Volume || 0;
           const d = Math.round(scaleRadiusLog(vol, 20000, 1600000, 10, 22)); // diameter
           const icon = L.divIcon({
@@ -643,6 +574,7 @@
         if (hoverLock) return; hoverLock = true; setTimeout(()=> hoverLock = false, 50);
         if (e.sharedDestinationFeatures?.length){
           flowmapLayer.selectFeaturesForPathDisplay(e.sharedDestinationFeatures, 'SELECTION_NEW');
+          // add focus style if marker element exists
           const l = e.layer;
           try{ l._icon?.classList?.add('focus'); setTimeout(()=>l._icon?.classList?.remove('focus'), 600);}catch{}
         }
@@ -663,6 +595,7 @@
     }
 
     function attachInteractivity(feature, layer){
+      // Decide a display name prioritizing destination labels
       const name  = feature.properties?.e_locality || feature.properties?.s_State || 'Unknown';
       const total = feature.properties?.e_totalVolume ?? feature.properties?.s_totalVolume ?? 0;
 
@@ -677,319 +610,7 @@
         </div>`);
     }
 
-    /* === Crisis facts layer (Al Fasher) ================================== */
-    const AL_FASHER = [13.636, 25.349];     // adjust if you have a more precise point
-    const SIEGE_START = new Date('2024-05-01');
-    const FACT_ATTACKS = 240;               // "More than 240 attacks"
-    const FACT_DISPLACED_PCT = 0.80;        // "More than 80% displaced"
-    const FACT_TRAPPED = 'Hundreds of thousands of civilians remain trapped';
-
-    function monthsSince(date){
-      const now = new Date();
-      const y = now.getFullYear() - date.getFullYear();
-      const m = now.getMonth() - date.getMonth();
-      let months = y*12 + m;
-      if (now.getDate() < date.getDate()) months -= 1;
-      return Math.max(0, months);
-    }
-
-    function addCrisisFacts(){
-      map.createPane('crisis'); map.getPane('crisis').style.zIndex = 480;
-      crisisLayer = L.layerGroup([], { pane:'crisis' }).addTo(map);
-      layerControl.addOverlay(crisisLayer, 'Crisis facts');
-
-      // 1) Siege ring (dashed)
-      siegeRing = L.circle(AL_FASHER, {
-        radius: 22000,
-        color: '#d22630', weight: 2, dashArray: '6,6', dashOffset: '0',
-        fillColor:'#d22630', fillOpacity:0.08
-      }).bindTooltip(
-        `Under RSF siege since May 2024 · ~${monthsSince(SIEGE_START)} months`,
-        { direction:'center', permanent:false, sticky:true }
-      ).addTo(crisisLayer);
-
-      // 2) KPI badge: 240+ attacks
-      const attacksIcon = L.divIcon({
-        className:'kpi-icon',
-        html:`<div class="kpi-card" id="kpi-card">
-                <div class="kpi">${FACT_ATTACKS.toLocaleString()}+</div>
-                <div class="label">attacks</div>
-              </div>`,
-        iconSize:[1,1], iconAnchor:[0,0]
-      });
-      kpiMarker = L.marker([AL_FASHER[0]+0.045, AL_FASHER[1]-0.04], { icon: attacksIcon, pane:'crisis' })
-        .addTo(crisisLayer);
-
-      // 3) Donut: 80% displaced
-      const deg = Math.round(FACT_DISPLACED_PCT*360);
-      const donutIcon = L.divIcon({
-        className:'donut-icon',
-        html:`<div class="donut-wrap" id="donut-wrap">
-                <div class="donut" style="--pct:${deg}"></div>
-                <div class="txt">
-                  <div class="big">${Math.round(FACT_DISPLACED_PCT*100)}%</div>
-                  <div class="small">of population displaced</div>
-                </div>
-              </div>`,
-        iconSize:[1,1], iconAnchor:[0,0]
-      });
-      donutMarker = L.marker([AL_FASHER[0]+0.02, AL_FASHER[1]+0.07], { icon: donutIcon, pane:'crisis' })
-        .addTo(crisisLayer);
-
-      // 4) Trapped note
-      const noteIcon = L.divIcon({
-        className:'note-icon',
-        html:`<div class="note-card" id="note-card"><strong>Critical:</strong> ${FACT_TRAPPED}</div>`,
-        iconSize:[1,1], iconAnchor:[0,0]
-      });
-      noteMarker = L.marker([AL_FASHER[0]-0.04, AL_FASHER[1]+0.02], { icon: noteIcon, pane:'crisis' })
-        .addTo(crisisLayer);
-
-      // 5) Optional: Camps
-      campsReady = addCampsLayer();
-    }
-
-    /* Camps CSV:
-       data/camps.csv
-       name,lat,lon,status,occupancy,capacity
-       Zamzam Camp,13.45,25.30,Almost empty,12000,220000
-       Abu Shouk,13.70,25.32,Almost empty,8000,110000
-       Al Salam,13.60,25.42,Almost empty,5000,90000
-    */
-    function addCampsLayer(){
-      campsLayer = L.layerGroup([], { pane:'crisis' });
-      layerControl.addOverlay(campsLayer, 'Camps (status)');
-      return new Promise(resolve=>{
-        if (!window.Papa){ resolve([]); return; }
-        Papa.parse('./data/camps.csv', {
-          download:true, header:true, dynamicTyping:true, skipEmptyLines:true,
-          complete: (res) => {
-            const rows = (res.data || []).filter(r => Number.isFinite(parseFloat(r.lat)) && Number.isFinite(parseFloat(r.lon)));
-            campsData = rows.map(r => ({
-              name: r.name || 'Camp',
-              lat: parseFloat(r.lat),
-              lon: parseFloat(r.lon),
-              status: String(r.status||'').toLowerCase().trim(),
-              occupancy: Number(r.occupancy)||null,
-              capacity: Number(r.capacity)||null
-            }));
-            rows.forEach(r => {
-              const status = String(r.status||'').toLowerCase().trim();
-              const cls = status.includes('almost') && status.includes('empty') ? 'bad' : '';
-              const icon = L.divIcon({
-                className:'camp-pin',
-                html:`<div class="camp-icon ${cls}"></div>`,
-                iconSize:[18,18], iconAnchor:[9,9]
-              });
-              const occ = Number(r.occupancy)||null, cap = Number(r.capacity)||null;
-              const occTxt = (occ && cap) ? `${occ.toLocaleString()} / ${cap.toLocaleString()}` : (occ ? occ.toLocaleString() : '—');
-              L.marker([parseFloat(r.lat), parseFloat(r.lon)], { icon, pane:'crisis' })
-                .bindTooltip(`${escapeHtml(r.name||'Camp')} · ${status || 'status unknown'}`, {direction:'top', offset:[0,-6]})
-                .bindPopup(`
-                  <div class="kpi-card">
-                    <div class="kpi" style="font-size:16px">${escapeHtml(r.name||'Camp')}</div>
-                    <div class="label">Status: ${escapeHtml(status||'unknown')}</div>
-                    <div class="label">Occupancy: ${occTxt}</div>
-                  </div>
-                `)
-                .addTo(campsLayer);
-            });
-            if (rows.length){ campsLayer.addTo(map); }
-            resolve(campsData);
-          },
-          error:()=>{ resolve([]); }
-        });
-      });
-    }
-
-    // ─── Story / Slideshow logic ───────────────────────────────────────
-    const storyPanel = document.getElementById('story-panel');
-    const storyTitle = document.getElementById('story-title');
-    const storyBody  = document.getElementById('story-body');
-    const storyDots  = document.getElementById('story-dots');
-    const storyCount = document.getElementById('story-count');
-    const btnPrev = document.getElementById('story-prev');
-    const btnNext = document.getElementById('story-next');
-    const btnToggle = document.getElementById('story-toggle');
-    const btnClose = document.getElementById('story-close');
-
-    let storyOpen = false;
-    let slideIdx = 0;
-    let autoplay = true;
-    let timer = null;
-    let siegeAnimTimer = null;
-    let campStep = 0;
-    const SLIDE_MS = 6000;
-
-    btnPrev.onclick = () => goToSlide(slideIdx-1, true);
-    btnNext.onclick = () => goToSlide(slideIdx+1, true);
-    btnToggle.onclick = () => toggleAutoplay();
-    btnClose.onclick = () => toggleStory(false);
-
-    window.addEventListener('keydown', (e)=>{
-      if (!storyOpen) return;
-      if (e.key === 'Escape') toggleStory(false);
-      if (e.key === 'ArrowLeft') goToSlide(slideIdx-1, true);
-      if (e.key === 'ArrowRight') goToSlide(slideIdx+1, true);
-      if (e.code === 'Space'){ e.preventDefault(); toggleAutoplay(); }
-    });
-    window.addEventListener('blur', ()=> stopTimer());
-
-    function toggleStory(open){
-      storyOpen = open;
-      storyPanel.style.display = open ? 'block' : 'none';
-      btnStory.classList.toggle('active', open);
-      updateBtnStates();
-      if (open){
-        buildDots();
-        goToSlide(0, false);
-      } else {
-        stopTimer();
-        cleanupSlide();
-      }
-    }
-    function toggleAutoplay(){
-      autoplay = !autoplay;
-      btnToggle.innerHTML = autoplay ? '<i class="fa-solid fa-pause"></i>' : '<i class="fa-solid fa-play"></i>';
-      if (autoplay){ scheduleNext(); } else { stopTimer(); }
-    }
-    function stopTimer(){ if (timer){ clearTimeout(timer); timer = null; } }
-    function scheduleNext(){ stopTimer(); if (autoplay) timer = setTimeout(()=>goToSlide(slideIdx+1,false), SLIDE_MS); }
-
-    function buildDots(){
-      storyDots.innerHTML = '';
-      const n = slides.length;
-      for (let i=0;i<n;i++){
-        const d = document.createElement('div');
-        d.className = 'story-dot' + (i===slideIdx?' active':'');
-        d.title = `Slide ${i+1}`;
-        d.onclick = ()=> goToSlide(i, true);
-        storyDots.appendChild(d);
-      }
-    }
-    function setDotActive(){
-      [...storyDots.children].forEach((c,i)=> c.classList.toggle('active', i===slideIdx));
-      storyCount.textContent = `${slideIdx+1}/${slides.length}`;
-    }
-
-    function cleanupSlide(){
-      document.getElementById('kpi-card')?.classList.remove('attention');
-      document.getElementById('donut-wrap')?.classList.remove('attention');
-      document.getElementById('note-card')?.classList.remove('attention');
-      if (siegeAnimTimer){ clearInterval(siegeAnimTimer); siegeAnimTimer = null; }
-      if (siegeRing){ siegeRing.setStyle({ dashOffset:'0', weight:2 }); }
-    }
-
-    function goToSlide(idx, userTriggered){
-      cleanupSlide();
-      if (idx < 0) idx = slides.length - 1;
-      if (idx >= slides.length) idx = 0;
-      slideIdx = idx;
-      const s = slides[idx];
-      storyTitle.textContent = s.title;
-      storyBody.innerHTML = s.html;
-      setDotActive();
-      s.focus();
-      if (userTriggered){ autoplay = false; btnToggle.innerHTML = '<i class="fa-solid fa-play"></i>'; }
-      scheduleNext();
-    }
-
-    // Slides
-    const slides = [
-      {
-        id:'siege',
-        title:'Under RSF siege since May 2024',
-        html:`<p>Al Fasher and its surroundings have been under siege since <strong>May 2024</strong>.</p>
-              <p>A dashed red ring marks the siege area; tooltip shows how many months have elapsed.</p>`,
-        focus: ()=> {
-          if (!siegeRing) return;
-          try { map.fitBounds(siegeRing.getBounds(), { padding:[30,30] }); } catch {}
-          let off = 0, up = true;
-          siegeAnimTimer = setInterval(()=>{
-            off = (off + 2) % 24;
-            siegeRing.setStyle({ dashOffset: String(off), weight: up ? 3 : 2 });
-            up = !up;
-          }, 350);
-        }
-      },
-      {
-        id:'attacks',
-        title:'More than 240 attacks',
-        html:`<p>A pinned KPI badge near the town center summarizes the intensity: <strong>240+ attacks</strong>.</p>`,
-        focus: ()=> {
-          if (!kpiMarker) return;
-          const p = kpiMarker.getLatLng();
-          map.setView(p, Math.max(map.getZoom(), 9), { animate:true });
-          document.getElementById('kpi-card')?.classList.add('attention');
-        }
-      },
-      {
-        id:'displaced',
-        title:'More than 80% displaced',
-        html:`<p>A <strong>donut marker</strong> shows the share of population displaced — currently set to <strong>80%</strong>.</p>`,
-        focus: ()=> {
-          if (!donutMarker) return;
-          const p = donutMarker.getLatLng();
-          map.setView(p, Math.max(map.getZoom(), 9), { animate:true });
-          document.getElementById('donut-wrap')?.classList.add('attention');
-        }
-      },
-      {
-        id:'trapped',
-        title:'Hundreds of thousands trapped',
-        html:`<p>An alert-style note highlights that <strong>hundreds of thousands</strong> of civilians remain <strong>trapped</strong>.</p>`,
-        focus: ()=> {
-          if (!noteMarker) return;
-          const p = noteMarker.getLatLng();
-          map.setView(p, Math.max(map.getZoom(), 9), { animate:true });
-          document.getElementById('note-card')?.classList.add('attention');
-        }
-      },
-      {
-        id:'camps',
-        title:'Three biggest camps almost empty',
-        html:`<p>A mini tour focuses the <strong>three largest camps</strong> flagged <em>almost empty</em>. The map pans through them like a slideshow.</p>`,
-        focus: ()=> tourCamps()
-      }
-    ];
-
-    async function tourCamps(){
-      const rows = await campsReady;
-      if (!rows || !rows.length){
-        storyBody.innerHTML += `<p style="margin-top:8px;color:#8a99ac">No <code>data/camps.csv</code> found or no rows. Add it to enable this slide.</p>`;
-        return;
-      }
-      const almost = rows.filter(r => (r.status||'').includes('almost') && (r.status||'').includes('empty'));
-      const base = (almost.length ? almost : rows).slice();
-      base.sort((a,b)=> (b.capacity||0)-(a.capacity||0) || (b.occupancy||0)-(a.occupancy||0));
-      const top3 = base.slice(0,3);
-      let campStep = 0;
-      const step = () => {
-        if (!top3.length) return;
-        const r = top3[campStep % top3.length];
-        map.setView([r.lat, r.lon], 10, { animate:true });
-        let best=null, bestD=1e9;
-        campsLayer?.eachLayer(l=>{
-          if (l.getLatLng){
-            const d = map.distance(l.getLatLng(), L.latLng(r.lat, r.lon));
-            if (d < bestD){ bestD = d; best = l; }
-          }
-        });
-        try{
-          const el = best?._icon || (best && best._container);
-          el?.classList.add('attention');
-          setTimeout(()=> el?.classList.remove('attention'), 1400);
-          best?.openTooltip();
-          setTimeout(()=> best?.closeTooltip(), 1800);
-        }catch{}
-        campStep++;
-      };
-      step();
-      setTimeout(step, 2000);
-      setTimeout(step, 4000);
-    }
-
-    // ─── Helpers
+    // ---- Helpers
     function toGeoJSON(source){
       if (!source) return null;
       if (source.type === 'Topology' && window.topojson?.feature){
@@ -1056,7 +677,6 @@
     function latlonKey(lat, lon){ return `${Number(lat).toFixed(4)},${Number(lon).toFixed(4)}`; }
     function formatNumber(x){ try { return Number(x).toLocaleString(undefined); } catch { return x; } }
     function escapeHtml(str){ return String(str).replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[s])); }
-
   })();
   </script>
 </body>
