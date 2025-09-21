@@ -93,6 +93,16 @@
   <script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
   <!-- Local copy of CanvasFlowmapLayer (ensure this path is valid in your project) -->
   <script src="./src/CanvasFlowmapLayer.js"></script>
+  <script>
+    // Fallback to CDN if local plugin file is missing
+    (function(){
+      if (typeof L === 'undefined' || typeof L.canvasFlowmapLayer === 'function') return;
+      var s = document.createElement('script');
+      s.src = 'https://cdn.jsdelivr.net/gh/jwasilgeo/Leaflet.Canvas-Flowmap-Layer@master/src/CanvasFlowmapLayer.js';
+      s.onerror = function(){ console.error('Failed to load CanvasFlowmapLayer from CDN.'); };
+      document.head.appendChild(s);
+    })();
+  </script>
 
   <script>
   (function() {
