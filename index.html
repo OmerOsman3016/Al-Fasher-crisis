@@ -13,177 +13,628 @@
   <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 
   <style>
-    :root{
+    :root {
       /* IOM primary + shades */
-      --iom-blue:#0033A0;         /* Primary IOM blue */
-      --iom-blue-60:#4066B8;
-      --iom-blue-40:#8099D0;
-      --iom-blue-20:#B3C2E3;
-      --iom-blue-10:#D9E0F1;
-      --blue-box:#E9EBF6;         /* Lightest box bg for callouts */
+      --iom-blue: #0033A0;         /* Primary IOM blue */
+      --iom-blue-60: #4066B8;
+      --iom-blue-40: #8099D0;
+      --iom-blue-20: #B3C2E3;
+      --iom-blue-10: #D9E0F1;
+      --blue-box: #E9EBF6;         /* Lightest box bg for callouts */
 
       /* IOM secondary set */
-      --un-blue:#418FDE;          /* Light blue (UN blue) */
-      --yellow:#FFB81C;           /* brand yellow */
-      --orange:#FF671F;           /* brand orange */
-      --red:#D22630;              /* brand red */
-      --mint:#5CB8B2;             /* brand mint */
+      --un-blue: #418FDE;          /* Light blue (UN blue) */
+      --yellow: #FFB81C;           /* brand yellow */
+      --orange: #FF671F;           /* brand orange */
+      --red: #D22630;              /* brand red */
+      --mint: #5CB8B2;             /* brand mint */
 
-      /* Map/UI tokens */
-      --brand-primary:var(--iom-blue);
-      --brand-accent:var(--un-blue);
-      --brand-amber:var(--yellow);
+      /* Map/UI tokens (repointed to brand) */
+      --brand-primary: var(--iom-blue);
+      --brand-accent: var(--un-blue);
+      --brand-amber: var(--yellow);
 
-      --surface:#f5f7fa;
+      --surface: #f5f7fa;
 
-      /* Flow ramp */
-      --line1:var(--yellow);
-      --line2:var(--orange);
-      --line3:var(--red);
+      /* Flow ramp (kept) */
+      --line1: var(--yellow);
+      --line2: var(--orange);
+      --line3: var(--red);
 
-      /* Scenario routes — a single secondary (mint) */
-      --potential:var(--mint);
+      /* Scenario routes — use a single secondary (mint) */
+      --potential: var(--mint);
     }
 
-    html, body { height:100%; }
-    body{
-      margin:0; background:var(--surface); color:#1d2a36;
-      font-family:'Open Sans', system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
-      display:flex; flex-direction:column; min-height:100vh;
-      -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
+    html, body { 
+      height: 100%; 
+      margin: 0; 
+      font-family: 'Open Sans', system-ui, -apple-system, sans-serif;
+    }
+    
+    body {
+      background: var(--surface); 
+      color: #1d2a36;
+      display: flex; 
+      flex-direction: column; 
+      min-height: 100vh;
     }
 
     /* ─── Header & Footer ─────────────────────────────────────────────── */
-    .app-header{
-      display:flex; align-items:center; justify-content:space-between; gap:12px;
-      padding:10px 16px; background:#fff; border-bottom:1px solid #e6edf5; position:relative;
+    .app-header {
+      display: flex; 
+      align-items: center; 
+      justify-content: space-between; 
+      gap: 12px;
+      padding: 10px 16px; 
+      background: #fff; 
+      border-bottom: 1px solid #e6edf5; 
+      position: relative;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
     }
-    .app-header::after{
-      content:""; position:absolute; left:0; right:0; bottom:-2px; height:2px;
-      background:linear-gradient(90deg,var(--brand-primary),var(--brand-accent));
+    
+    .app-header::after {
+      content: ""; 
+      position: absolute; 
+      left: 0; 
+      right: 0; 
+      bottom: -2px; 
+      height: 2px;
+      background: linear-gradient(90deg, var(--brand-primary), var(--brand-accent));
     }
-    .brand{ display:flex; align-items:center; gap:10px; min-width:0; }
-    .brand .logo{ width:36px; height:24px; border-radius:4px; overflow:hidden; display:block; box-shadow:0 0 0 1px #d1dbe7 inset; }
-    .brand .logo svg{ width:100%; height:100%; display:block; }
-    .brand h1{ font-size:16px; line-height:1.15; margin:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-weight:800; color:#0e2a5a; }
-    .brand .sub{ font-size:12px; color:#5a7086; font-weight:600; letter-spacing:.2px; }
-    .toolbar{ display:flex; align-items:center; flex-wrap:wrap; gap:6px; }
-    .btn{
-      display:inline-flex; align-items:center; gap:8px; border:1px solid #d1dbe7; background:#fff; color:#1d2a36;
-      padding:6px 10px; border-radius:10px; font-size:12px; font-weight:700; cursor:pointer; user-select:none; transition:.2s ease;
+    
+    .brand { 
+      display: flex; 
+      align-items: center; 
+      gap: 10px; 
+      min-width: 0; 
     }
-    .btn:hover{ border-color:#b7c6da; box-shadow:0 1px 0 rgba(0,0,0,.03); }
-    .btn.active{ border-color:var(--brand-accent); background:#eef6ff; }
+    
+    .brand .logo { 
+      width: 36px; 
+      height: 24px; 
+      border-radius: 4px; 
+      overflow: hidden; 
+      display: block; 
+      box-shadow: 0 0 0 1px #d1dbe7 inset; 
+    }
+    
+    .brand .logo svg { 
+      width: 100%; 
+      height: 100%; 
+      display: block; 
+    }
+    
+    .brand h1 { 
+      font-size: 16px; 
+      line-height: 1.15; 
+      margin: 0; 
+      white-space: nowrap; 
+      overflow: hidden; 
+      text-overflow: ellipsis; 
+    }
+    
+    .brand .sub { 
+      font-size: 12px; 
+      color: #5a7086; 
+      font-weight: 500; 
+    }
+    
+    .toolbar { 
+      display: flex; 
+      align-items: center; 
+      flex-wrap: wrap; 
+      gap: 6px; 
+    }
+    
+    .btn {
+      display: inline-flex; 
+      align-items: center; 
+      gap: 8px; 
+      border: 1px solid #d1dbe7; 
+      background: #fff; 
+      color: #1d2a36;
+      padding: 6px 10px; 
+      border-radius: 10px; 
+      font-size: 12px; 
+      font-weight: 600; 
+      cursor: pointer; 
+      user-select: none; 
+      transition: all 0.2s ease;
+    }
+    
+    .btn:hover { 
+      border-color: #b7c6da; 
+      box-shadow: 0 1px 0 rgba(0,0,0,.03); 
+    }
+    
+    .btn.active { 
+      border-color: var(--brand-accent); 
+      background: #eef6ff; 
+    }
+    
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
 
-    .app-footer{
-      display:flex; align-items:center; justify-content:space-between; gap:10px;
-      background:#fff; border-top:1px solid #e6edf5; padding:8px 12px; font-size:12px; color:#45607a;
+    .app-footer {
+      display: flex; 
+      align-items: center; 
+      justify-content: space-between; 
+      gap: 10px;
+      background: #fff; 
+      border-top: 1px solid #e6edf5; 
+      padding: 8px 12px; 
+      font-size: 12px; 
+      color: #45607a;
     }
-    .kbd{
-      font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;
-      border:1px solid #c9d5e6; border-bottom-width:2px; padding:0 6px; border-radius:6px; background:#f7faff;
+    
+    .kbd {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      border: 1px solid #c9d5e6; 
+      border-bottom-width: 2px; 
+      padding: 0 6px; 
+      border-radius: 6px; 
+      background: #f7faff;
     }
 
     /* ─── Map container ───────────────────────────────────────────────── */
-    .map-wrap{ position:relative; flex:1 1 auto; min-height:0; }
-    #map{ position:absolute; inset:0; }
-
-    .loading-overlay{
-      position:absolute; inset:0; z-index:1100; background:rgba(255,255,255,.85);
-      display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center;
+    .map-wrap { 
+      position: relative; 
+      flex: 1 1 auto; 
+      min-height: 0; 
     }
-    .spinner{
-      width:44px; height:44px; border:4px solid #e7eef7; border-top-color:var(--brand-primary);
-      border-radius:50%; animation:spin 1s linear infinite; margin-bottom:10px;
+    
+    #map { 
+      position: absolute; 
+      inset: 0; 
     }
-    @keyframes spin{ to{ transform:rotate(360deg); } }
 
-    /* ─── Origin pulsing points ──────────────────────────────────────── */
-    .origin-pulse-icon{ pointer-events:auto; }
-    .origin-pulse-icon .pulse{
-      position:relative; width:var(--d,24px); height:var(--d,24px); border-radius:50%;
+    .loading-overlay {
+      position: absolute; 
+      inset: 0; 
+      z-index: 1100; 
+      background: rgba(255,255,255,.95);
+      display: flex; 
+      flex-direction: column; 
+      align-items: center; 
+      justify-content: center; 
+      text-align: center;
+    }
+    
+    .spinner {
+      width: 44px; 
+      height: 44px; 
+      border: 4px solid #e7eef7; 
+      border-top-color: var(--brand-primary);
+      border-radius: 50%; 
+      animation: spin 1s linear infinite; 
+      margin-bottom: 10px;
+    }
+    
+    @keyframes spin { 
+      to { transform: rotate(360deg); } 
+    }
+
+    /* Admin1 labels */
+    .leaflet-tooltip.state-label {
+      background: transparent; 
+      border: none; 
+      box-shadow: none; 
+      padding: 0;
+      color: #244b6b; 
+      font-weight: 600; 
+      font-size: 12px; 
+      letter-spacing: .2px;
+      text-shadow: 0 0 2px #fff, 0 0 3px #fff, 0 0 4px #fff, 0 0 5px #fff;
+      pointer-events: none;
+    }
+
+    /* ─── Pulsing origin points ───────────────────────────────────── */
+    .origin-pulse-icon { pointer-events: auto; }
+    
+    .origin-pulse-icon .pulse {
+      position: relative; 
+      width: var(--d,24px); 
+      height: var(--d,24px); 
+      border-radius: 50%;
       background: radial-gradient(circle at 50% 45%, rgba(255,255,255,.95) 0 28%, rgba(255,103,31,1) 32%, rgba(255,103,31,.92) 60%, rgba(255,103,31,.85) 100%);
       box-shadow: 0 0 0 2px #ffffff inset, 0 2px 8px rgba(0,0,0,.18);
     }
+    
     .origin-pulse-icon .pulse::before,
-    .origin-pulse-icon .pulse::after{
-      content:""; position:absolute; left:50%; top:50%; width:100%; height:100%;
-      border-radius:50%; transform:translate(-50%,-50%) scale(.7); border:2px solid rgba(255,103,31,.7);
-      animation:pulseRing 2.2s ease-out infinite;
+    .origin-pulse-icon .pulse::after {
+      content: ""; 
+      position: absolute; 
+      left: 50%; 
+      top: 50%; 
+      width: 100%; 
+      height: 100%;
+      border-radius: 50%; 
+      transform: translate(-50%,-50%) scale(.7); 
+      border: 2px solid rgba(255,103,31,.7);
+      animation: pulseRing 2.2s ease-out infinite;
     }
-    .origin-pulse-icon .pulse::after{ animation-delay:1.1s; }
+    
+    .origin-pulse-icon .pulse::after { 
+      animation-delay: 1.1s; 
+    }
+    
     @keyframes pulseRing {
-      0% { transform:translate(-50%,-50%) scale(.7); opacity:.9; }
-      70% { opacity:.2; }
-      100% { transform:translate(-50%,-50%) scale(2.1); opacity:0; }
+      0% { transform: translate(-50%,-50%) scale(.7); opacity: .9; }
+      70% { opacity: .2; }
+      100% { transform: translate(-50%,-50%) scale(2.1); opacity: 0; }
     }
 
-    /* ─── Destination points ─────────────────────────────────────────── */
-    .dest-icon{ pointer-events:auto; transition:transform .12s ease; }
-    .dest-icon .dot{
-      position:relative; width:var(--d,18px); height:var(--d,18px); border-radius:50%;
+    /* ─── Destination points ────────────────────────────────────────── */
+    .dest-icon { 
+      pointer-events: auto; 
+      transition: transform .12s ease; 
+    }
+    
+    .dest-icon .dot {
+      position: relative; 
+      width: var(--d,18px); 
+      height: var(--d,18px); 
+      border-radius: 50%;
       background: radial-gradient(circle at 45% 30%, rgba(255,255,255,.95) 0 28%, rgba(65,143,222,1) 32%, rgba(65,143,222,.92) 60%, rgba(65,143,222,.85) 100%);
-      border:1px solid #fff; box-shadow: 0 0 0 1px rgba(0,0,0,.06), 0 0 10px rgba(65,143,222,.35);
+      border: 1px solid #fff; 
+      box-shadow: 0 0 0 1px rgba(0,0,0,.06), 0 0 10px rgba(65,143,222,.35);
     }
-    .dest-icon .dot::after{
-      content:""; position:absolute; left:35%; top:28%; width:18%; height:18%;
-      background:rgba(255,255,255,.9); border-radius:50%; filter:blur(.3px);
+    
+    .dest-icon .dot::after {
+      content: ""; 
+      position: absolute; 
+      left: 35%; 
+      top: 28%; 
+      width: 18%; 
+      height: 18%;
+      background: rgba(255,255,255,.9); 
+      border-radius: 50%; 
+      filter: blur(.3px);
     }
-    .dest-icon:hover{ transform:scale(1.1); }
-    .dest-icon.focus{ transform:scale(1.18); box-shadow:0 0 0 2px rgba(65,143,222,.25); }
+    
+    .dest-icon:hover { 
+      transform: scale(1.1); 
+    }
+    
+    .dest-icon.focus { 
+      transform: scale(1.18); 
+      box-shadow: 0 0 0 2px rgba(65,143,222,.25); 
+    }
 
-    /* ─── Legend ─────────────────────────────────────────────────────── */
-    .legend * { box-sizing:border-box; }
+    /* Top destination labels */
+    .leaflet-tooltip.dest-label {
+      background: #fff; 
+      color: #1d2a36; 
+      border: 1px solid #d1dbe7; 
+      box-shadow: 0 2px 8px rgba(0,0,0,.08);
+      border-radius: 8px; 
+      padding: 4px 8px; 
+      font-size: 12px; 
+      font-weight: 600;
+    }
 
     /* ─── Crisis facts UI ───────────────────────────────────────────── */
-    .kpi-icon, .donut-icon, .note-icon { pointer-events:auto; }
-    .kpi-card, .note-card{
-      background:#fff; border:1px solid #d1dbe7; border-radius:10px; box-shadow:0 2px 10px rgba(0,0,0,.08);
-      padding:6px 10px; min-width:120px; text-align:left;
+    .kpi-icon, .donut-icon, .note-icon { pointer-events: auto; }
+    
+    .kpi-card, .note-card {
+      background: #fff; 
+      border: 1px solid #d1dbe7; 
+      border-radius: 10px; 
+      box-shadow: 0 2px 10px rgba(0,0,0,.08);
+      padding: 6px 10px; 
+      min-width: 120px; 
+      text-align: left;
     }
-    .kpi-card .kpi{ font-size:18px; font-weight:800; color:#1d2a36; line-height:1.1; }
-    .kpi-card .label{ font-size:12px; color:#46607a; font-weight:700; margin-top:2px; }
-    .note-card{ font-size:12px; color:#1d2a36; }
-    .note-card strong{ color:#d22630; }
+    
+    .kpi-card .kpi { 
+      font-size: 18px; 
+      font-weight: 800; 
+      color: #1d2a36; 
+      line-height: 1.1; 
+    }
+    
+    .kpi-card .label { 
+      font-size: 12px; 
+      color: #46607a; 
+      font-weight: 600; 
+      margin-top: 2px; 
+    }
+    
+    .note-card { 
+      font-size: 12px; 
+      color: #1d2a36; 
+    }
+    
+    .note-card strong { 
+      color: #d22630; 
+    }
 
-    .donut{ width:44px; height:44px; border-radius:50%; background:conic-gradient(var(--donut-color,#418FDE) calc(var(--pct,0)*1deg), #e8eff7 0); border:2px solid #fff; box-shadow:0 0 0 1px rgba(0,0,0,.06), 0 0 10px rgba(65,143,222,.28); position:relative; display:inline-block; vertical-align:middle; }
-    .donut::after{ content:""; position:absolute; inset:8px; background:#fff; border-radius:50%; box-shadow:inset 0 0 0 1px #e6eef6; }
-    .donut-wrap{ display:flex; align-items:center; gap:8px; }
-    .donut-wrap .txt .big{ font-weight:800; color:#1d2a36; }
-    .donut-wrap .txt .small{ font-size:12px; color:#46607a; }
+    .donut { 
+      width: 44px; 
+      height: 44px; 
+      border-radius: 50%; 
+      background: conic-gradient(var(--donut-color,#418FDE) calc(var(--pct,0)*1deg), #e8eff7 0); 
+      border: 2px solid #fff; 
+      box-shadow: 0 0 0 1px rgba(0,0,0,.06), 0 0 10px rgba(65,143,222,.28); 
+      position: relative; 
+      display: inline-block; 
+      vertical-align: middle; 
+    }
+    
+    .donut::after { 
+      content: ""; 
+      position: absolute; 
+      inset: 8px; 
+      background: #fff; 
+      border-radius: 50%; 
+      box-shadow: inset 0 0 0 1px #e6eef6; 
+    }
+    
+    .donut-wrap { 
+      display: flex; 
+      align-items: center; 
+      gap: 8px; 
+    }
+    
+    .donut-wrap .txt .big { 
+      font-weight: 800; 
+      color: #1d2a36; 
+    }
+    
+    .donut-wrap .txt .small { 
+      font-size: 12px; 
+      color: #46607a; 
+    }
 
-    .camp-icon{ width:18px; height:18px; border-radius:50%; background:#999; border:1px solid #fff; box-shadow:0 0 0 1px rgba(0,0,0,.06); position:relative; opacity:.65; }
-    .camp-icon::after{ content:""; position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:10px; height:10px; clip-path:polygon(50% 0, 100% 70%, 0 70%); background:#f4f4f4; }
-    .camp-icon.bad{ background:#bbb; opacity:.45; }
+    .camp-icon { 
+      width: 18px; 
+      height: 18px; 
+      border-radius: 50%; 
+      background: #999; 
+      border: 1px solid #fff; 
+      box-shadow: 0 0 0 1px rgba(0,0,0,.06); 
+      position: relative; 
+      opacity: .65; 
+    }
+    
+    .camp-icon::after { 
+      content: ""; 
+      position: absolute; 
+      left: 50%; 
+      top: 50%; 
+      transform: translate(-50%,-50%); 
+      width: 10px; 
+      height: 10px; 
+      clip-path: polygon(50% 0, 100% 70%, 0 70%); 
+      background: #f4f4f4; 
+    }
+    
+    .camp-icon.bad { 
+      background: #bbb; 
+      opacity: .45; 
+    }
 
     /* ─── Story / Slideshow panel ───────────────────────────────────── */
-    .story-panel{
-      position:absolute; right:14px; bottom:14px; z-index:1200; width:320px; max-width:85vw;
-      background:#fff; border:1px solid #d1dbe7; border-radius:14px; box-shadow:0 10px 30px rgba(0,0,0,.12);
-      overflow:hidden; display:none;
+    .story-panel {
+      position: absolute; 
+      right: 14px; 
+      bottom: 14px; 
+      z-index: 1200; 
+      width: 360px; 
+      max-width: 85vw;
+      background: #fff; 
+      border: 1px solid #d1dbe7; 
+      border-radius: 14px; 
+      box-shadow: 0 10px 30px rgba(0,0,0,.12);
+      overflow: hidden; 
+      display: none;
     }
-    .story-header{ display:flex; align-items:center; justify-content:space-between; gap:8px; padding:10px 12px; background:linear-gradient(0deg,#ffffff,#f8fbff); border-bottom:1px solid #eaf0f7; }
-    .story-title{ font-weight:800; color:#1d2a36; font-size:14px; }
-    .story-body{ padding:12px; color:#334a62; font-size:13px; line-height:1.35; }
-    .story-footer{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding:8px 10px; border-top:1px solid #eaf0f7; background:#fff; }
-    .story-dots{ display:flex; gap:6px; align-items:center; }
-    .story-dot{ width:8px; height:8px; border-radius:50%; background:#dde6f2; }
-    .story-dot.active{ background:var(--brand-accent); }
-    .story-actions .btn{ padding:6px 8px; border-radius:8px; }
+    
+    .story-header { 
+      display: flex; 
+      align-items: center; 
+      justify-content: space-between; 
+      gap: 8px; 
+      padding: 12px 16px; 
+      background: linear-gradient(0deg,#ffffff,#f8fbff); 
+      border-bottom: 1px solid #eaf0f7; 
+    }
+    
+    .story-title { 
+      font-weight: 800; 
+      color: #1d2a36; 
+      font-size: 16px; 
+    }
+    
+    .story-body { 
+      padding: 16px; 
+      color: #334a62; 
+      font-size: 14px; 
+      line-height: 1.5; 
+      max-height: 300px;
+      overflow-y: auto;
+    }
+    
+    .story-footer { 
+      display: flex; 
+      align-items: center; 
+      justify-content: space-between; 
+      gap: 10px; 
+      padding: 12px 16px; 
+      border-top: 1px solid #eaf0f7; 
+      background: #fff; 
+    }
+    
+    .story-dots { 
+      display: flex; 
+      gap: 6px; 
+      align-items: center; 
+    }
+    
+    .story-dot { 
+      width: 8px; 
+      height: 8px; 
+      border-radius: 50%; 
+      background: #dde6f2; 
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+    
+    .story-dot:hover {
+      background: #b3c2e3;
+    }
+    
+    .story-dot.active { 
+      background: var(--brand-accent); 
+      transform: scale(1.2);
+    }
+    
+    .story-actions .btn { 
+      padding: 6px 8px; 
+      border-radius: 8px; 
+    }
 
     /* attention ping for highlighted UI bits */
     @keyframes ping {
-      0%{ transform:scale(1); box-shadow:0 0 0 0 rgba(255,184,28,.0); }
-      50%{ transform:scale(1.05); box-shadow:0 0 0 8px rgba(255,184,28,.25);}
-      100%{ transform:scale(1); box-shadow:0 0 0 0 rgba(255,184,28,.0);}
+      0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255,184,28,.0); }
+      50% { transform: scale(1.05); box-shadow: 0 0 0 8px rgba(255,184,28,.25); }
+      100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255,184,28,.0); }
     }
-    .attention{ animation: ping 1.2s ease-out 3; }
+    
+    .attention { animation: ping 1.2s ease-out 3; }
 
-    @media (max-width:768px){
-      .brand h1{ font-size:14px; }
-      .brand .sub{ display:none; }
-      .btn span{ display:none; }
-      .story-panel{ left:8px; right:8px; width:auto; }
+    /* Improved popup styling */
+    .leaflet-popup-content-wrapper {
+      border-radius: 12px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+    }
+    
+    .leaflet-popup-content {
+      margin: 16px;
+      line-height: 1.5;
+      font-size: 14px;
+    }
+    
+    .leaflet-popup-content h4 {
+      margin: 0 0 12px;
+      color: var(--brand-primary);
+      font-weight: 700;
+      font-size: 16px;
+    }
+    
+    .leaflet-popup-content p {
+      margin: 0 0 10px;
+    }
+    
+    .leaflet-popup-content small {
+      color: #5a7086;
+    }
+
+    /* Timeline controls */
+    .timeline-control {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      z-index: 1000;
+      background: rgba(255, 255, 255, 0.9);
+      padding: 12px 16px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      border: 1px solid #e6edf5;
+      min-width: 240px;
+    }
+    
+    .timeline-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    
+    .timeline-title {
+      font-weight: 600;
+      font-size: 14px;
+      color: #1d2a36;
+    }
+    
+    .timeline-slider {
+      width: 100%;
+      margin: 8px 0;
+    }
+    
+    .timeline-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      color: #5a7086;
+    }
+
+    /* Data summary panel */
+    .data-summary {
+      position: absolute;
+      top: 80px;
+      right: 20px;
+      z-index: 1000;
+      background: rgba(255, 255, 255, 0.9);
+      padding: 16px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      border: 1px solid #e6edf5;
+      max-width: 280px;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    
+    .data-summary h3 {
+      margin: 0 0 12px;
+      font-size: 14px;
+      color: var(--brand-primary);
+      font-weight: 700;
+    }
+    
+    .data-summary p {
+      margin: 0 0 10px;
+      color: #334a62;
+    }
+    
+    .data-summary .highlight {
+      color: var(--brand-primary);
+      font-weight: 600;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+      .brand h1 { font-size: 14px; }
+      .brand .sub { display: none; }
+      .btn span { display: none; }
+      .story-panel { 
+        left: 8px; 
+        right: 8px; 
+        width: auto; 
+        bottom: 8px;
+      }
+      
+      .timeline-control {
+        left: 8px;
+        right: 8px;
+        width: auto;
+        bottom: 8px;
+      }
+      
+      .data-summary {
+        top: 70px;
+        right: 8px;
+        left: 8px;
+        max-width: none;
+      }
+      
+      .app-footer {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+      }
     }
   </style>
 </head>
@@ -208,15 +659,13 @@
     </div>
 
     <nav class="toolbar" aria-label="Map controls">
-      <button id="btn-play"  class="btn active" title="Play/Pause animation (Space)"><i class="fa-solid fa-play"></i><span>Animation</span></button>
+      <button id="btn-play" class="btn active" title="Play/Pause animation (Space)"><i class="fa-solid fa-play"></i><span>Animation</span></button>
       <button id="btn-flows" class="btn active" title="Toggle flow lines (F)"><i class="fa-solid fa-wave-square"></i><span>Flows</span></button>
       <button id="btn-points" class="btn active" title="Toggle points (P)"><i class="fa-solid fa-circle"></i><span>Points</span></button>
-
-      <!-- Potential routes toggle -->
       <button id="btn-routes" class="btn" title="Toggle Potential Routes from El Fasher (O)"><i class="fa-solid fa-route"></i><span>Routes</span></button>
-
-      <button id="btn-story" class="btn"        title="Open story / slideshow (S)"><i class="fa-solid fa-book-open"></i><span>Story</span></button>
-      <button id="btn-reset" class="btn"        title="Reset view (R)"><i class="fa-solid fa-rotate"></i><span>Reset</span></button>
+      <button id="btn-story" class="btn" title="Open story / slideshow (S)"><i class="fa-solid fa-book-open"></i><span>Story</span></button>
+      <button id="btn-reset" class="btn" title="Reset view (R)"><i class="fa-solid fa-rotate"></i><span>Reset</span></button>
+      <button id="btn-help" class="btn" title="Show help information"><i class="fa-solid fa-circle-question"></i><span>Help</span></button>
     </nav>
   </header>
 
@@ -229,15 +678,37 @@
       <div>Loading displacement data…</div>
     </div>
 
+    <!-- Timeline control -->
+    <div class="timeline-control" id="timeline-control" style="display: none;">
+      <div class="timeline-header">
+        <div class="timeline-title">Time Period</div>
+        <button id="btn-timeline-close" class="btn" style="padding: 2px 6px;"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <input type="range" class="timeline-slider" id="timeline-slider" min="0" max="100" value="0">
+      <div class="timeline-labels">
+        <span>Jan 2023</span>
+        <span>Current</span>
+      </div>
+    </div>
+
+    <!-- Data summary panel -->
+    <div class="data-summary" id="data-summary" style="display: none;">
+      <h3>Data Summary</h3>
+      <p><span class="highlight" id="total-displaced">0</span> total displaced persons</p>
+      <p><span class="highlight" id="total-origins">0</span> origin states</p>
+      <p><span class="highlight" id="total-destinations">0</span> destination localities</p>
+      <p><span class="highlight" id="active-flows">0</span> active displacement flows</p>
+    </div>
+
     <!-- Story / Slideshow Panel -->
     <div class="story-panel" id="story-panel" role="dialog" aria-modal="false" aria-live="polite">
       <div class="story-header">
-        <div class="story-title" id="story-title">Story</div>
+        <div class="story-title" id="story-title">Understanding the Crisis in Al Fasher</div>
         <div class="story-actions">
-          <button id="story-prev"   class="btn" title="Previous (←)"><i class="fa-solid fa-arrow-left"></i></button>
+          <button id="story-prev" class="btn" title="Previous (←)"><i class="fa-solid fa-arrow-left"></i></button>
           <button id="story-toggle" class="btn" title="Play/Pause (Space)"><i class="fa-solid fa-play"></i></button>
-          <button id="story-next"   class="btn" title="Next (→)"><i class="fa-solid fa-arrow-right"></i></button>
-          <button id="story-close"  class="btn" title="Close (Esc)"><i class="fa-solid fa-xmark"></i></button>
+          <button id="story-next" class="btn" title="Next (→)"><i class="fa-solid fa-arrow-right"></i></button>
+          <button id="story-close" class="btn" title="Close (Esc)"><i class="fa-solid fa-xmark"></i></button>
         </div>
       </div>
       <div class="story-body" id="story-body"></div>
@@ -272,18 +743,49 @@
 
     // Map init
     const map = L.map('map', {
-      preferCanvas:true, zoomControl:false, minZoom:4, maxZoom:11, zoomSnap:0.5, zoomDelta:0.5, attributionControl:true
-    }).setView([16,30], 5.5);
+      preferCanvas: true, 
+      zoomControl: false, 
+      minZoom: 4, 
+      maxZoom: 11, 
+      zoomSnap: 0.5, 
+      zoomDelta: 0.5, 
+      attributionControl: true
+    }).setView([16, 30], 5.5);
 
-    // Basemaps (Mapbox Light default for clarity)
+    // Basemaps (Mapbox Satellite default)
     const cartoLight = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-      attribution:'&copy; OpenStreetMap & CartoDB'
+      attribution: '&copy; OpenStreetMap & CartoDB'
     });
-    const mbLight   = L.tileLayer(`https://api.mapbox.com/styles/v1/mapbox/light-v10/tiles/{z}/{x}/{y}?access_token=${MAPBOX_TOKEN}`,   { tileSize:512, zoomOffset:-1, attribution:'&copy; Mapbox & OpenStreetMap' });
-    const mbStreets = L.tileLayer(`https://api.mapbox.com/styles/v1/mapbox/streets-v11/tiles/{z}/{x}/{y}?access_token=${MAPBOX_TOKEN}`, { tileSize:512, zoomOffset:-1, attribution:'&copy; Mapbox & OpenStreetMap' });
-    const mbSat     = L.tileLayer(`https://api.mapbox.com/styles/v1/mapbox/satellite-v9/tiles/{z}/{x}/{y}?access_token=${MAPBOX_TOKEN}`, { tileSize:512, zoomOffset:-1, attribution:'&copy; Mapbox & OpenStreetMap' });
-    const mbOutdoor = L.tileLayer(`https://api.mapbox.com/styles/v1/mapbox/outdoors-v11/tiles/{z}/{x}/{y}?access_token=${MAPBOX_TOKEN}`, { tileSize:512, zoomOffset:-1, attribution:'&copy; Mapbox & OpenStreetMap' });
-    const mbCustom  = L.tileLayer(`https://api.mapbox.com/styles/v1/omerosman/cm8oy6is4006101si7ll3bs4h/tiles/{z}/{x}/{y}?access_token=${MAPBOX_TOKEN}`, { tileSize:512, zoomOffset:-1, attribution:'&copy; Mapbox & OpenStreetMap' });
+    
+    const mbLight = L.tileLayer(`https://api.mapbox.com/styles/v1/mapbox/light-v10/tiles/{z}/{x}/{y}?access_token=${MAPBOX_TOKEN}`, { 
+      tileSize: 512, 
+      zoomOffset: -1, 
+      attribution: '&copy; Mapbox & OpenStreetMap' 
+    });
+    
+    const mbStreets = L.tileLayer(`https://api.mapbox.com/styles/v1/mapbox/streets-v11/tiles/{z}/{x}/{y}?access_token=${MAPBOX_TOKEN}`, { 
+      tileSize: 512, 
+      zoomOffset: -1, 
+      attribution: '&copy; Mapbox & OpenStreetMap' 
+    });
+    
+    const mbSat = L.tileLayer(`https://api.mapbox.com/styles/v1/mapbox/satellite-v9/tiles/{z}/{x}/{y}?access_token=${MAPBOX_TOKEN}`, { 
+      tileSize: 512, 
+      zoomOffset: -1, 
+      attribution: '&copy; Mapbox & OpenStreetMap' 
+    });
+    
+    const mbOutdoor = L.tileLayer(`https://api.mapbox.com/styles/v1/mapbox/outdoors-v11/tiles/{z}/{x}/{y}?access_token=${MAPBOX_TOKEN}`, { 
+      tileSize: 512, 
+      zoomOffset: -1, 
+      attribution: '&copy; Mapbox & OpenStreetMap' 
+    });
+    
+    const mbCustom = L.tileLayer(`https://api.mapbox.com/styles/v1/omerosman/cm8oy6is4006101si7ll3bs4h/tiles/{z}/{x}/{y}?access_token=${MAPBOX_TOKEN}`, { 
+      tileSize: 512, 
+      zoomOffset: -1, 
+      attribution: '&copy; Mapbox & OpenStreetMap' 
+    });
 
     mbLight.addTo(map);
 
@@ -296,21 +798,22 @@
       "Carto Light": cartoLight
     }).addTo(map);
 
-    L.control.scale({ position:'bottomleft', metric:true, imperial:false }).addTo(map);
-    L.control.zoom({ position:'bottomright' }).addTo(map);
+    L.control.scale({ position: 'bottomleft', metric: true, imperial: false }).addTo(map);
+    L.control.zoom({ position: 'bottomright' }).addTo(map);
 
     // ─── Legend ────────────────────────────────────────────────────────
     const legend = L.control({ position: 'bottomleft' });
-    legend.onAdd = function(){
-      const div = L.DomUtil.create('div','legend');
+    
+    legend.onAdd = function() {
+      const div = L.DomUtil.create('div', 'legend');
       div.innerHTML = `
-        <div style="background:#fff;border:1px solid #d1dbe7;border-radius:10px;padding:8px 10px;box-shadow:0 2px 10px rgba(0,0,0,.06);min-width:220px">
-          <div style="font-weight:800;color:#0e2a5a;margin-bottom:6px">Flow volume (e_Volume)</div>
-          <div style="display:grid;grid-template-columns:18px 1fr;gap:8px;align-items:center;font-size:12px;color:#3c4f62;margin-bottom:6px">
-            <span style="height:4px;background:var(--line1);"></span><span>1 — 50,000</span>
-            <span style="height:4px;background:var(--line2);"></span><span>50,000 — 100,000</span>
-            <span style="height:4px;background:var(--line3);"></span><span>100,000 — 1,600,000</span>
-            <span style="height:4px;background:var(--potential);"></span><span>Potential route (scenario)</span>
+        <div style="background:#fff;border:1px solid #d1dbe7;border-radius:10px;padding:12px;box-shadow:0 2px 10px rgba(0,0,0,.06);min-width:240px">
+          <div style="font-weight:700;color:#1d2a36;margin-bottom:8px;font-size:14px">Flow volume (e_Volume)</div>
+          <div style="display:grid;grid-template-columns:18px 1fr;gap:8px;align-items:center;font-size:12px;color:#3c4f62;margin-bottom:8px">
+            <span style="height:4px;background:var(--line1);border-radius:2px;"></span><span>1 — 50,000</span>
+            <span style="height:4px;background:var(--line2);border-radius:2px;"></span><span>50,000 — 100,000</span>
+            <span style="height:4px;background:var(--line3);border-radius:2px;"></span><span>100,000 — 1,600,000</span>
+            <span style="height:4px;background:var(--potential);border-radius:2px;"></span><span>Potential route (scenario)</span>
           </div>
           <div style="display:grid;grid-template-columns:18px 1fr;gap:8px;align-items:center;font-size:12px;color:#3c4f62">
             <span style="width:12px;height:12px;border-radius:50%;background:#ff671f;display:inline-block;box-shadow:0 0 0 2px #fff inset;"></span>
@@ -321,19 +824,21 @@
         </div>`;
       return div;
     };
+    
     legend.addTo(map);
     const legendEl = document.querySelector('.legend');
-    if (legendEl){
+    
+    if (legendEl) {
       L.DomEvent.disableScrollPropagation(legendEl);
       L.DomEvent.disableClickPropagation(legendEl);
     }
 
     // ─── State ────────────────────────────────────────────────────────
-    let stateBoundariesLayer, flowmapLayer, originPulseLayer;
+    let stateBoundariesLayer, admin1Labels, flowmapLayer, originPulseLayer, destLabelsLayer;
     let crisisLayer, campsLayer;
     let kpiMarker, donutMarker, noteMarker, siegeRing;
 
-    // Potential routes state
+    // NEW: Potential routes state
     let routesGroup = null, routesLayer = null, routesMarkers = null, routesOrigin = null, routesVisible = false;
 
     let campsData = []; // parsed camps
@@ -348,64 +853,103 @@
     const btnReset = document.getElementById('btn-reset');
     const btnStory = document.getElementById('btn-story');
     const btnRoutes = document.getElementById('btn-routes');
+    const btnHelp = document.getElementById('btn-help');
+    const timelineControl = document.getElementById('timeline-control');
+    const timelineSlider = document.getElementById('timeline-slider');
+    const btnTimelineClose = document.getElementById('btn-timeline-close');
+    const dataSummary = document.getElementById('data-summary');
 
     btnPlay.addEventListener('click', toggleAnimation);
     btnFlows.addEventListener('click', toggleFlows);
     btnPoints.addEventListener('click', togglePoints);
-    btnReset.addEventListener('click', ()=> map.setView([16,30], 5.5));
+    btnReset.addEventListener('click', () => map.setView([16, 30], 5.5));
     btnStory.addEventListener('click', () => window.toggleStory?.(true));
     btnRoutes.addEventListener('click', toggleRoutes);
+    btnHelp.addEventListener('click', showHelp);
+    btnTimelineClose.addEventListener('click', () => timelineControl.style.display = 'none');
 
     // Keyboard shortcuts
     window.addEventListener('keydown', (e) => {
       if (e.target && e.target.closest && e.target.closest('input, textarea, [contenteditable="true"]')) return;
       const k = (e.key || '').toLowerCase();
-      if (e.code === 'Space'){ e.preventDefault(); toggleAnimation(); }
+      if (e.code === 'Space') { e.preventDefault(); toggleAnimation(); }
       else if (k === 'f') toggleFlows();
       else if (k === 'p') togglePoints();
-      else if (k === 'o') toggleRoutes();
+      else if (k === 'o') toggleRoutes();            // NEW shortcut
       else if (k === 's') window.toggleStory?.(true);
-      else if (k === 'r') map.setView([16,30], 5.5);
+      else if (k === 'r') map.setView([16, 30], 5.5);
+      else if (k === 'h') showHelp();
     });
 
-    function updateBtnStates(){
+    function updateBtnStates() {
       btnPlay.classList.toggle('active', isAnimationPlaying);
       btnFlows.classList.toggle('active', showFlows);
       btnPoints.classList.toggle('active', showPoints);
-      btnRoutes.classList.toggle('active', routesVisible);
+      btnRoutes.classList.toggle('active', routesVisible); // NEW
     }
 
-    function toggleAnimation(){
+    function toggleAnimation() {
       isAnimationPlaying = !isAnimationPlaying;
       flowmapLayer?.setAnimationStarted?.(isAnimationPlaying);
       updateBtnStates();
     }
 
-    function toggleFlows(){
+    function toggleFlows() {
       showFlows = !showFlows;
       flowmapLayer?.setPathDisplayMode?.(showFlows ? 'all' : 'none');
       updateBtnStates();
     }
 
-    function togglePoints(){
+    function togglePoints() {
       showPoints = !showPoints;
       flowmapLayer?.setPointVisibility?.(showPoints);
-      if (originPulseLayer){
+      if (originPulseLayer) {
         if (showPoints && !map.hasLayer(originPulseLayer)) originPulseLayer.addTo(map);
         if (!showPoints && map.hasLayer(originPulseLayer)) map.removeLayer(originPulseLayer);
+      }
+      if (destLabelsLayer) {
+        // keep dest labels hidden by default (respecting earlier request)
+        if (showPoints && map.hasLayer(destLabelsLayer) === false) {/* do nothing; user can enable from Layers */}
+        if (!showPoints && map.hasLayer(destLabelsLayer)) map.removeLayer(destLabelsLayer);
       }
       updateBtnStates();
     }
 
+    function showHelp() {
+      alert(`Sudan IDPs Pathways Visualization Help
+
+Navigation:
+- Pan: Click and drag the map
+- Zoom: Use mouse wheel or +/- buttons
+- Reset view: Click the Reset button or press R
+
+Visualization Controls:
+- Animation: Play/pause flow animation (Space)
+- Flows: Toggle displacement flow lines (F)
+- Points: Toggle origin/destination points (P)
+- Routes: Show potential routes from El Fasher (O)
+- Story: Guided tour of the crisis (S)
+
+Interaction:
+- Click on points to see detailed information
+- Click on states to focus on flows from that region
+- Hover over elements to see tooltips
+
+Data Sources: IOM DTM displacement tracking data`);
+    }
+
+    // --- Load data
     const overlay = document.getElementById('loading-overlay');
 
-    // Load data
     Promise.all([
       fetch('./data/ADMIN1.json').then(r => (r.ok ? r.json() : null)).catch(() => null),
       fetch('./data/sudan_states.geojson').then(r => (r.ok ? r.json() : null)).catch(() => null),
       new Promise((resolve, reject) => {
         Papa.parse('./data/IDPs_Pathway.csv', {
-          download:true, header:true, dynamicTyping:true, skipEmptyLines:true,
+          download: true, 
+          header: true, 
+          dynamicTyping: true, 
+          skipEmptyLines: true,
           complete: res => resolve(res.data),
           error: reject
         });
@@ -418,7 +962,7 @@
         .map(r => normalizeRow(r))
         .filter(r => Number.isFinite(r.s_lat) && Number.isFinite(r.s_lon) && Number.isFinite(r.e_lat) && Number.isFinite(r.e_lon) && Number.isFinite(r.e_Volume) && r.e_Volume > 0);
 
-      const { destinationTotals, originTotals } = computeTotals(data);
+      const { destinationTotals, originTotals, destAgg } = computeTotals(data);
       data.forEach(d => {
         d.e_totalVolume = destinationTotals.get(d.e_locality_id) || d.e_Volume;
         d.s_totalVolume = originTotals.get(d.s_state_id) || d.e_Volume;
@@ -426,94 +970,147 @@
 
       addOriginPulseLayer(data);
       initFlowmap(data);
+      addDestinationLabels(destAgg); // hidden by default (not added to map)
 
+      // Prepare the potential routes overlay (not shown yet)
+      setupPotentialRoutes();
+
+      // Update data summary
+      updateDataSummary(data, originTotals, destinationTotals);
+      
       overlay.style.display = 'none';
 
-      // Crisis facts + optional Camps (visible only when Story is open)
+      // Crisis facts + optional Camps
       addCrisisFacts();
-
-      // Auto-open story on first load (after crisis markers exist)
-      
 
     }).catch(err => {
       overlay.innerHTML = '<div style="color:#b00020;text-align:center">Failed to load data. Check console.</div>';
       console.error(err);
     });
 
-    // ---- Admin1 styled layer (no permanent labels) ---------------------
-    function addStyledAdmin1(states){
+    function updateDataSummary(data, originTotals, destinationTotals) {
+      const totalDisplaced = Array.from(originTotals.values()).reduce((sum, val) => sum + val, 0);
+      const totalOrigins = originTotals.size;
+      const totalDestinations = destinationTotals.size;
+      const activeFlows = data.length;
+      
+      document.getElementById('total-displaced').textContent = totalDisplaced.toLocaleString();
+      document.getElementById('total-origins').textContent = totalOrigins.toLocaleString();
+      document.getElementById('total-destinations').textContent = totalDestinations.toLocaleString();
+      document.getElementById('active-flows').textContent = activeFlows.toLocaleString();
+      
+      // Show the data summary panel
+      dataSummary.style.display = 'block';
+    }
+
+    // ---- Admin1 styled layer
+    function addStyledAdmin1(states) {
       map.createPane('admin1-casing');  map.getPane('admin1-casing').style.zIndex = 350;
       map.createPane('admin1-stroke');  map.getPane('admin1-stroke').style.zIndex = 351;
+      map.createPane('admin1-labels');  map.getPane('admin1-labels').style.zIndex = 352;
 
-      function strokeWeightForZoom(z){ return Math.max(0.8, Math.min(2.4, (z - 4) * 0.35)); }
+      function strokeWeightForZoom(z) { return Math.max(0.8, Math.min(2.4, (z - 4) * 0.35)); }
 
       const admin1StrokeStyle = () => ({
-        pane:'admin1-stroke', color: getCSS('--brand-primary','#2a5885'),
-        weight: strokeWeightForZoom(map.getZoom()), opacity:0.95,
-        fillColor:'#eaf2fb', fillOpacity:0.25, lineJoin:'round', lineCap:'round', smoothFactor:0.4, interactive:true
+        pane: 'admin1-stroke', 
+        color: getCSS('--brand-primary','#2a5885'),
+        weight: strokeWeightForZoom(map.getZoom()), 
+        opacity: 0.95,
+        fillColor: '#eaf2fb', 
+        fillOpacity: 0.25, 
+        lineJoin: 'round', 
+        lineCap: 'round', 
+        smoothFactor: 0.4, 
+        interactive: true
       });
 
       const admin1CasingStyle = () => ({
-        pane:'admin1-casing', color:'#ffffff',
-        weight: strokeWeightForZoom(map.getZoom()) + 2, opacity:0.9, fillOpacity:0,
-        lineJoin:'round', lineCap:'round', smoothFactor:0.4, interactive:false
+        pane: 'admin1-casing', 
+        color: '#ffffff',
+        weight: strokeWeightForZoom(map.getZoom()) + 2, 
+        opacity: 0.9, 
+        fillOpacity: 0,
+        lineJoin: 'round', 
+        lineCap: 'round', 
+        smoothFactor: 0.4, 
+        interactive: false
       });
 
-      const admin1Casing = L.geoJSON(states, { style: admin1CasingStyle, interactive:false });
+      const admin1Casing = L.geoJSON(states, { style: admin1CasingStyle, interactive: false });
       const admin1Stroke = L.geoJSON(states, {
         style: admin1StrokeStyle,
         onEachFeature: (feat, lyr) => {
           const nm = getAdmin1Name(feat?.properties) || 'Admin 1';
           lyr.on({
-            mouseover:e=>{
+            mouseover: e => {
               e.target.setStyle({
                 color: getCSS('--brand-amber','#ffb81c'),
                 weight: strokeWeightForZoom(map.getZoom()) + 1.2,
-                fillOpacity:0.35
+                fillOpacity: 0.35
               });
               e.target.bringToFront();
             },
-            mouseout:()=>admin1Stroke.resetStyle(lyr),
-            click:e=>{
-              try { map.fitBounds(e.target.getBounds(), { padding:[20,20] }); } catch{}
+            mouseout: () => admin1Stroke.resetStyle(lyr),
+            click: e => {
+              try { map.fitBounds(e.target.getBounds(), { padding: [20, 20] }); } catch {}
               const code = getAdmin1Code(feat?.properties);
-              if (code && flowmapLayer?.selectFeaturesForPathDisplayById){
+              if (code && flowmapLayer?.selectFeaturesForPathDisplayById) {
                 try { flowmapLayer.selectFeaturesForPathDisplayById('s_state_id', String(code), true, 'SELECTION_NEW'); } catch {}
               }
             }
           });
-          // Hover tooltip only (no permanent labels)
-          lyr.bindTooltip(nm, { sticky:true });
+          lyr.bindTooltip(nm, { sticky: true });
         }
       });
+
+      admin1Labels = L.layerGroup([], { pane: 'admin1-labels' });
+
+      function rebuildLabels() {
+        admin1Labels.clearLayers();
+        if (map.getZoom() < 6) return;
+        admin1Stroke.eachLayer(l => {
+          const nm = getAdmin1Name(l.feature?.properties) || '';
+          if (!nm) return;
+          const c = safeCenter(l);
+          if (!c) return;
+          L.tooltip({ permanent: true, direction: 'center', className: 'state-label', pane: 'admin1-labels' })
+            .setContent(nm).setLatLng(c).addTo(admin1Labels);
+        });
+      }
 
       stateBoundariesLayer = L.featureGroup([admin1Casing, admin1Stroke]).addTo(map);
       stateBoundariesLayer.bringToBack();
 
-      try { map.fitBounds(stateBoundariesLayer.getBounds(), { padding:[20,20] }); } catch {}
+      try { map.fitBounds(stateBoundariesLayer.getBounds(), { padding: [20, 20] }); } catch {}
+
+      rebuildLabels();
+      admin1Labels.addTo(map);
 
       layerControl.addOverlay(stateBoundariesLayer, 'Admin 1 Boundaries');
+      layerControl.addOverlay(admin1Labels, 'Admin 1 Labels');
 
-      map.on('zoomend', ()=>{
+      map.on('zoomend', () => {
         admin1Casing.setStyle(admin1CasingStyle());
         admin1Stroke.setStyle(admin1StrokeStyle());
+        rebuildLabels();
       });
     }
 
-    // ---- Origin pulsing layer ------------------------------------------
-    function addOriginPulseLayer(rows){
-      map.createPane('origin-pulses'); map.getPane('origin-pulses').style.zIndex = 460;
+    // ---- Origin pulsing layer
+    function addOriginPulseLayer(rows) {
+      map.createPane('origin-pulses'); 
+      map.getPane('origin-pulses').style.zIndex = 460;
 
       const byState = new Map(); // s_state_id -> {lat,lon,name,total}
-      for (const d of rows){
+      for (const d of rows) {
         if (!d.s_state_id) continue;
-        if (!byState.has(d.s_state_id)){
-          byState.set(d.s_state_id, { id:d.s_state_id, lat:d.s_lat, lon:d.s_lon, name:d.s_State||'Unknown', total:0 });
+        if (!byState.has(d.s_state_id)) {
+          byState.set(d.s_state_id, { id: d.s_state_id, lat: d.s_lat, lon: d.s_lon, name: d.s_State || 'Unknown', total: 0 });
         }
-        byState.get(d.s_state_id).total += Number(d.e_Volume)||0;
+        byState.get(d.s_state_id).total += Number(d.e_Volume) || 0;
       }
 
-      originPulseLayer = L.layerGroup([], { pane:'origin-pulses' });
+      originPulseLayer = L.layerGroup([], { pane: 'origin-pulses' });
 
       const totals = [...byState.values()].map(v => v.total);
       const tMin = Math.max(1, Math.min(...totals));
@@ -525,17 +1122,18 @@
         const icon = L.divIcon({
           className: 'origin-pulse-icon',
           html: `<div class="pulse" style="--d:${size}px"></div>`,
-          iconSize: [size, size], iconAnchor: [size/2, size/2]
+          iconSize: [size, size], 
+          iconAnchor: [size/2, size/2]
         });
 
         const m = L.marker([v.lat, v.lon], { icon })
-          .bindTooltip(`Displacement Origin: ${escapeHtml(v.name)}<br>Total displaced: ${formatNumber(v.total)}`, { direction:'top', offset:[0,-4] })
+          .bindTooltip(`Displacement Origin: ${escapeHtml(v.name)}<br>Total displaced: ${formatNumber(v.total)}`, { direction: 'top', offset: [0, -4] })
           .on('click', () => {
             try { flowmapLayer?.selectFeaturesForPathDisplayById?.('s_state_id', String(v.id), true, 'SELECTION_NEW'); } catch {}
           })
           .bindPopup(`
             <div style="min-width:220px">
-              <h4 style="margin:0 0 8px;color:var(--brand-primary);font-weight:800">Displacement Origin</h4>
+              <h4 style="margin:0 0 8px;color:var(--brand-primary);font-weight:600">Displacement Origin</h4>
               <p style="margin:0 0 6px"><strong>State:</strong> ${escapeHtml(v.name)}</p>
               <p style="margin:0 0 0"><strong>Total Displaced:</strong> ${formatNumber(v.total)}</p>
             </div>`);
@@ -547,72 +1145,164 @@
       layerControl.addOverlay(originPulseLayer, 'Origin points (pulsing)');
     }
 
-    // ---- Flowmap (destination markers with glow) ------------------------
-    function initFlowmap(data){
+    // ---- Destination labels overlay (Top N by zoom & in-bounds)
+    function addDestinationLabels(destAgg) {
+      map.createPane('dest-labels'); 
+      map.getPane('dest-labels').style.zIndex = 470;
+
+      destLabelsLayer = L.layerGroup([], { pane: 'dest-labels' }); // NOT added to map by default
+      layerControl.addOverlay(destLabelsLayer, 'Top destination labels'); // user can toggle on from Layers
+
+      function topNForZoom(z) {
+        if (z < 5) return 3;
+        if (z < 6) return 5;
+        if (z < 7) return 8;
+        if (z < 8) return 12;
+        return 18;
+      }
+
+      function rebuild() {
+        if (!destLabelsLayer) return;
+        destLabelsLayer.clearLayers();
+        if (!map.hasLayer(destLabelsLayer)) return; // only build when visible
+
+        const b = map.getBounds();
+        const inView = destAgg.filter(d => b.contains([d.lat, d.lon]));
+        inView.sort((a, b) => b.total - a.total);
+        const N = topNForZoom(map.getZoom());
+
+        inView.slice(0, N).forEach(d => {
+          const marker = L.marker([d.lat, d.lon], { interactive: true })
+            .bindTooltip(`${escapeHtml(d.name)} • ${formatNumber(d.total)}`, {
+              permanent: true, 
+              direction: 'top', 
+              className: 'dest-label', 
+              offset: [0, -8]
+            })
+            .on('click', () => {
+              try { flowmapLayer?.selectFeaturesForPathDisplayById?.('e_locality_id', String(d.id), true, 'SELECTION_NEW'); } catch {}
+            });
+          destLabelsLayer.addLayer(marker);
+        });
+      }
+
+      map.on('moveend zoomend', rebuild);
+      rebuild();
+    }
+
+    // ---- Flowmap (improved destination markers)
+    function initFlowmap(data) {
       const originKeySet = new Set(data.map(d => latlonKey(d.s_lat, d.s_lon)));
 
-      const fc = { type:'FeatureCollection', features: data.map(d => ({
-        type:'Feature', geometry:{ type:'Point', coordinates:[d.s_lon, d.s_lat] }, properties:d
-      })) };
+      const fc = { 
+        type: 'FeatureCollection', 
+        features: data.map(d => ({
+          type: 'Feature', 
+          geometry: { type: 'Point', coordinates: [d.s_lon, d.s_lat] }, 
+          properties: d
+        })) 
+      };
 
       flowmapLayer = L.canvasFlowmapLayer(fc, {
-        originAndDestinationFieldIds:{
-          originUniqueIdField:'s_state_id',
-          originGeometry:{ x:'s_lon', y:'s_lat' },
-          destinationUniqueIdField:'e_locality_id',
-          destinationGeometry:{ x:'e_lon', y:'e_lat' }
+        originAndDestinationFieldIds: {
+          originUniqueIdField: 's_state_id',
+          originGeometry: { x: 's_lon', y: 's_lat' },
+          destinationUniqueIdField: 'e_locality_id',
+          destinationGeometry: { x: 'e_lon', y: 'e_lat' }
         },
-        pointToLayer:(feature, latlng)=>{
+        pointToLayer: (feature, latlng) => {
           const isOriginSpot = originKeySet.has(latlonKey(latlng.lat, latlng.lng));
-          if (isOriginSpot){
-            return L.circleMarker(latlng, { radius:0.1, opacity:0, fillOpacity:0 });
+          if (isOriginSpot) {
+            return L.circleMarker(latlng, { radius: 0.1, opacity: 0, fillOpacity: 0 });
           }
           const vol = feature.properties?.e_totalVolume || feature.properties?.e_Volume || 0;
           const d = Math.round(scaleRadiusLog(vol, 20000, 1600000, 10, 22)); // diameter
           const icon = L.divIcon({
-            className:'dest-icon',
-            html:`<div class="dot" style="--d:${d}px"></div>`,
-            iconSize:[d, d], iconAnchor:[d/2, d/2]
+            className: 'dest-icon',
+            html: `<div class="dot" style="--d:${d}px"></div>`,
+            iconSize: [d, d], 
+            iconAnchor: [d/2, d/2]
           });
           return L.marker(latlng, { icon });
         },
-        canvasBezierStyle:{
-          type:'classBreaks', field:'e_Volume',
-          classBreakInfos:[
-            { classMinValue:1, classMaxValue:50000,   symbol:{ strokeStyle:getCSS('--line1','#ffb81c'), lineWidth:0.7, lineCap:'round', shadowColor:'#fee8c8', shadowBlur:2 } },
-            { classMinValue:50000, classMaxValue:100000, symbol:{ strokeStyle:getCSS('--line2','#ff671f'), lineWidth:1.5, lineCap:'round', shadowColor:'#fdbb84', shadowBlur:2 } },
-            { classMinValue:100000, classMaxValue:1600000, symbol:{ strokeStyle:getCSS('--line3','#d22630'), lineWidth:3.0, lineCap:'round', shadowColor:'#e34a33', shadowBlur:2 } }
+        canvasBezierStyle: {
+          type: 'classBreaks', 
+          field: 'e_Volume',
+          classBreakInfos: [
+            { 
+              classMinValue: 1, 
+              classMaxValue: 50000,   
+              symbol: { 
+                strokeStyle: getCSS('--line1','#ffb81c'), 
+                lineWidth: 0.7, 
+                lineCap: 'round', 
+                shadowColor: '#fee8c8', 
+                shadowBlur: 2 
+              } 
+            },
+            { 
+              classMinValue: 50000, 
+              classMaxValue: 100000, 
+              symbol: { 
+                strokeStyle: getCSS('--line2','#ff671f'), 
+                lineWidth: 1.5, 
+                lineCap: 'round', 
+                shadowColor: '#fdbb84', 
+                shadowBlur: 2 
+              } 
+            },
+            { 
+              classMinValue: 100000, 
+              classMaxValue: 1600000, 
+              symbol: { 
+                strokeStyle: getCSS('--line3','#d22630'), 
+                lineWidth: 3.0, 
+                lineCap: 'round', 
+                shadowColor: '#e34a33', 
+                shadowBlur: 2 
+              } 
+            }
           ],
-          defaultSymbol:{ strokeStyle:'#d0d7e2', lineWidth:0.6, lineCap:'round', shadowColor:'#d0d7e2', shadowBlur:1.2 }
+          defaultSymbol: { 
+            strokeStyle: '#d0d7e2', 
+            lineWidth: 0.6, 
+            lineCap: 'round', 
+            shadowColor: '#d0d7e2', 
+            shadowBlur: 1.2 
+          }
         },
-        pathDisplayMode:'all',
-        animationStarted:true,
-        animationEasingFamily:'Linear',
-        animationEasingType:'None',
-        animationDuration:3200,
-        onEachFeature:(feature, layer)=>attachInteractivity(feature, layer)
+        pathDisplayMode: 'all',
+        animationStarted: true,
+        animationEasingFamily: 'Linear',
+        animationEasingType: 'None',
+        animationDuration: 3200,
+        onEachFeature: (feature, layer) => attachInteractivity(feature, layer)
       }).addTo(map);
 
       // Hover/click focus
       let hoverLock = false;
       flowmapLayer.on('mouseover', (e) => {
         if (hoverLock) return;
-        hoverLock = true; setTimeout(()=> hoverLock = false, 50);
+        hoverLock = true; 
+        setTimeout(() => hoverLock = false, 50);
 
-        if (e.sharedDestinationFeatures?.length){
+        if (e.sharedDestinationFeatures?.length) {
           flowmapLayer.selectFeaturesForPathDisplay(e.sharedDestinationFeatures, 'SELECTION_NEW');
           const l = e.layer;
-          try{ l._icon?.classList?.add('focus'); setTimeout(()=>l._icon?.classList?.remove('focus'), 600);}catch{}
+          try { 
+            l._icon?.classList?.add('focus'); 
+            setTimeout(() => l._icon?.classList?.remove('focus'), 600);
+          } catch {}
         }
-        if (e.sharedOriginFeatures?.length){
+        if (e.sharedOriginFeatures?.length) {
           flowmapLayer.selectFeaturesForPathDisplay(e.sharedOriginFeatures, 'SELECTION_NEW');
         }
       });
 
       flowmapLayer.on('click', (e) => {
-        if (e.sharedDestinationFeatures?.length){
+        if (e.sharedDestinationFeatures?.length) {
           flowmapLayer.selectFeaturesForPathDisplay(e.sharedDestinationFeatures, 'SELECTION_NEW');
-        } else if (e.sharedOriginFeatures?.length){
+        } else if (e.sharedOriginFeatures?.length) {
           flowmapLayer.selectFeaturesForPathDisplay(e.sharedOriginFeatures, 'SELECTION_NEW');
         }
       });
@@ -620,15 +1310,15 @@
       updateBtnStates();
     }
 
-    function attachInteractivity(feature, layer){
+    function attachInteractivity(feature, layer) {
       const name  = feature.properties?.e_locality || feature.properties?.s_State || 'Unknown';
       const total = feature.properties?.e_totalVolume ?? feature.properties?.s_totalVolume ?? 0;
 
-      layer.bindTooltip(`${escapeHtml(name)}`, { direction:'top', offset:[0,-2] });
+      layer.bindTooltip(`${escapeHtml(name)}`, { direction: 'top', offset: [0, -2] });
 
       layer.bindPopup(`
         <div style="min-width:220px">
-          <h4 style="margin:0 0 8px;color:var(--brand-primary);font-weight:800">Location</h4>
+          <h4 style="margin:0 0 8px;color:var(--brand-primary);font-weight:600">Location</h4>
           <p style="margin:0 0 6px"><strong>Name:</strong> ${escapeHtml(name)}</p>
           <p style="margin:0 0 6px"><strong>Total linked displaced:</strong> ${formatNumber(total)}</p>
           ${feature.properties?.main_needs ? `<p style="margin:0 0 6px"><strong>Main Needs:</strong> ${escapeHtml(String(feature.properties.main_needs))}</p>` : ''}
@@ -636,14 +1326,14 @@
         </div>`);
     }
 
-    /* === Crisis facts layer (Al Fasher) — ONLY when Story open ========= */
+    /* === Crisis facts layer (Al Fasher) ================================== */
     const AL_FASHER = [13.636, 25.349]; // adjust if you have a more precise point
     const SIEGE_START = new Date('2024-05-01');
     const FACT_ATTACKS = 240; // "More than 240 attacks"
     const FACT_DISPLACED_PCT = 0.80; // "More than 80% displaced"
     const FACT_TRAPPED = 'Hundreds of thousands of civilians remain trapped';
 
-    function monthsSince(date){
+    function monthsSince(date) {
       const now = new Date();
       const y = now.getFullYear() - date.getFullYear();
       const m = now.getMonth() - date.getMonth();
@@ -652,53 +1342,65 @@
       return Math.max(0, months);
     }
 
-    function addCrisisFacts(){
-      map.createPane('crisis'); map.getPane('crisis').style.zIndex = 480;
-      crisisLayer = L.layerGroup([], { pane:'crisis' }); // not added here; Story toggles it
+    function addCrisisFacts() {
+      map.createPane('crisis'); 
+      map.getPane('crisis').style.zIndex = 480;
+      crisisLayer = L.layerGroup([], { pane: 'crisis' }).addTo(map);
+      layerControl.addOverlay(crisisLayer, 'Crisis facts');
 
       // 1) Siege ring (dashed)
       siegeRing = L.circle(AL_FASHER, {
-        radius: 22000, color: '#d22630', weight: 2, dashArray: '6,6', dashOffset: '0',
-        fillColor:'#d22630', fillOpacity:0.08
+        radius: 22000, 
+        color: '#d22630', 
+        weight: 2, 
+        dashArray: '6,6', 
+        dashOffset: '0',
+        fillColor: '#d22630', 
+        fillOpacity: 0.08
       }).bindTooltip(`Under RSF siege since May 2024 · ~${monthsSince(SIEGE_START)} months`, {
-        direction:'center', permanent:false, sticky:true
+        direction: 'center', 
+        permanent: false, 
+        sticky: true
       }).addTo(crisisLayer);
 
       // 2) KPI badge: 240+ attacks
       const attacksIcon = L.divIcon({
-        className:'kpi-icon',
-        html:`<div class="kpi-card" id="kpi-card">
+        className: 'kpi-icon',
+        html: `<div class="kpi-card" id="kpi-card">
                 <div class="kpi">${FACT_ATTACKS.toLocaleString()}+</div>
                 <div class="label">attacks</div>
               </div>`,
-        iconSize:[1,1], iconAnchor:[0,0]
+        iconSize: [1, 1], 
+        iconAnchor: [0, 0]
       });
-      kpiMarker = L.marker([AL_FASHER[0]+0.045, AL_FASHER[1]-0.04], { icon: attacksIcon, pane:'crisis' })
+      kpiMarker = L.marker([AL_FASHER[0] + 0.045, AL_FASHER[1] - 0.04], { icon: attacksIcon, pane: 'crisis' })
         .addTo(crisisLayer);
 
       // 3) Donut: 80% displaced
-      const deg = Math.round(FACT_DISPLACED_PCT*360);
+      const deg = Math.round(FACT_DISPLACED_PCT * 360);
       const donutIcon = L.divIcon({
-        className:'donut-icon',
-        html:`<div class="donut-wrap" id="donut-wrap">
+        className: 'donut-icon',
+        html: `<div class="donut-wrap" id="donut-wrap">
                 <div class="donut" style="--pct:${deg}"></div>
                 <div class="txt">
-                  <div class="big">${Math.round(FACT_DISPLACED_PCT*100)}%</div>
+                  <div class="big">${Math.round(FACT_DISPLACED_PCT * 100)}%</div>
                   <div class="small">of population displaced</div>
                 </div>
               </div>`,
-        iconSize:[1,1], iconAnchor:[0,0]
+        iconSize: [1, 1], 
+        iconAnchor: [0, 0]
       });
-      donutMarker = L.marker([AL_FASHER[0]+0.02, AL_FASHER[1]+0.07], { icon: donutIcon, pane:'crisis' })
+      donutMarker = L.marker([AL_FASHER[0] + 0.02, AL_FASHER[1] + 0.07], { icon: donutIcon, pane: 'crisis' })
         .addTo(crisisLayer);
 
       // 4) Trapped note
       const noteIcon = L.divIcon({
-        className:'note-icon',
-        html:`<div class="note-card" id="note-card"><strong>Critical:</strong> ${FACT_TRAPPED}</div>`,
-        iconSize:[1,1], iconAnchor:[0,0]
+        className: 'note-icon',
+        html: `<div class="note-card" id="note-card"><strong>Critical:</strong> ${FACT_TRAPPED}</div>`,
+        iconSize: [1, 1], 
+        iconAnchor: [0, 0]
       });
-      noteMarker = L.marker([AL_FASHER[0]-0.04, AL_FASHER[1]+0.02], { icon: noteIcon, pane:'crisis' })
+      noteMarker = L.marker([AL_FASHER[0] - 0.04, AL_FASHER[1] + 0.02], { icon: noteIcon, pane: 'crisis' })
         .addTo(crisisLayer);
 
       // 5) Optional: Camps
@@ -711,198 +1413,268 @@
        Abu Shouk,13.70,25.32,Almost empty,8000,110000
        Al Salam,13.60,25.42,Almost empty,5000,90000
     */
-    function addCampsLayer(){
-      campsLayer = L.layerGroup([], { pane:'crisis' });
+    function addCampsLayer() {
+      campsLayer = L.layerGroup([], { pane: 'crisis' });
+      layerControl.addOverlay(campsLayer, 'Camps (status)');
 
-      return new Promise(resolve=>{
-        if (!window.Papa){ resolve([]); return; }
+      return new Promise(resolve => {
+        if (!window.Papa) { resolve([]); return; }
         Papa.parse('./data/camps.csv', {
-          download:true, header:true, dynamicTyping:true, skipEmptyLines:true,
+          download: true, 
+          header: true, 
+          dynamicTyping: true, 
+          skipEmptyLines: true,
           complete: (res) => {
             const rows = (res.data || []).filter(r => Number.isFinite(parseFloat(r.lat)) && Number.isFinite(parseFloat(r.lon)));
             campsData = rows.map(r => ({
               name: r.name || 'Camp',
-              lat: parseFloat(r.lat), lon: parseFloat(r.lon),
-              status: String(r.status||'').toLowerCase().trim(),
-              occupancy: Number(r.occupancy)||null, capacity: Number(r.capacity)||null
+              lat: parseFloat(r.lat), 
+              lon: parseFloat(r.lon),
+              status: String(r.status || '').toLowerCase().trim(),
+              occupancy: Number(r.occupancy) || null, 
+              capacity: Number(r.capacity) || null
             }));
 
             rows.forEach(r => {
-              const status = String(r.status||'').toLowerCase().trim();
+              const status = String(r.status || '').toLowerCase().trim();
               const cls = status.includes('almost') && status.includes('empty') ? 'bad' : '';
               const icon = L.divIcon({
-                className:'camp-pin',
-                html:`<div class="camp-icon ${cls}"></div>`,
-                iconSize:[18,18], iconAnchor:[9,9]
+                className: 'camp-pin',
+                html: `<div class="camp-icon ${cls}"></div>`,
+                iconSize: [18, 18], 
+                iconAnchor: [9, 9]
               });
-              const occ = Number(r.occupancy)||null, cap = Number(r.capacity)||null;
+              const occ = Number(r.occupancy) || null, cap = Number(r.capacity) || null;
               const occTxt = (occ && cap) ? `${occ.toLocaleString()} / ${cap.toLocaleString()}` : (occ ? occ.toLocaleString() : '—');
 
-              L.marker([parseFloat(r.lat), parseFloat(r.lon)], { icon, pane:'crisis' })
-                .bindTooltip(`${escapeHtml(r.name||'Camp')} · ${status || 'status unknown'}`, {direction:'top', offset:[0,-6]})
+              L.marker([parseFloat(r.lat), parseFloat(r.lon)], { icon, pane: 'crisis' })
+                .bindTooltip(`${escapeHtml(r.name || 'Camp')} · ${status || 'status unknown'}`, { direction: 'top', offset: [0, -6] })
                 .bindPopup(`
                   <div class="kpi-card">
-                    <div class="kpi" style="font-size:16px">${escapeHtml(r.name||'Camp')}</div>
-                    <div class="label">Status: ${escapeHtml(status||'unknown')}</div>
+                    <div class="kpi" style="font-size:16px">${escapeHtml(r.name || 'Camp')}</div>
+                    <div class="label">Status: ${escapeHtml(status || 'unknown')}</div>
                     <div class="label">Occupancy: ${occTxt}</div>
                   </div>`)
                 .addTo(campsLayer);
             });
 
+            if (rows.length) { campsLayer.addTo(map); }
             resolve(campsData);
           },
-          error:()=>{ resolve([]); }
+          error: () => { resolve([]); }
         });
       });
     }
 
-    // ─── Potential routes overlay (El Fasher → Tawila, At Tina) ────────
-    function setupPotentialRoutes(){
-      map.createPane('potential'); map.getPane('potential').style.zIndex = 475;
+    // ─── NEW: Potential routes overlay (El Fasher → Tawila, At Tina) ───
+    function setupPotentialRoutes() {
+      // Dedicated pane on top of regular flows
+      map.createPane('potential'); 
+      map.getPane('potential').style.zIndex = 475;
 
-      const origin = { id:'ELFASHER', name:'El Fasher', lat:AL_FASHER[0], lon:AL_FASHER[1] };
+      const origin = { id: 'ELFASHER', name: 'El Fasher', lat: AL_FASHER[0], lon: AL_FASHER[1] };
       const dests = [
-        { id:'SD02170', name:'Tawila',  lat:13.351266, lon:24.856704 },
-        { id:'SD02171', name:'At Tina', lat:15.167895, lon:23.127019 }
+        { id: 'SD02170', name: 'Tawila',  lat: 13.351266, lon: 24.856704 },
+        { id: 'SD02171', name: 'At Tina', lat: 15.167895, lon: 23.127019 }
       ];
 
+      // CanvasFlowmap features
       const fc = {
-        type:'FeatureCollection',
-        features: dests.map((d,i)=>({
-          type:'Feature',
-          geometry:{ type:'Point', coordinates:[origin.lon, origin.lat] },
-          properties:{
-            s_state_id: origin.id, s_State: origin.name, s_lat: origin.lat, s_lon: origin.lon,
-            e_locality_id: d.id, e_locality: d.name, e_lat: d.lat, e_lon: d.lon,
-            e_Volume: 100 + i*10
+        type: 'FeatureCollection',
+        features: dests.map((d, i) => ({
+          type: 'Feature',
+          geometry: { type: 'Point', coordinates: [origin.lon, origin.lat] },
+          properties: {
+            s_state_id: origin.id, 
+            s_State: origin.name, 
+            s_lat: origin.lat, 
+            s_lon: origin.lon,
+            e_locality_id: d.id, 
+            e_locality: d.name, 
+            e_lat: d.lat, 
+            e_lon: d.lon,
+            e_Volume: 100 + i * 10 // small dummy volume
           }
         }))
       };
 
       routesLayer = L.canvasFlowmapLayer(fc, {
-        pane:'potential',
-        originAndDestinationFieldIds:{
-          originUniqueIdField:'s_state_id',
-          originGeometry:{ x:'s_lon', y:'s_lat' },
-          destinationUniqueIdField:'e_locality_id',
-          destinationGeometry:{ x:'e_lon', y:'e_lat' }
+        pane: 'potential',
+        originAndDestinationFieldIds: {
+          originUniqueIdField: 's_state_id',
+          originGeometry: { x: 's_lon', y: 's_lat' },
+          destinationUniqueIdField: 'e_locality_id',
+          destinationGeometry: { x: 'e_lon', y: 'e_lat' }
         },
-        pointToLayer:()=> L.circleMarker([0,0],{radius:0.01,opacity:0,fillOpacity:0}),
-        canvasBezierStyle:{
-          type:'classBreaks', field:'e_Volume',
-          classBreakInfos:[
-            { classMinValue:1, classMaxValue:9999999, symbol:{ strokeStyle:getCSS('--potential','#0ea5e9'), lineWidth:3.2, lineCap:'round', shadowColor:'#7dd3fc', shadowBlur:3 } }
+        pointToLayer: () => L.circleMarker([0, 0], { radius: 0.01, opacity: 0, fillOpacity: 0 }), // hide internal points
+        canvasBezierStyle: {
+          type: 'classBreaks', 
+          field: 'e_Volume',
+          classBreakInfos: [
+            { 
+              classMinValue: 1, 
+              classMaxValue: 9999999, 
+              symbol: { 
+                strokeStyle: getCSS('--potential','#0ea5e9'), 
+                lineWidth: 3.2, 
+                lineCap: 'round', 
+                shadowColor: '#7dd3fc', 
+                shadowBlur: 3 
+              } 
+            }
           ],
-          defaultSymbol:{ strokeStyle:getCSS('--potential','#0ea5e9'), lineWidth:3.2, lineCap:'round', shadowColor:'#7dd3fc', shadowBlur:3 }
+          defaultSymbol: { 
+            strokeStyle: getCSS('--potential','#0ea5e9'), 
+            lineWidth: 3.2, 
+            lineCap: 'round', 
+            shadowColor: '#7dd3fc', 
+            shadowBlur: 3 
+          }
         },
-        pathDisplayMode:'all',
-        animationStarted:true,
-        animationEasingFamily:'Linear',
-        animationEasingType:'None',
-        animationDuration:3000
+        pathDisplayMode: 'all',
+        animationStarted: true,
+        animationEasingFamily: 'Linear',
+        animationEasingType: 'None',
+        animationDuration: 3000
       });
 
-      routesMarkers = L.layerGroup([], { pane:'potential' });
-      dests.forEach(d=>{
+      // Destination markers (glow)
+      routesMarkers = L.layerGroup([], { pane: 'potential' });
+      dests.forEach(d => {
         const icon = L.divIcon({
-          className:'dest-icon',
-          html:`<div class="dot" style="--d:22px"></div>`,
-          iconSize:[22,22], iconAnchor:[11,11]
+          className: 'dest-icon',
+          html: `<div class="dot" style="--d:22px"></div>`,
+          iconSize: [22, 22], 
+          iconAnchor: [11, 11]
         });
-        L.marker([d.lat, d.lon], { icon, pane:'potential' })
-          .bindTooltip(`${escapeHtml(d.name)} • ${d.id}`, {direction:'top', offset:[0,-8]})
+        L.marker([d.lat, d.lon], { icon, pane: 'potential' })
+          .bindTooltip(`${escapeHtml(d.name)} • ${d.id}`, { direction: 'top', offset: [0, -8] })
           .addTo(routesMarkers);
       });
 
+      // Origin marker (pulsing)
       routesOrigin = L.marker(AL_FASHER, {
-        pane:'potential',
-        icon: L.divIcon({ className:'origin-pulse-icon', html:'<div class="pulse" style="--d:28px"></div>', iconSize:[28,28], iconAnchor:[14,14] })
-      }).bindTooltip('Origin: El Fasher', {direction:'top', offset:[0,-4]});
+        pane: 'potential',
+        icon: L.divIcon({ 
+          className: 'origin-pulse-icon', 
+          html: '<div class="pulse" style="--d:28px"></div>', 
+          iconSize: [28, 28], 
+          iconAnchor: [14, 14] 
+        })
+      }).bindTooltip('Origin: El Fasher', { direction: 'top', offset: [0, -4] });
 
+      // Group for easy toggle
       routesGroup = L.featureGroup([routesLayer, routesMarkers, routesOrigin]);
       layerControl.addOverlay(routesGroup, 'Potential routes (El Fasher → Tawila, At Tina)');
     }
 
-    function toggleRoutes(){
-      if (!routesGroup){ setupPotentialRoutes(); }
+    function toggleRoutes() {
+      if (!routesGroup) { setupPotentialRoutes(); }
       routesVisible = !routesVisible;
-      if (routesVisible){
+      if (routesVisible) {
         if (!map.hasLayer(routesGroup)) routesGroup.addTo(map);
         routesLayer?.setAnimationStarted?.(true);
-        try{
+        try {
           const b = L.latLngBounds([AL_FASHER]);
-          routesMarkers?.eachLayer?.(m=> b.extend(m.getLatLng()));
+          routesMarkers?.eachLayer?.(m => b.extend(m.getLatLng()));
           map.fitBounds(b.pad(0.2));
-        }catch{}
-      }else{
+        } catch {}
+      } else {
         if (map.hasLayer(routesGroup)) map.removeLayer(routesGroup);
       }
       updateBtnStates();
     }
 
-    // ─── Helpers ---------------------------------------------------------
-    function toGeoJSON(source){
+    // ─── Helpers
+    function toGeoJSON(source) {
       if (!source) return null;
-      if (source.type === 'Topology' && window.topojson?.feature){
+      if (source.type === 'Topology' && window.topojson?.feature) {
         const keys = Object.keys(source.objects || {});
         const key = keys.find(k => /admin.?1/i.test(k)) || keys[0];
         return key ? topojson.feature(source, source.objects[key]) : null;
       }
       return source; // assume GeoJSON
     }
-    function getCSS(varName, fallback){
+    
+    function getCSS(varName, fallback) {
       const v = getComputedStyle(document.documentElement).getPropertyValue(varName);
       return (v && v.trim()) ? v.trim() : fallback;
     }
-    function getAdmin1Name(props = {}){
+    
+    function getAdmin1Name(props = {}) {
       return props.ADM1_EN || props.NAME_1 || props.admin1Name || props.state_name || props.State || props.NAME || props.ADM1_PCODE || null;
     }
-    function getAdmin1Code(props = {}){
+    
+    function getAdmin1Code(props = {}) {
       const candidates = [props.ADM1_PCODE, props.STATE_CODE, props.code, props.STATECODE, props.state_code];
       const code = (candidates.find(x => x) || '').toString().trim();
       return code || null;
     }
-    function normalizeRow(r){
+    
+    function safeCenter(layer) {
+      try { return layer.getBounds().getCenter(); } catch { return null; }
+    }
+    
+    function normalizeRow(r) {
       return {
         s_state_id: String(r.s_state_id || r.origin_state_id || r.state_code || '').trim(),
         s_State: r.s_State || r.origin_state || r.state || 'Unknown',
-        s_lat: parseFloat(r.s_lat), s_lon: parseFloat(r.s_lon),
+        s_lat: parseFloat(r.s_lat), 
+        s_lon: parseFloat(r.s_lon),
         e_locality_id: String(r.e_locality_id || r.dest_locality_id || r.locality_code || '').trim(),
         e_locality: r.e_locality || r.dest_locality || r.locality || 'Unknown',
-        e_lat: parseFloat(r.e_lat), e_lon: parseFloat(r.e_lon),
+        e_lat: parseFloat(r.e_lat), 
+        e_lon: parseFloat(r.e_lon),
         e_Volume: parseFloat(r.e_Volume || r.volume || r.total || 0) || 0,
         main_needs: r.main_needs || r.needs || '',
         ...r
       };
     }
-    function computeTotals(data){
+    
+    function computeTotals(data) {
       const destinationTotals = new Map();
       const originTotals = new Map();
-      for (const d of data){
+      const destAggIndex = new Map(); // id -> {id, name, lat, lon, total}
+      for (const d of data) {
         destinationTotals.set(d.e_locality_id, (destinationTotals.get(d.e_locality_id) || 0) + d.e_Volume);
         originTotals.set(d.s_state_id, (originTotals.get(d.s_state_id) || 0) + d.e_Volume);
+        if (!destAggIndex.has(d.e_locality_id)) {
+          destAggIndex.set(d.e_locality_id, { id: d.e_locality_id, name: d.e_locality || 'Unknown', lat: d.e_lat, lon: d.e_lon, total: 0 });
+        }
+        destAggIndex.get(d.e_locality_id).total += d.e_Volume;
       }
-      return { destinationTotals, originTotals };
+      const destAgg = [...destAggIndex.values()];
+      return { destinationTotals, originTotals, destAgg };
     }
-    function scaleRadiusLog(value, minV, maxV, rMin, rMax){
+    
+    function scaleRadiusLog(value, minV, maxV, rMin, rMax) {
       const v = Math.max(minV || 1, Math.min(maxV || value || 1, value || 1));
       const a = Math.log(v) - Math.log(minV || 1);
       const b = Math.log(maxV || v) - Math.log(minV || 1);
       const t = b > 0 ? a / b : 0;
       return rMin + (rMax - rMin) * t;
     }
-    function latlonKey(lat, lon){ return `${Number(lat).toFixed(4)},${Number(lon).toFixed(4)}`; }
-    function formatNumber(x){ try { return Number(x).toLocaleString(undefined); } catch { return x; } }
-    function escapeHtml(str){ return String(str).replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[s])); }
+    
+    function latlonKey(lat, lon) { 
+      return `${Number(lat).toFixed(4)},${Number(lon).toFixed(4)}`; 
+    }
+    
+    function formatNumber(x) { 
+      try { return Number(x).toLocaleString(undefined); } catch { return x; } 
+    }
+    
+    function escapeHtml(str) { 
+      return String(str).replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[s])); 
+    }
 
-    /* ─── Story / Slideshow logic ─────────────────────────────────────── */
-    (()=>{
+    /* ─── Story / Slideshow logic (REWRITTEN) ──────────────────────────── */
+    (() => {
       const SLIDE_MS = 6000;    // autoplay per slide
       const FLY_DUR  = 1.4;     // flyTo seconds
-      const UI_DELAY = 420;     // ms delay after fly
+      const UI_DELAY = 420;     // ms delay after fly before UI/tooltip
       const TOUR_STEP = 3000;   // ms per camp during tour
 
-      // Story UI
+      // Grab story UI
       const storyPanel = document.getElementById('story-panel');
       const storyTitle = document.getElementById('story-title');
       const storyBody  = document.getElementById('story-body');
@@ -922,7 +1694,7 @@
       let currentCleanup = null;
       let tour = null;
 
-      function flyTo(lat, lon, zoom){
+      function flyTo(lat, lon, zoom) {
         return new Promise(resolve => {
           if (!map) return resolve();
           const onEnd = () => { map.off('moveend', onEnd); resolve(); };
@@ -930,186 +1702,251 @@
           map.flyTo([lat, lon], zoom, { duration: FLY_DUR, easeLinearity: 1, animate: true, noMoveStart: false });
         });
       }
+      
       const delay = (ms = UI_DELAY) => new Promise(r => setTimeout(r, ms));
       const addAttention = id => document.getElementById(id)?.classList.add('attention');
       const removeAttention = id => document.getElementById(id)?.classList.remove('attention');
 
-      function clearFlowSelection(){
+      function highlightById(field, candidateIds, additive = false) {
+        if (!flowmapLayer || !flowmapLayer.selectFeaturesForPathDisplayById) return false;
+        const ids = Array.isArray(candidateIds) ? candidateIds : [candidateIds];
+        for (const id of ids) {
+          try {
+            flowmapLayer.selectFeaturesForPathDisplayById(field, String(id), !additive, 'SELECTION_NEW');
+            return true;
+          } catch {}
+        }
+        return false;
+      }
+      
+      function clearFlowSelection() {
         try {
           flowmapLayer?.clearAllPathSelections?.();
           flowmapLayer?.setPathDisplayMode?.('all');
         } catch {}
       }
-      function setFlowAnimation(started){
+      
+      function setFlowAnimation(started) {
         try { flowmapLayer?.setAnimationStarted?.(started); } catch {}
       }
-      function pauseGlobalAnimationForStory(){
+      
+      function pauseGlobalAnimationForStory() {
         prevAnimationState = isAnimationPlaying;
         isAnimationPlaying = false;
         setFlowAnimation(false);
         updateBtnStates?.();
       }
-      function restoreGlobalAnimationAfterStory(){
+      
+      function restoreGlobalAnimationAfterStory() {
         const resume = prevAnimationState === true;
         isAnimationPlaying = resume;
         setFlowAnimation(resume);
         updateBtnStates?.();
       }
-      function stopAutoplay(){ if (autoplayTimer){ clearTimeout(autoplayTimer); autoplayTimer = null; } }
-      function scheduleAutoplay(){
+      
+      function stopAutoplay() { 
+        if (autoplayTimer) { 
+          clearTimeout(autoplayTimer); 
+          autoplayTimer = null; 
+        } 
+      }
+      
+      function scheduleAutoplay() {
         stopAutoplay();
         if (!autoplay) return;
-        autoplayTimer = setTimeout(()=> goToSlide(slideIdx + 1, { userTriggered:false }), SLIDE_MS);
+        autoplayTimer = setTimeout(() => goToSlide(slideIdx + 1, { userTriggered: false }), SLIDE_MS);
       }
-      function setAutoplay(val){
+      
+      function setAutoplay(val) {
         autoplay = !!val;
         btnToggle.innerHTML = autoplay ? '<i class="fa-solid fa-pause"></i>' : '<i class="fa-solid fa-play"></i>';
         if (autoplay) scheduleAutoplay(); else stopAutoplay();
       }
-      function buildDots(){
+      
+      function buildDots() {
         storyDots.innerHTML = '';
-        for (let i=0;i<slides.length;i++){
+        for (let i = 0; i < slides.length; i++) {
           const d = document.createElement('div');
-          d.className = 'story-dot' + (i===slideIdx?' active':'');
+          d.className = 'story-dot' + (i === slideIdx ? ' active' : '');
           d.title = `Slide ${i+1}`;
-          d.onclick = ()=> goToSlide(i, { userTriggered:true });
+          d.onclick = () => goToSlide(i, { userTriggered: true });
           storyDots.appendChild(d);
         }
       }
-      function setDotsActive(){
-        [...storyDots.children].forEach((c,i)=> c.classList.toggle('active', i===slideIdx));
+      
+      function setDotsActive() {
+        [...storyDots.children].forEach((c, i) => c.classList.toggle('active', i === slideIdx));
         storyCount.textContent = `${slideIdx+1}/${slides.length}`;
       }
-      function cleanupSlide(){
-        if (currentCleanup){ try{ currentCleanup(); }catch{} currentCleanup=null; }
+      
+      function cleanupSlide() {
+        if (currentCleanup) { 
+          try { currentCleanup(); } catch {} 
+          currentCleanup = null; 
+        }
         removeAttention('kpi-card');
         removeAttention('donut-wrap');
         removeAttention('note-card');
-        if (tour){ tour.stop(); tour = null; }
-        if (window.siegeRing){
-          try { siegeRing.setStyle({ dashOffset:'0', weight:2 }); } catch {}
+        if (tour) { tour.stop(); tour = null; }
+        if (window.siegeRing) {
+          try { siegeRing.setStyle({ dashOffset: '0', weight: 2 }); } catch {}
         }
       }
 
-      class CampTour{
-        constructor(rows, stepMs = TOUR_STEP){
+      class CampTour {
+        constructor(rows, stepMs = TOUR_STEP) {
           this.rows = rows.slice();
-          const almost = this.rows.filter(r => String(r.status||'').toLowerCase().includes('almost') && String(r.status||'').toLowerCase().includes('empty'));
+          const almost = this.rows.filter(r => 
+            String(r.status || '').toLowerCase().includes('almost') && 
+            String(r.status || '').toLowerCase().includes('empty')
+          );
           const pool = (almost.length ? almost : this.rows).slice();
-          pool.sort((a,b)=> (b.capacity||0)-(a.capacity||0) || (b.occupancy||0)-(a.occupancy||0));
-          this.path = pool.slice(0,3);
-          this.i = 0; this.timer = null; this.stepMs = stepMs; this._stopped = false;
+          pool.sort((a, b) => (b.capacity || 0) - (a.capacity || 0) || (b.occupancy || 0) - (a.occupancy || 0));
+          this.path = pool.slice(0, 3);
+          this.i = 0; 
+          this.timer = null; 
+          this.stepMs = stepMs; 
+          this._stopped = false;
         }
-        async step(){
+        
+        async step() {
           if (this._stopped || !this.path.length) return;
-          const r = this.path[this.i % this.path.length]; this.i++;
-          await flyTo(r.lat, r.lon, Math.max(map.getZoom()||8, 10));
+          const r = this.path[this.i % this.path.length]; 
+          this.i++;
+          await flyTo(r.lat, r.lon, Math.max(map.getZoom() || 8, 10));
           await delay();
           if (this._stopped) return;
-          let best=null, bestD=1e12;
-          campsLayer?.eachLayer?.(l=>{
-            if (l.getLatLng){
+          let best = null, bestD = 1e12;
+          campsLayer?.eachLayer?.(l => {
+            if (l.getLatLng) {
               const d = map.distance(l.getLatLng(), L.latLng(r.lat, r.lon));
-              if (d<bestD){ bestD=d; best=l; }
+              if (d < bestD) { bestD = d; best = l; }
             }
           });
-          try{
+          try {
             const node = best?._icon || best?._container;
             node?.classList?.add('attention');
             best?.openTooltip();
-            setTimeout(()=>{ node?.classList?.remove('attention'); best?.closeTooltip(); }, 1400);
-          }catch{}
+            setTimeout(() => { 
+              node?.classList?.remove('attention'); 
+              best?.closeTooltip(); 
+            }, 1400);
+          } catch {}
         }
-        start(){ if (this._stopped || !this.path.length) return; this.step(); this.timer = setInterval(()=>this.step(), this.stepMs); }
-        stop(){ this._stopped = true; if (this.timer) clearInterval(this.timer); this.timer=null; }
+        
+        start() { 
+          if (this._stopped || !this.path.length) return; 
+          this.step(); 
+          this.timer = setInterval(() => this.step(), this.stepMs); 
+        }
+        
+        stop() { 
+          this._stopped = true; 
+          if (this.timer) clearInterval(this.timer); 
+          this.timer = null; 
+        }
       }
 
       const slides = [
         {
-          id:'siege',
-          title:'Under RSF siege since May 2024',
-          html:`<p>Al Fasher and surroundings have been under siege since <strong>May 2024</strong>.</p>
+          id: 'siege',
+          title: 'Under RSF siege since May 2024',
+          html: `<p>Al Fasher and surroundings have been under siege since <strong>May 2024</strong>.</p>
                 <p>A dashed red ring marks the siege area; tooltip shows elapsed months.</p>`,
-          async focus(){
+          async focus() {
             cleanupSlide();
             pauseGlobalAnimationForStory();
             clearFlowSelection();
+            highlightById('s_state_id', ['SD09', 'SD07', 'SDNF', 'North Darfur']);
 
-            const target = AL_FASHER || [13.636,25.349];
+            const target = AL_FASHER || [13.636, 25.349];
             await flyTo(target[0], target[1], 10);
             await delay(UI_DELAY);
 
-            let off=0, throb=true;
-            const interval = setInterval(()=>{
+            let off = 0, throb = true;
+            const interval = setInterval(() => {
               if (!siegeRing) return;
               off = (off + 2) % 24;
-              try { siegeRing.setStyle({ dashOffset:String(off), weight: throb ? 3 : 2 }); } catch {}
+              try { 
+                siegeRing.setStyle({ 
+                  dashOffset: String(off), 
+                  weight: throb ? 3 : 2 
+                }); 
+              } catch {}
               throb = !throb;
             }, 350);
-            currentCleanup = ()=>{ clearInterval(interval); try{ siegeRing?.setStyle?.({dashOffset:'0', weight:2}); }catch{} };
+            currentCleanup = () => { 
+              clearInterval(interval); 
+              try { 
+                siegeRing?.setStyle?.({ dashOffset: '0', weight: 2 }); 
+              } catch {} 
+            };
           }
         },
         {
-          id:'attacks',
-          title:'More than 240 attacks',
-          html:`<p>A pinned KPI summarizes intensity: <strong>240+ attacks</strong>.</p>`,
-          async focus(){
+          id: 'attacks',
+          title: 'More than 240 attacks',
+          html: `<p>A pinned KPI summarizes intensity: <strong>240+ attacks</strong>.</p>`,
+          async focus() {
             cleanupSlide();
             pauseGlobalAnimationForStory();
-            const p = kpiMarker?.getLatLng?.() || L.latLng((AL_FASHER?.[0]||13.636)+0.04, (AL_FASHER?.[1]||25.349)-0.04);
-            await flyTo(p.lat, p.lng, Math.max(map.getZoom()||8, 10));
+            const p = kpiMarker?.getLatLng?.() || L.latLng((AL_FASHER?.[0] || 13.636) + 0.04, (AL_FASHER?.[1] || 25.349) - 0.04);
+            await flyTo(p.lat, p.lng, Math.max(map.getZoom() || 8, 10));
             await delay(UI_DELAY);
-            addAttention('kpi-card'); currentCleanup = ()=> removeAttention('kpi-card');
+            addAttention('kpi-card'); 
+            currentCleanup = () => removeAttention('kpi-card');
           }
         },
         {
-          id:'displaced',
-          title:'More than 80% displaced',
-          html:`<p>A <strong>donut marker</strong> shows the share displaced — currently set to <strong>80%</strong>.</p>`,
-          async focus(){
+          id: 'displaced',
+          title: 'More than 80% displaced',
+          html: `<p>A <strong>donut marker</strong> shows the share displaced — currently set to <strong>80%</strong>.</p>`,
+          async focus() {
             cleanupSlide();
             pauseGlobalAnimationForStory();
-            const p = donutMarker?.getLatLng?.() || L.latLng((AL_FASHER?.[0]||13.636)+0.02, (AL_FASHER?.[1]||25.349)+0.07);
-            await flyTo(p.lat, p.lng, Math.max(map.getZoom()||8, 10));
+            const p = donutMarker?.getLatLng?.() || L.latLng((AL_FASHER?.[0] || 13.636) + 0.02, (AL_FASHER?.[1] || 25.349) + 0.07);
+            await flyTo(p.lat, p.lng, Math.max(map.getZoom() || 8, 10));
             await delay(UI_DELAY);
-            addAttention('donut-wrap'); currentCleanup = ()=> removeAttention('donut-wrap');
+            addAttention('donut-wrap'); 
+            currentCleanup = () => removeAttention('donut-wrap');
           }
         },
         {
-          id:'trapped',
-          title:'Hundreds of thousands trapped',
-          html:`<p>An alert note highlights that <strong>hundreds of thousands</strong> of civilians remain <strong>trapped</strong>.</p>`,
-          async focus(){
+          id: 'trapped',
+          title: 'Hundreds of thousands trapped',
+          html: `<p>An alert note highlights that <strong>hundreds of thousands</strong> of civilians remain <strong>trapped</strong>.</p>`,
+          async focus() {
             cleanupSlide();
             pauseGlobalAnimationForStory();
-            const p = noteMarker?.getLatLng?.() || L.latLng((AL_FASHER?.[0]||13.636)-0.04, (AL_FASHER?.[1]||25.349)+0.02);
-            await flyTo(p.lat, p.lng, Math.max(map.getZoom()||8, 10));
+            const p = noteMarker?.getLatLng?.() || L.latLng((AL_FASHER?.[0] || 13.636) - 0.04, (AL_FASHER?.[1] || 25.349) + 0.02);
+            await flyTo(p.lat, p.lng, Math.max(map.getZoom() || 8, 10));
             await delay(UI_DELAY);
-            addAttention('note-card'); currentCleanup = ()=> removeAttention('note-card');
+            addAttention('note-card'); 
+            currentCleanup = () => removeAttention('note-card');
           }
         },
         {
-          id:'camps',
-          title:'Three biggest camps almost empty',
-          html:`<p>A mini tour focuses the <strong>three largest camps</strong> flagged <em>almost empty</em>. The map pans smoothly.</p>`,
-          async focus(){
+          id: 'camps',
+          title: 'Three biggest camps almost empty',
+          html: `<p>A mini tour focuses the <strong>three largest camps</strong> flagged <em>almost empty</em>. The map pans smoothly.</p>`,
+          async focus() {
             cleanupSlide();
             pauseGlobalAnimationForStory();
             clearFlowSelection();
 
             const rows = await campsReady;
-            if (!rows || !rows.length){
+            if (!rows || !rows.length) {
               storyBody.innerHTML += `<p style="margin-top:8px;color:#8a99ac">No <code>data/camps.csv</code> found or no rows. Add it to enable this slide.</p>`;
               return;
             }
             const tour = new CampTour(rows, 3000);
             tour.start();
-            currentCleanup = ()=> tour?.stop();
+            currentCleanup = () => tour?.stop();
           }
         }
       ];
 
-      async function goToSlide(idx, { userTriggered } = { userTriggered:false }){
+      async function goToSlide(idx, { userTriggered } = { userTriggered: false }) {
         stopAutoplay();
         if (idx < 0) idx = slides.length - 1;
         if (idx >= slides.length) idx = 0;
@@ -1124,29 +1961,22 @@
         scheduleAutoplay();
       }
 
-      function toggleStory(open){
+      function toggleStory(open) {
         storyOpen = !!open;
         storyPanel.style.display = storyOpen ? 'block' : 'none';
         btnStory.classList.toggle('active', storyOpen);
         updateBtnStates?.();
 
-        if (storyOpen){
+        if (storyOpen) {
           // show crisis facts only while story is open
           if (crisisLayer && !map.hasLayer(crisisLayer)) crisisLayer.addTo(map);
 
           pauseGlobalAnimationForStory();
           slideIdx = 0;
-          storyDots.innerHTML = '';
-          for (let i=0;i<slides.length;i++){
-            const d = document.createElement('div');
-            d.className = 'story-dot' + (i===slideIdx?' active':'');
-            d.title = `Slide ${i+1}`;
-            d.onclick = ()=> goToSlide(i, { userTriggered:true });
-            storyDots.appendChild(d);
-          }
+          buildDots();
           setDotsActive();
           setAutoplay(true);
-          goToSlide(slideIdx, { userTriggered:false });
+          goToSlide(slideIdx, { userTriggered: false });
         } else {
           // hide crisis facts when story closes
           if (crisisLayer && map.hasLayer(crisisLayer)) map.removeLayer(crisisLayer);
@@ -1159,27 +1989,27 @@
       }
 
       // Bind controls
-      btnPrev.onclick   = () => goToSlide(slideIdx - 1, { userTriggered:true });
-      btnNext.onclick   = () => goToSlide(slideIdx + 1, { userTriggered:true });
+      btnPrev.onclick   = () => goToSlide(slideIdx - 1, { userTriggered: true });
+      btnNext.onclick   = () => goToSlide(slideIdx + 1, { userTriggered: true });
       btnToggle.onclick = () => setAutoplay(!autoplay);
       btnClose.onclick  = () => toggleStory(false);
       btnStory.onclick  = () => toggleStory(!storyOpen);
 
       // Keyboard support (only when panel open)
-      window.addEventListener('keydown', (e)=>{
+      window.addEventListener('keydown', (e) => {
         if (!storyOpen) return;
         if (e.key === 'Escape') return toggleStory(false);
-        if (e.key === 'ArrowLeft')  return goToSlide(slideIdx - 1, { userTriggered:true });
-        if (e.key === 'ArrowRight') return goToSlide(slideIdx + 1, { userTriggered:true });
-        if (e.code === 'Space'){ e.preventDefault(); return setAutoplay(!autoplay); }
+        if (e.key === 'ArrowLeft')  return goToSlide(slideIdx - 1, { userTriggered: true });
+        if (e.key === 'ArrowRight') return goToSlide(slideIdx + 1, { userTriggered: true });
+        if (e.code === 'Space') { e.preventDefault(); return setAutoplay(!autoplay); }
       });
 
       // Pause autoplay if window loses focus
-      window.addEventListener('blur', ()=> stopAutoplay());
+      window.addEventListener('blur', () => stopAutoplay());
 
       // Expose globally
       window.toggleStory = toggleStory;
-      window.goToSlide   = (i)=> goToSlide(i, { userTriggered:true });
+      window.goToSlide   = (i) => goToSlide(i, { userTriggered: true });
     })();
     /* ─── End Story Engine ───────────────────────────────────────────── */
 
