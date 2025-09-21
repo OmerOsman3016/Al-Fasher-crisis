@@ -1207,26 +1207,32 @@
         scheduleAutoplay();
       }
 
-      function toggleStory(open){
-        storyOpen = !!open;
-        storyPanel.style.display = storyOpen ? 'block' : 'none';
-        btnStory.classList.toggle('active', storyOpen);
-        updateBtnStates?.();
+     function toggleStory(open){
+  storyOpen = !!open;
+  storyPanel.style.display = storyOpen ? 'block' : 'none';
+  btnStory.classList.toggle('active', storyOpen);
+  updateBtnStates?.();
 
-        if (storyOpen){
-          pauseGlobalAnimationForStory();
-          slideIdx = 0;
-          buildDots();
-          setDotsActive();
-          setAutoplay(true);
-          goToSlide(slideIdx, { userTriggered:false });
-        } else {
-          stopAutoplay();
-          cleanupSlide();
-          clearFlowSelection();
-          restoreGlobalAnimationAfterStory();
-        }
-      }
+  if (storyOpen){
+    // show crisis facts only while story is open
+    if (crisisLayer && !map.hasLayer(crisisLayer)) crisisLayer.addTo(map);
+
+    pauseGlobalAnimationForStory();
+    slideIdx = 0;
+    buildDots();
+    setDotsActive();
+    setAutoplay(true);
+    goToSlide(slideIdx, { userTriggered:false });
+  } else {
+    // hide crisis facts when story closes
+    if (crisisLayer && map.hasLayer(crisisLayer)) map.removeLayer(crisisLayer);
+
+    stopAutoplay();
+    cleanupSlide();
+    clearFlowSelection();
+    restoreGlobalAnimationAfterStory();
+  }
+}
 
       // Bind controls
       btnPrev.onclick   = () => goToSlide(slideIdx - 1, { userTriggered:true });
