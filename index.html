@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
@@ -7,71 +7,56 @@
 
   <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
-  <!-- Font Awesome for icons -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkfKc2jT4Z1JykB8qNdQv9N6hZJcCShhHCNreQvJX2fC8Yq+X8Y+9i7Ww==" crossorigin="anonymous" referrerpolicy="no-referrer"/>
+  <!-- Font Awesome (optional) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer"/>
 
   <style>
-    :root {
-      --brand-primary: #2a5885;    /* IOM-ish deep blue */
-      --brand-accent:  #418FDE;    /* IOM accent blue */
-      --brand-warm1:   #ffb81c;    /* line class 1 */
-      --brand-warm2:   #ff671f;    /* line class 2 */
-      --brand-warm3:   #d22630;    /* line class 3 */
+    :root{
+      --brand-primary:#2a5885;  /* IOM deep blue */
+      --brand-accent:#418FDE;   /* IOM accent blue */
+      --brand-amber:#ffb81c;    /* hover highlight */
+      --line1:#ffb81c; --line2:#ff671f; --line3:#d22630;
     }
 
-    html, body { height: 100%; }
-
-    body {
-      margin: 0;
-      background: #f5f7fa;
-      color: #333;
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
-      display: flex;
-      flex-direction: column;
+    html, body { height:100%; }
+    body{
+      margin:0; background:#f5f7fa; color:#333;
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,Helvetica,Arial,"Apple Color Emoji","Segoe UI Emoji";
+      display:flex; flex-direction:column;
     }
 
-    .map-container { position: relative; flex: 1 1 auto; margin: 0; }
-    #map { position: absolute; inset: 0; }
+    .map-container{ position:relative; flex:1 1 auto; }
+    #map{ position:absolute; inset:0; }
 
-    .legend {
-      padding: 10px 12px;
-      background: rgba(255,255,255,0.95);
-      border-radius: 10px;
-      box-shadow: 0 6px 20px rgba(0,0,0,0.15);
-      line-height: 1.4;
-      font-size: 13px;
+    .loading-overlay{
+      position:absolute; inset:0; z-index:1100;
+      background:rgba(255,255,255,.85);
+      display:flex; flex-direction:column; align-items:center; justify-content:center;
     }
-    .legend h4 { margin: 0 0 8px; color: var(--brand-primary); font-size: 14px; letter-spacing: .3px; }
-    .legend .row { display: flex; align-items: center; gap: 8px; margin: 6px 0; }
-    .legend i { width: 18px; height: 3px; display: inline-block; opacity: .95; border-radius: 2px; }
+    .spinner{
+      width:44px; height:44px; border:4px solid #e7eef7; border-top-color:var(--brand-primary);
+      border-radius:50%; animation:spin 1s linear infinite; margin-bottom:12px;
+    }
+    @keyframes spin{ to{ transform:rotate(360deg); } }
 
-    .loading-overlay {
-      position: absolute; inset: 0;
-      background: rgba(255,255,255,.85);
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      z-index: 1100;
+    .info-panel{
+      position:absolute; left:12px; bottom:14px; z-index:1000;
+      background:rgba(255,255,255,.95); padding:12px 14px; border-radius:10px;
+      box-shadow:0 6px 20px rgba(0,0,0,.15); max-width:min(320px,70vw); font-size:13px;
+    }
+    .info-panel h3{ margin:0 0 6px; color:var(--brand-primary); font-size:16px; }
+    .info-panel p{ margin:0 0 8px; }
+    .info-panel .close-btn{ position:absolute; top:6px; right:8px; border:none; background:transparent; font-size:18px; color:#666; cursor:pointer; }
+
+    /* Admin1 labels */
+    .leaflet-tooltip.state-label{
+      background:transparent; border:none; box-shadow:none; padding:0;
+      color:#244b6b; font-weight:600; font-size:12px; letter-spacing:.2px;
+      text-shadow:0 0 2px #fff, 0 0 3px #fff, 0 0 4px #fff, 0 0 5px #fff; /* halo */
+      pointer-events:none;
     }
 
-    .spinner {
-      width: 44px; height: 44px; border: 4px solid #e7eef7; border-top-color: var(--brand-primary);
-      border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 12px;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-
-    .info-panel {
-      position: absolute; left: 12px; bottom: 14px; z-index: 1000;
-      background: rgba(255,255,255,0.95);
-      padding: 12px 14px; border-radius: 10px; box-shadow: 0 6px 20px rgba(0,0,0,0.15);
-      max-width: min(320px, 70vw);
-      font-size: 13px;
-    }
-    .info-panel h3 { margin: 0 0 6px; color: var(--brand-primary); font-size: 16px; }
-    .info-panel p { margin: 0 0 8px; }
-    .info-panel .close-btn { position: absolute; top: 6px; right: 8px; border: none; background: transparent; font-size: 18px; color: #666; cursor: pointer; }
-
-    @media (max-width: 768px) {
-      .info-panel { font-size: 12px; }
-    }
+    @media (max-width:768px){ .info-panel{ font-size:12px; } }
   </style>
 </head>
 <body>
@@ -84,11 +69,11 @@
     </div>
 
     <div class="info-panel" id="info-panel">
-      <button class="close-btn" id="close-info" aria-label="Close help">&times;</button>
+      <button class="close-btn" id="close-info" aria-label="Close">&times;</button>
       <h3>How to use this map</h3>
       <p><strong>Click</strong> an origin state or destination point to focus flows.</p>
       <p><strong>Hover</strong> features for quick details.</p>
-      <p>Shortcuts: <kbd>Space</kbd> play/pause animation, <kbd>F</kbd> toggle flows, <kbd>P</kbd> toggle points, <kbd>R</kbd> reset view.</p>
+      <p>Shortcuts: <kbd>Space</kbd> play/pause, <kbd>F</kbd> flows, <kbd>P</kbd> points, <kbd>R</kbd> reset view.</p>
     </div>
   </div>
 
@@ -96,133 +81,92 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   <script src="https://unpkg.com/@tweenjs/tween.js@18.6.4/dist/tween.umd.js"></script>
   <script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
-  <!-- TopoJSON client (handles ADMIN1.json if it's TopoJSON) -->
+  <!-- Handle TopoJSON ADMIN1 -->
   <script src="https://unpkg.com/topojson-client@3"></script>
-  <!-- Local copy of CanvasFlowmapLayer (ensure this path is valid in your project) -->
+  <!-- Local CanvasFlowmapLayer -->
   <script src="./src/CanvasFlowmapLayer.js"></script>
 
   <script>
-  (function() {
-    const MAPBOX_TOKEN = 'pk.eyJ1Ijoib21lcm9zbWFuIiwiYSI6ImUxZDBkODBlNjQxMDE2M2Y3OTQ3MWIwNTJkMjgzZTI3In0.ekCHuxRflTOO0RpQ6rQR7Q'; // consider moving to env/config
+  (function(){
+    const MAPBOX_TOKEN = 'pk.eyJ1Ijoib21lcm9zbWFuIiwiYSI6ImUxZDBkODBlNjQxMDE2M2Y3OTQ3MWIwNTJkMjgzZTI3In0.ekCHuxRflTOO0RpQ6rQR7Q';
 
-    // --- Map init ---
+    // Map init
     const map = L.map('map', {
-      preferCanvas: true,
-      zoomControl: false,
-      minZoom: 4, maxZoom: 11,
-      zoomSnap: 0.5, zoomDelta: 0.5,
-      attributionControl: true
-    }).setView([16, 30], 5.5);
+      preferCanvas:true, zoomControl:false,
+      minZoom:4, maxZoom:11, zoomSnap:0.5, zoomDelta:0.5,
+      attributionControl:true
+    }).setView([16,30], 5.5);
 
     // Basemaps
-    const cartoLight = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { attribution: '&copy; OpenStreetMap & CartoDB' });
-    const mbLight   = L.tileLayer(`https://api.mapbox.com/styles/v1/mapbox/light-v10/tiles/{z}/{x}/{y}?access_token=${MAPBOX_TOKEN}`, { tileSize: 512, zoomOffset: -1, attribution: '&copy; Mapbox & OpenStreetMap' });
-    const mbStreets = L.tileLayer(`https://api.mapbox.com/styles/v1/mapbox/streets-v11/tiles/{z}/{x}/{y}?access_token=${MAPBOX_TOKEN}`, { tileSize: 512, zoomOffset: -1, attribution: '&copy; Mapbox & OpenStreetMap' });
-    const mbSat     = L.tileLayer(`https://api.mapbox.com/styles/v1/mapbox/satellite-v9/tiles/{z}/{x}/{y}?access_token=${MAPBOX_TOKEN}`, { tileSize: 512, zoomOffset: -1, attribution: '&copy; Mapbox & OpenStreetMap' });
-    const mbOutdoors= L.tileLayer(`https://api.mapbox.com/styles/v1/mapbox/outdoors-v11/tiles/{z}/{x}/{y}?access_token=${MAPBOX_TOKEN}`, { tileSize: 512, zoomOffset: -1, attribution: '&copy; Mapbox & OpenStreetMap' });
-    const mbCustom  = L.tileLayer('https://api.mapbox.com/styles/v1/omerosman/cm8oy6is4006101si7ll3bs4h/tiles/{z}/{x}/{y}?access_token=' + MAPBOX_TOKEN, { tileSize: 512, zoomOffset: -1, attribution: '&copy; Mapbox & OpenStreetMap' });
-
+    const cartoLight = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { attribution:'&copy; OpenStreetMap & CartoDB' });
+    const mbLight   = L.tileLayer(`https://api.mapbox.com/styles/v1/mapbox/light-v10/tiles/{z}/{x}/{y}?access_token=${MAPBOX_TOKEN}`, { tileSize:512, zoomOffset:-1, attribution:'&copy; Mapbox & OpenStreetMap' });
+    const mbStreets = L.tileLayer(`https://api.mapbox.com/styles/v1/mapbox/streets-v11/tiles/{z}/{x}/{y}?access_token=${MAPBOX_TOKEN}`, { tileSize:512, zoomOffset:-1, attribution:'&copy; Mapbox & OpenStreetMap' });
+    const mbSat     = L.tileLayer(`https://api.mapbox.com/styles/v1/mapbox/satellite-v9/tiles/{z}/{x}/{y}?access_token=${MAPBOX_TOKEN}`, { tileSize:512, zoomOffset:-1, attribution:'&copy; Mapbox & OpenStreetMap' });
+    const mbOutdoor = L.tileLayer(`https://api.mapbox.com/styles/v1/mapbox/outdoors-v11/tiles/{z}/{x}/{y}?access_token=${MAPBOX_TOKEN}`, { tileSize:512, zoomOffset:-1, attribution:'&copy; Mapbox & OpenStreetMap' });
+    const mbCustom  = L.tileLayer('https://api.mapbox.com/styles/v1/omerosman/cm8oy6is4006101si7ll3bs4h/tiles/{z}/{x}/{y}?access_token=' + MAPBOX_TOKEN, { tileSize:512, zoomOffset:-1, attribution:'&copy; Mapbox & OpenStreetMap' });
     mbCustom.addTo(map);
 
     const layerControl = L.control.layers({
       "Mapbox Custom": mbCustom,
       "Mapbox Light": mbLight,
       "Mapbox Streets": mbStreets,
-      "Mapbox Outdoors": mbOutdoors,
+      "Mapbox Outdoors": mbOutdoor,
       "Mapbox Satellite": mbSat,
       "Carto Light": cartoLight
     }).addTo(map);
 
-    L.control.scale({ position: 'bottomleft', metric: true, imperial: false }).addTo(map);
-    L.control.zoom({ position: 'bottomright' }).addTo(map);
+    L.control.scale({ position:'bottomleft', metric:true, imperial:false }).addTo(map);
+    L.control.zoom({ position:'bottomright' }).addTo(map);
 
-    let stateBoundariesLayer;    // for reference/fitBounds
-    let flowmapLayer;            // canvas flow layer instance
-    let isAnimationPlaying = true;
-    let showFlows = true;
-    let showPoints = true;
+    let stateBoundariesLayer, admin1Labels, flowmapLayer;
+    let isAnimationPlaying = true, showFlows = true, showPoints = true;
 
     // Info panel close
-    const helpClose = document.getElementById('close-info');
-    helpClose.addEventListener('click', () => document.getElementById('info-panel').style.display = 'none');
+    document.getElementById('close-info').addEventListener('click', () => {
+      document.getElementById('info-panel').style.display = 'none';
+    });
 
     // Keyboard shortcuts
     window.addEventListener('keydown', (e) => {
       if (e.target && e.target.closest && e.target.closest('input, textarea, [contenteditable="true"]')) return;
-      if (e.code === 'Space') { e.preventDefault(); toggleAnimation(); }
-      else if (e.key && e.key.toLowerCase() === 'f') toggleFlows();
-      else if (e.key && e.key.toLowerCase() === 'p') togglePoints();
-      else if (e.key && e.key.toLowerCase() === 'r') map.setView([16,30], 5.5);
+      const k = (e.key || '').toLowerCase();
+      if (e.code === 'Space'){ e.preventDefault(); toggleAnimation(); }
+      else if (k === 'f') toggleFlows();
+      else if (k === 'p') togglePoints();
+      else if (k === 'r') map.setView([16,30], 5.5);
     });
 
     function toggleAnimation(){
       isAnimationPlaying = !isAnimationPlaying;
-      if (flowmapLayer && typeof flowmapLayer.setAnimationStarted === 'function') {
-        flowmapLayer.setAnimationStarted(isAnimationPlaying);
-      }
+      if (flowmapLayer?.setAnimationStarted) flowmapLayer.setAnimationStarted(isAnimationPlaying);
     }
     function toggleFlows(){
       showFlows = !showFlows;
-      if (flowmapLayer && typeof flowmapLayer.setPathDisplayMode === 'function') {
-        flowmapLayer.setPathDisplayMode(showFlows ? 'all' : 'none');
-      }
+      if (flowmapLayer?.setPathDisplayMode) flowmapLayer.setPathDisplayMode(showFlows ? 'all' : 'none');
     }
     function togglePoints(){
       showPoints = !showPoints;
-      if (flowmapLayer && typeof flowmapLayer.setPointVisibility === 'function') {
-        flowmapLayer.setPointVisibility(showPoints);
-      }
+      if (flowmapLayer?.setPointVisibility) flowmapLayer.setPointVisibility(showPoints);
     }
 
-    // --- Load data ---
+    // --- Load data
     const overlay = document.getElementById('loading-overlay');
-
     Promise.all([
-      // Prefer ADMIN1.json; may be GeoJSON or TopoJSON
       fetch('./data/ADMIN1.json').then(r => (r.ok ? r.json() : null)).catch(() => null),
-      // Fallback to an older states file if present
       fetch('./data/sudan_states.geojson').then(r => (r.ok ? r.json() : null)).catch(() => null),
-      // CSV flows
       new Promise((resolve, reject) => {
         Papa.parse('./data/IDPs_Pathway.csv', {
-          download: true, header: true, dynamicTyping: true, skipEmptyLines: true,
-          complete: (res) => resolve(res.data), error: reject
+          download:true, header:true, dynamicTyping:true, skipEmptyLines:true,
+          complete: res => resolve(res.data), error: reject
         });
       })
-    ]).then(([admin1Maybe, statesFallback, rows]) => {
-      // Prefer ADMIN1.json; if Topology, convert to GeoJSON
-      const states = toGeoJSON(admin1Maybe) || toGeoJSON(statesFallback);
-
-      if (states) {
-        const baseStyle = { color: '#666', weight: 1, opacity: 0.8, fillOpacity: 0.05 };
-        stateBoundariesLayer = L.geoJSON(states, {
-          style: baseStyle,
-          onEachFeature: (feat, lyr) => {
-            const nm = getAdmin1Name(feat && feat.properties) || 'Admin 1';
-            lyr.bindTooltip(nm, { sticky: true });
-            lyr.on({
-              mouseover: (e) => e.target.setStyle({ weight: 2, fillOpacity: 0.08 }),
-              mouseout:  (e) => stateBoundariesLayer.resetStyle(e.target),
-              click:     (e) => {
-                try { map.fitBounds(e.target.getBounds(), { padding: [20, 20] }); } catch {}
-              }
-            });
-          }
-        }).addTo(map);
-
-        // Keep borders under the flows
-        stateBoundariesLayer.bringToBack();
-
-        // Fit once
-        try { map.fitBounds(stateBoundariesLayer.getBounds(), { padding: [20,20] }); } catch {}
-
-        // Add toggle to the layer control
-        layerControl.addOverlay(stateBoundariesLayer, 'Admin 1 Boundaries');
-      }
+    ]).then(([admin1Maybe, fallbackStates, rows]) => {
+      const states = toGeoJSON(admin1Maybe) || toGeoJSON(fallbackStates);
+      if (states) addStyledAdmin1(states);
 
       // Clean & process tabular rows
       const data = rows
-        .map(row => normalizeRow(row))
+        .map(r => normalizeRow(r))
         .filter(r =>
           Number.isFinite(r.s_lat) && Number.isFinite(r.s_lon) &&
           Number.isFinite(r.e_lat) && Number.isFinite(r.e_lon) &&
@@ -242,134 +186,158 @@
       console.error(err);
     });
 
-    // --- Helpers for ADMIN1.json ---
-    function toGeoJSON(source) {
-      if (!source) return null;
-      // If it's Topology (TopoJSON), convert to GeoJSON using topojson-client
-      if (source.type === 'Topology' && window.topojson && topojson.feature) {
-        const objectNames = Object.keys(source.objects || {});
-        if (objectNames.length) {
-          // If there's an object named 'ADMIN1' prefer it; otherwise take the first
-          const key = objectNames.find(k => /admin.?1/i.test(k)) || objectNames[0];
-          return topojson.feature(source, source.objects[key]);
+    // ---- Admin1 styled layer (casing + stroke + labels)
+    function addStyledAdmin1(states){
+      // Panes for drawing order
+      map.createPane('admin1-casing');  map.getPane('admin1-casing').style.zIndex = 350;
+      map.createPane('admin1-stroke');  map.getPane('admin1-stroke').style.zIndex = 351;
+      map.createPane('admin1-labels');  map.getPane('admin1-labels').style.zIndex = 352;
+
+      function strokeWeightForZoom(z){
+        return Math.max(0.8, Math.min(2.4, (z - 4) * 0.35)); // 0.8..2.4
+      }
+      const admin1StrokeStyle = () => ({
+        pane:'admin1-stroke',
+        color: getComputedStyle(document.documentElement).getPropertyValue('--brand-primary') || '#2a5885',
+        weight: strokeWeightForZoom(map.getZoom()),
+        opacity:0.95,
+        fillColor:'#eaf2fb',
+        fillOpacity:0.25,
+        lineJoin:'round', lineCap:'round',
+        smoothFactor:0.4, interactive:true
+      });
+      const admin1CasingStyle = () => ({
+        pane:'admin1-casing',
+        color:'#ffffff',
+        weight: strokeWeightForZoom(map.getZoom()) + 2,
+        opacity:0.9,
+        fillOpacity:0,
+        lineJoin:'round', lineCap:'round',
+        smoothFactor:0.4, interactive:false
+      });
+
+      const admin1Casing = L.geoJSON(states, { style: admin1CasingStyle, interactive:false });
+      const admin1Stroke = L.geoJSON(states, {
+        style: admin1StrokeStyle,
+        onEachFeature: (feat, lyr) => {
+          const nm = getAdmin1Name(feat?.properties) || 'Admin 1';
+          lyr.on({
+            mouseover:e=>{
+              e.target.setStyle({ color: getCSS('--brand-amber','#ffb81c'), weight: strokeWeightForZoom(map.getZoom()) + 1.2, fillOpacity:0.35 });
+              e.target.bringToFront();
+            },
+            mouseout:()=>admin1Stroke.resetStyle(lyr),
+            click:e=>{
+              try { map.fitBounds(e.target.getBounds(), { padding:[20,20] }); } catch{}
+              // Optional: filter flows by state code if we can detect it
+              const code = getAdmin1Code(feat?.properties);
+              if (code && flowmapLayer?.selectFeaturesForPathDisplayById){
+                try { flowmapLayer.selectFeaturesForPathDisplayById('s_state_id', String(code), true, 'SELECTION_NEW'); } catch {}
+              }
+            }
+          });
+          lyr.bindTooltip(nm, { sticky:true });
         }
+      });
+
+      // Labels: only when zoomed in
+      admin1Labels = L.layerGroup([], { pane:'admin1-labels' });
+      function rebuildLabels(){
+        admin1Labels.clearLayers();
+        if (map.getZoom() < 6) return;
+        admin1Stroke.eachLayer(l => {
+          const nm = getAdmin1Name(l.feature?.properties) || '';
+          if (!nm) return;
+          const c = safeCenter(l);
+          if (!c) return;
+          L.tooltip({
+            permanent:true, direction:'center', className:'state-label', pane:'admin1-labels'
+          }).setContent(nm).setLatLng(c).addTo(admin1Labels);
+        });
       }
-      // Assume plain GeoJSON
-      return source;
+
+      stateBoundariesLayer = L.featureGroup([admin1Casing, admin1Stroke]).addTo(map);
+      stateBoundariesLayer.bringToBack();
+      try { map.fitBounds(stateBoundariesLayer.getBounds(), { padding:[20,20] }); } catch {}
+
+      rebuildLabels();
+      admin1Labels.addTo(map);
+
+      layerControl.addOverlay(stateBoundariesLayer, 'Admin 1 Boundaries');
+      layerControl.addOverlay(admin1Labels, 'Admin 1 Labels');
+
+      map.on('zoomend', ()=>{
+        admin1Casing.setStyle(admin1CasingStyle());
+        admin1Stroke.setStyle(admin1StrokeStyle());
+        rebuildLabels();
+      });
     }
 
-    function getAdmin1Name(props = {}) {
-      return (
-        props.ADM1_EN ||
-        props.ADM1_PCODE ||
-        props.NAME_1 ||
-        props.admin1Name ||
-        props.state_name ||
-        props.State ||
-        props.NAME ||
-        null
-      );
-    }
-
-    // --- Data shaping ---
-    function normalizeRow(r) {
-      return {
-        // origins
-        s_state_id: String(r.s_state_id || r.origin_state_id || r.state_code || '').trim(),
-        s_State: r.s_State || r.origin_state || r.state || 'Unknown',
-        s_lat: parseFloat(r.s_lat),
-        s_lon: parseFloat(r.s_lon),
-
-        // destinations
-        e_locality_id: String(r.e_locality_id || r.dest_locality_id || r.locality_code || '').trim(),
-        e_locality: r.e_locality || r.dest_locality || r.locality || 'Unknown',
-        e_lat: parseFloat(r.e_lat),
-        e_lon: parseFloat(r.e_lon),
-
-        // metrics
-        e_Volume: parseFloat(r.e_Volume || r.volume || r.total || 0) || 0,
-        main_needs: r.main_needs || r.needs || '',
-
-        ...r
-      };
-    }
-
-    function computeTotals(data) {
-      const destinationTotals = new Map();
-      const originTotals = new Map();
-      for (const d of data) {
-        destinationTotals.set(d.e_locality_id, (destinationTotals.get(d.e_locality_id) || 0) + d.e_Volume);
-        originTotals.set(d.s_state_id, (originTotals.get(d.s_state_id) || 0) + d.e_Volume);
-      }
-      return { destinationTotals, originTotals };
-    }
-
-    function initFlowmap(data) {
-      const fc = {
-        type: 'FeatureCollection',
-        features: data.map(d => ({
-          type: 'Feature',
-          geometry: { type: 'Point', coordinates: [d.s_lon, d.s_lat] },
-          properties: d
-        }))
-      };
+    // ---- Flowmap
+    function initFlowmap(data){
+      const fc = { type:'FeatureCollection', features: data.map(d => ({
+        type:'Feature', geometry:{ type:'Point', coordinates:[d.s_lon, d.s_lat] }, properties:d
+      })) };
 
       flowmapLayer = L.canvasFlowmapLayer(fc, {
-        originAndDestinationFieldIds: {
-          originUniqueIdField: 's_state_id',
-          originGeometry: { x: 's_lon', y: 's_lat' },
-          destinationUniqueIdField: 'e_locality_id',
-          destinationGeometry: { x: 'e_lon', y: 'e_lat' }
+        originAndDestinationFieldIds:{
+          originUniqueIdField:'s_state_id',
+          originGeometry:{ x:'s_lon', y:'s_lat' },
+          destinationUniqueIdField:'e_locality_id',
+          destinationGeometry:{ x:'e_lon', y:'e_lat' }
         },
-
-        pointToLayer: function(feature, latlng) {
+        pointToLayer:(feature, latlng)=>{
           const isOrigin = feature.properties && feature.properties.isOrigin;
           const vol = isOrigin ? (feature.properties.s_totalVolume || 0) : (feature.properties.e_totalVolume || 0);
           const r = isOrigin ? scaleRadius(vol, 20000, 6, 12) : scaleRadius(vol, 20000, 5, 10);
-          const color = isOrigin ? '#ff671f' : '#418FDE';
+          const color = isOrigin ? '#ff671f' : getCSS('--brand-accent', '#418FDE');
           return L.circleMarker(latlng, {
-            radius: r,
-            weight: 1,
-            color: '#fff',
-            fillColor: color,
-            fillOpacity: isOrigin ? 0.85 : 0.75,
-            opacity: 1
+            radius:r, weight:1, color:'#fff',
+            fillColor:color, fillOpacity: isOrigin ? 0.85 : 0.75, opacity:1
           });
         },
-
-        canvasBezierStyle: {
-          type: 'classBreaks',
-          field: 'e_Volume',
-          classBreakInfos: [
-            { classMinValue: 1,      classMaxValue: 50000,   symbol: { strokeStyle: getComputedStyle(document.documentElement).getPropertyValue('--brand-warm1') || '#ffb81c', lineWidth: 0.7, lineCap: 'round', shadowColor: '#fee8c8', shadowBlur: 2 } },
-            { classMinValue: 50000,  classMaxValue: 100000,  symbol: { strokeStyle: getComputedStyle(document.documentElement).getPropertyValue('--brand-warm2') || '#ff671f', lineWidth: 1.5, lineCap: 'round', shadowColor: '#fdbb84', shadowBlur: 2 } },
-            { classMinValue: 100000, classMaxValue: 1600000, symbol: { strokeStyle: getComputedStyle(document.documentElement).getPropertyValue('--brand-warm3') || '#d22630', lineWidth: 3,   lineCap: 'round', shadowColor: '#e34a33', shadowBlur: 2 } }
+        canvasBezierStyle:{
+          type:'classBreaks',
+          field:'e_Volume',
+          classBreakInfos:[
+            { classMinValue:1,       classMaxValue:50000,   symbol:{ strokeStyle:getCSS('--line1','#ffb81c'), lineWidth:0.7, lineCap:'round', shadowColor:'#fee8c8', shadowBlur:2 } },
+            { classMinValue:50000,   classMaxValue:100000,  symbol:{ strokeStyle:getCSS('--line2','#ff671f'), lineWidth:1.5, lineCap:'round', shadowColor:'#fdbb84', shadowBlur:2 } },
+            { classMinValue:100000,  classMaxValue:1600000, symbol:{ strokeStyle:getCSS('--line3','#d22630'), lineWidth:3.0, lineCap:'round', shadowColor:'#e34a33', shadowBlur:2 } }
           ],
-          defaultSymbol: { strokeStyle: '#d0d7e2', lineWidth: 0.6, lineCap: 'round', shadowColor: '#d0d7e2', shadowBlur: 1.2 }
+          defaultSymbol:{ strokeStyle:'#d0d7e2', lineWidth:0.6, lineCap:'round', shadowColor:'#d0d7e2', shadowBlur:1.2 }
         },
+        pathDisplayMode:'all',
+        animationStarted:true,
+        animationEasingFamily:'Linear',
+        animationEasingType:'None',
+        animationDuration:3200,
 
-        pathDisplayMode: 'all',
-        animationStarted: true,
-        animationEasingFamily: 'Linear',
-        animationEasingType: 'None',
-        animationDuration: 3200,
-
-        onEachFeature: (feature, layer) => attachInteractivity(feature, layer)
+        onEachFeature:(feature, layer)=>attachInteractivity(feature, layer)
       }).addTo(map);
 
-      // Optional: initial selection (safe no-op if ID doesn't exist)
+      // Hover & click focus on flow features
+      let hoverLock = false;
+      flowmapLayer.on('mouseover', (e) => {
+        if (hoverLock) return; hoverLock = true; setTimeout(()=> hoverLock = false, 50);
+        if (e.sharedOriginFeatures?.length) flowmapLayer.selectFeaturesForPathDisplay(e.sharedOriginFeatures, 'SELECTION_NEW');
+        if (e.sharedDestinationFeatures?.length) flowmapLayer.selectFeaturesForPathDisplay(e.sharedDestinationFeatures, 'SELECTION_NEW');
+      });
+      flowmapLayer.on('click', (e) => {
+        if (e.sharedOriginFeatures?.length) flowmapLayer.selectFeaturesForPathDisplay(e.sharedOriginFeatures, 'SELECTION_NEW');
+        else if (e.sharedDestinationFeatures?.length) flowmapLayer.selectFeaturesForPathDisplay(e.sharedDestinationFeatures, 'SELECTION_NEW');
+      });
+
+      // Optional initial selection (safe no-op)
       try { flowmapLayer.selectFeaturesForPathDisplayById('s_state_id', 'SD02114', true, 'SELECTION_NEW'); } catch {}
     }
 
-    function attachInteractivity(feature, layer) {
+    function attachInteractivity(feature, layer){
       const isOrigin = feature.properties && feature.properties.isOrigin;
       const title = isOrigin ? 'Displacement Origin' : 'Displacement Destination';
       const name  = isOrigin ? (feature.properties.s_State || 'Unknown') : (feature.properties.e_locality || 'Unknown');
       const total = isOrigin ? (feature.properties.s_totalVolume || 0) : (feature.properties.e_totalVolume || 0);
 
-      const tip = `${title}: ${escapeHtml(name)}`;
-      layer.bindTooltip(tip, { direction: 'top', offset: [0,-2] });
-
+      layer.bindTooltip(`${title}: ${escapeHtml(name)}`, { direction:'top', offset:[0,-2] });
       const popup = `
         <div style="min-width:220px">
           <h4 style="margin:0 0 8px;color:var(--brand-primary);font-weight:600">${title}</h4>
@@ -379,36 +347,73 @@
           <p style="margin:6px 0 0"><small>Click markers/lines to focus flows</small></p>
         </div>`;
       layer.bindPopup(popup);
-
-      // Hover & click focus
-      let hoverLock = false;
-      layer.on('mouseover', () => {
-        if (hoverLock) return; hoverLock = true; setTimeout(() => hoverLock = false, 50);
-        if (flowmapLayer) {
-          if (isOrigin && layer.sharedOriginFeatures?.length) flowmapLayer.selectFeaturesForPathDisplay(layer.sharedOriginFeatures, 'SELECTION_NEW');
-          if (!isOrigin && layer.sharedDestinationFeatures?.length) flowmapLayer.selectFeaturesForPathDisplay(layer.sharedDestinationFeatures, 'SELECTION_NEW');
-        }
-      });
-
-      layer.on('click', () => {
-        if (!flowmapLayer) return;
-        if (isOrigin && layer.sharedOriginFeatures?.length) {
-          flowmapLayer.selectFeaturesForPathDisplay(layer.sharedOriginFeatures, 'SELECTION_NEW');
-        } else if (!isOrigin && layer.sharedDestinationFeatures?.length) {
-          flowmapLayer.selectFeaturesForPathDisplay(layer.sharedDestinationFeatures, 'SELECTION_NEW');
-        }
-      });
     }
 
-    // --- Utils ---
-    function scaleRadius(value, step, rMin, rMax) {
+    // ---- Helpers
+    function toGeoJSON(source){
+      if (!source) return null;
+      if (source.type === 'Topology' && window.topojson?.feature){
+        const keys = Object.keys(source.objects || {});
+        const key = keys.find(k => /admin.?1/i.test(k)) || keys[0];
+        return key ? topojson.feature(source, source.objects[key]) : null;
+      }
+      return source; // assume GeoJSON
+    }
+    function getCSS(varName, fallback){
+      const v = getComputedStyle(document.documentElement).getPropertyValue(varName);
+      return v && v.trim() ? v.trim() : fallback;
+    }
+    function getAdmin1Name(props = {}){
+      return props.ADM1_EN || props.NAME_1 || props.admin1Name || props.state_name || props.State || props.NAME || props.ADM1_PCODE || null;
+    }
+    // Try to map Admin1 feature -> s_state_id code (e.g., "SD15")
+    function getAdmin1Code(props = {}){
+      // common property names from humanitarian admin datasets
+      const candidates = [props.ADM1_PCODE, props.STATE_CODE, props.code, props.STATECODE, props.state_code];
+      const code = (candidates.find(x => x) || '').toString().trim();
+      // If not provided, try to infer from name via lookup table (customize if needed)
+      return code || null;
+    }
+    function safeCenter(layer){
+      try { return layer.getBounds().getCenter(); } catch { return null; }
+    }
+
+    function normalizeRow(r){
+      return {
+        // origins
+        s_state_id: String(r.s_state_id || r.origin_state_id || r.state_code || '').trim(),
+        s_State: r.s_State || r.origin_state || r.state || 'Unknown',
+        s_lat: parseFloat(r.s_lat),
+        s_lon: parseFloat(r.s_lon),
+        // destinations
+        e_locality_id: String(r.e_locality_id || r.dest_locality_id || r.locality_code || '').trim(),
+        e_locality: r.e_locality || r.dest_locality || r.locality || 'Unknown',
+        e_lat: parseFloat(r.e_lat),
+        e_lon: parseFloat(r.e_lon),
+        // metrics
+        e_Volume: parseFloat(r.e_Volume || r.volume || r.total || 0) || 0,
+        main_needs: r.main_needs || r.needs || '',
+        ...r
+      };
+    }
+    function computeTotals(data){
+      const destinationTotals = new Map();
+      const originTotals = new Map();
+      for (const d of data){
+        destinationTotals.set(d.e_locality_id, (destinationTotals.get(d.e_locality_id) || 0) + d.e_Volume);
+        originTotals.set(d.s_state_id, (originTotals.get(d.s_state_id) || 0) + d.e_Volume);
+      }
+      return { destinationTotals, originTotals };
+    }
+
+    function scaleRadius(value, step, rMin, rMax){
       if (!Number.isFinite(value) || value <= 0) return rMin;
       const v = Math.log(1 + value / Math.max(step, 1));
-      const t = Math.min(v / Math.log(1 + (20)), 1); // gentle cap
+      const t = Math.min(v / Math.log(1 + 20), 1);
       return rMin + (rMax - rMin) * t;
     }
-    function formatNumber(x) { try { return Number(x).toLocaleString(undefined); } catch { return x; } }
-    function escapeHtml(str) { return String(str).replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[s])); }
+    function formatNumber(x){ try { return Number(x).toLocaleString(undefined); } catch { return x; } }
+    function escapeHtml(str){ return String(str).replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s])); }
   })();
   </script>
 </body>
