@@ -450,12 +450,65 @@
       overlay.style.display = 'none';
 
       // Crisis facts + optional Camps
-      addCrisisFacts();
+     function addCrisisFacts(){
+  map.createPane('crisis'); 
+  map.getPane('crisis').style.zIndex = 480;
 
-    }).catch(err => {
-      overlay.innerHTML = '<div style="color:#b00020;text-align:center">Failed to load data. Check console.</div>';
-      console.error(err);
-    });
+  // Create the group but DO NOT add to map here
+  crisisLayer = L.layerGroup([], { pane:'crisis' });
+
+  // 🚫 remove this line if it exists anywhere:
+  // layerControl.addOverlay(crisisLayer, 'Crisis facts');
+
+  // 1) Siege ring
+  siegeRing = L.circle(AL_FASHER, {
+    radius: 22000, color: '#d22630', weight: 2, dashArray: '6,6', dashOffset: '0',
+    fillColor:'#d22630', fillOpacity:0.08
+  }).bindTooltip(`Under RSF siege since May 2024 · ~${monthsSince(SIEGE_START)} months`, {
+    direction:'center', permanent:false, sticky:true
+  }).addTo(crisisLayer);
+
+  // 2) KPI badge: 240+ attacks
+  const attacksIcon = L.divIcon({
+    className:'kpi-icon',
+    html:`<div class="kpi-card" id="kpi-card">
+            <div class="kpi">${FACT_ATTACKS.toLocaleString()}+</div>
+            <div class="label">attacks</div>
+          </div>`,
+    iconSize:[1,1], iconAnchor:[0,0]
+  });
+  kpiMarker = L.marker([AL_FASHER[0]+0.045, AL_FASHER[1]-0.04], { icon: attacksIcon, pane:'crisis' })
+    .addTo(crisisLayer);
+
+  // 3) Donut: 80% displaced
+  const deg = Math.round(FACT_DISPLACED_PCT*360);
+  const donutIcon = L.divIcon({
+    className:'donut-icon',
+    html:`<div class="donut-wrap" id="donut-wrap">
+            <div class="donut" style="--pct:${deg}"></div>
+            <div class="txt">
+              <div class="big">${Math.round(FACT_DISPLACED_PCT*100)}%</div>
+              <div class="small">of population displaced</div>
+            </div>
+          </div>`,
+    iconSize:[1,1], iconAnchor:[0,0]
+  });
+  donutMarker = L.marker([AL_FASHER[0]+0.02, AL_FASHER[1]+0.07], { icon: donutIcon, pane:'crisis' })
+    .addTo(crisisLayer);
+
+  // 4) Trapped note
+  const noteIcon = L.divIcon({
+    className:'note-icon',
+    html:`<div class="note-card" id="note-card"><strong>Critical:</strong> ${FACT_TRAPPED}</div>`,
+    iconSize:[1,1], iconAnchor:[0,0]
+  });
+  noteMarker = L.marker([AL_FASHER[0]-0.04, AL_FASHER[1]+0.02], { icon: noteIcon, pane:'crisis' })
+    .addTo(crisisLayer);
+
+  // Camps stay as-is (optional). See note below if you also want them Story-only.
+  campsReady = addCampsLayer();
+}
+
 
     // ---- Admin1 styled layer
     function addStyledAdmin1(states){
