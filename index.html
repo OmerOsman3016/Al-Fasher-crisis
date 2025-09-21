@@ -1,659 +1,1380 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-    <title>Sudan Crisis: Al-Fasher Siege & Displacement Routes</title>
-    
-    <!-- Leaflet CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="anonymous"/>
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer"/>
-    <!-- IOM digital typeface -->
-    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<meta charset="utf-8" />
+<meta name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<title>Sudan | Al Fasher Crisis Dashboard</title>
 
-    <style>
-        :root {
-            --iom-blue: #0033A0;
-            --un-blue: #418FDE;
-            --yellow: #FFB81C;
-            --orange: #FF671F;
-            --red: #D22630;
-            --mint: #5CB8B2;
-            --surface: #f5f7fa;
-        }
-        
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-        
-        body {
-            font-family: 'Open Sans', sans-serif;
-            background: var(--surface);
-            color: #1d2a36;
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-            overflow: hidden;
-        }
-        
-        .app-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 12px 20px;
-            background: #fff;
-            border-bottom: 1px solid #e6edf5;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-        }
-        
-        .brand {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-        
-        .logo {
-            width: 40px;
-            height: 26px;
-            border-radius: 4px;
-            overflow: hidden;
-            display: block;
-            box-shadow: 0 0 0 1px #d1dbe7 inset;
-        }
-        
-        .brand-text h1 {
-            font-size: 18px;
-            font-weight: 700;
-            color: var(--iom-blue);
-        }
-        
-        .brand-text .sub {
-            font-size: 13px;
-            color: #5a7086;
-        }
-        
-        .toolbar {
-            display: flex;
-            gap: 8px;
-        }
-        
-        .btn {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 8px 14px;
-            background: #fff;
-            border: 1px solid #d1dbe7;
-            border-radius: 8px;
-            font-weight: 600;
-            font-size: 13px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        
-        .btn:hover {
-            border-color: var(--un-blue);
-            background: #f0f7ff;
-        }
-        
-        .btn.active {
-            border-color: var(--un-blue);
-            background: #e6f2ff;
-        }
-        
-        .map-wrap {
-            flex: 1;
-            position: relative;
-        }
-        
-        #map {
-            position: absolute;
-            top: 0;
-            right: 0;
-            bottom: 0;
-            left: 0;
-        }
-        
-        .control-panel {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            width: 320px;
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-            padding: 16px;
-            z-index: 1000;
-            max-height: 80vh;
-            overflow-y: auto;
-        }
-        
-        .panel-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 16px;
-            padding-bottom: 12px;
-            border-bottom: 1px solid #e6edf5;
-        }
-        
-        .panel-title {
-            font-size: 16px;
-            font-weight: 700;
-            color: var(--iom-blue);
-        }
-        
-        .panel-section {
-            margin-bottom: 20px;
-        }
-        
-        .section-title {
-            font-size: 14px;
-            font-weight: 600;
-            margin-bottom: 12px;
-            color: #1d2a36;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        
-        .stats-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            margin-bottom: 16px;
-        }
-        
-        .stat-card {
-            background: #f7f9fc;
-            border-radius: 8px;
-            padding: 12px;
-            text-align: center;
-        }
-        
-        .stat-value {
-            font-size: 20px;
-            font-weight: 800;
-            color: var(--iom-blue);
-            margin-bottom: 4px;
-        }
-        
-        .stat-label {
-            font-size: 12px;
-            color: #5a7086;
-        }
-        
-        .timeline-control {
-            margin: 16px 0;
-        }
-        
-        .timeline-slider {
-            width: 100%;
-            margin: 8px 0;
-        }
-        
-        .timeline-labels {
-            display: flex;
-            justify-content: space-between;
-            font-size: 12px;
-            color: #5a7086;
-        }
-        
-        .scenario-selector {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-        
-        .scenario-btn {
-            display: flex;
-            align-items: center;
-            padding: 10px 14px;
-            background: #f7f9fc;
-            border: 1px solid #e6edf5;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        
-        .scenario-btn:hover {
-            border-color: var(--un-blue);
-            background: #e6f2ff;
-        }
-        
-        .scenario-btn.active {
-            border-color: var(--un-blue);
-            background: #e6f2ff;
-        }
-        
-        .scenario-icon {
-            width: 24px;
-            height: 24px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-right: 10px;
-            border-radius: 50%;
-            background: var(--un-blue);
-            color: white;
-        }
-        
-        .legend {
-            position: absolute;
-            bottom: 20px;
-            left: 20px;
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 8px;
-            padding: 12px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            z-index: 1000;
-            max-width: 280px;
-        }
-        
-        .legend-title {
-            font-weight: 700;
-            margin-bottom: 8px;
-            font-size: 14px;
-        }
-        
-        .legend-item {
-            display: flex;
-            align-items: center;
-            margin: 6px 0;
-        }
-        
-        .legend-color {
-            width: 20px;
-            height: 4px;
-            margin-right: 8px;
-        }
-        
-        .legend-circle {
-            width: 16px;
-            height: 16px;
-            border-radius: 50%;
-            margin-right: 8px;
-        }
-        
-        .legend-label {
-            font-size: 12px;
-        }
-        
-        .footer {
-            padding: 12px 20px;
-            background: #fff;
-            border-top: 1px solid #e6edf5;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 12px;
-            color: #5a7086;
-        }
-        
-        .keyboard-shortcuts {
-            display: flex;
-            gap: 8px;
-        }
-        
-        .kbd {
-            padding: 4px 8px;
-            background: #f7f9fc;
-            border: 1px solid #e6edf5;
-            border-radius: 4px;
-            font-family: monospace;
-        }
-        
-        @media (max-width: 768px) {
-            .control-panel {
-                width: calc(100% - 40px);
-                max-height: 40vh;
-            }
-            
-            .toolbar .btn-text {
-                display: none;
-            }
-            
-            .footer {
-                flex-direction: column;
-                gap: 8px;
-                align-items: flex-start;
-            }
-        }
-    </style>
+<!-- Leaflet + deps -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="anonymous"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous"/>
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  /* Brand */
+  --iom-blue:#0033A0;
+  --un-blue:#418FDE;
+  --yellow:#FFB81C; --orange:#FF671F; --red:#D22630; --mint:#5CB8B2;
+  --brand-primary:var(--iom-blue); --brand-accent:var(--un-blue);
+  --surface:#f5f7fa;
+
+  /* Flows */
+  --line1:var(--yellow); --line2:var(--orange); --line3:var(--red); --potential:var(--mint);
+
+  /* Neutral UI border (requested gray) */
+  --ui-border:#cfd4da;
+  --ui-border-strong:#9aa4b2;
+}
+
+html,body{height:100%;}
+body{
+  margin:0; background:var(--surface); color:#1d2a36;
+  font-family:'Open Sans', system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica, Arial;
+  display:flex; flex-direction:column; min-height:100vh;
+  -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
+}
+
+/* Header */
+.app-header{
+  display:flex; align-items:center; justify-content:space-between; gap:12px;
+  padding:10px 16px; background:#fff; border-bottom:1px solid var(--ui-border); position:relative;
+  box-shadow:0 2px 8px rgba(0,0,0,.05);
+}
+.app-header::after{
+  content:""; position:absolute; left:0; right:0; bottom:-2px; height:2px;
+  background:linear-gradient(90deg, var(--brand-primary), var(--brand-accent));
+}
+.brand{ display:flex; align-items:center; gap:10px; min-width:0; }
+.brand .logo{ width:36px; height:24px; border-radius:4px; overflow:hidden; display:block; box-shadow:0 0 0 1px var(--ui-border) inset; }
+.brand h1{ font-size:16px; margin:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-weight:800; color:#0e2a5a; }
+.brand .sub{ font-size:12px; color:#5a7086; font-weight:600; letter-spacing:.2px; }
+.toolbar{ display:flex; align-items:center; flex-wrap:wrap; gap:6px; }
+.btn{
+  display:inline-flex; align-items:center; gap:8px; border:1px solid var(--ui-border); background:#fff; color:#1d2a36;
+  padding:6px 10px; border-radius:10px; font-size:12px; font-weight:700; cursor:pointer; user-select:none; transition:.2s ease;
+}
+.btn:hover{ border-color:#b7c6da; box-shadow:0 1px 0 rgba(0,0,0,.03); }
+.btn.active{ border-color:var(--brand-accent); background:#eef6ff; }
+.btn:disabled{ opacity:.5; cursor:not-allowed; }
+
+/* Footer */
+.app-footer{
+  display:flex; align-items:center; justify-content:space-between; gap:10px;
+  background:#fff; border-top:1px solid var(--ui-border); padding:8px 12px; font-size:12px; color:#45607a;
+}
+.kbd{
+  font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;
+  border:1px solid var(--ui-border); border-bottom-width:2px; padding:0 6px; border-radius:6px; background:#f7faff;
+}
+
+/* Layout */
+.map-wrap{ position:relative; flex:1 1 auto; min-height:0; }
+#map{ position:absolute; inset:0; }
+
+/* Overlays */
+.loading-overlay{
+  position:absolute; inset:0; z-index:1100; background:rgba(255,255,255,.92);
+  display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center;
+  border-top:1px solid var(--ui-border);
+}
+.spinner{ width:44px; height:44px; border:4px solid #e7eef7; border-top-color:var(--brand-primary);
+  border-radius:50%; animation:spin 1s linear infinite; margin-bottom:10px; }
+@keyframes spin{ to{ transform:rotate(360deg); } }
+
+/* Panels */
+.panel{
+  position:absolute; z-index:1200; background:#fff; border:1px solid var(--ui-border); border-radius:12px;
+  box-shadow:0 10px 30px rgba(0,0,0,.12); overflow:hidden;
+}
+.panel .head{ display:flex; align-items:center; justify-content:space-between; gap:8px; padding:10px 12px;
+  background:linear-gradient(0deg,#ffffff,#f8fbff); border-bottom:1px solid var(--ui-border); }
+.panel .body{ padding:12px; }
+
+/* Timeline (bottom-left) */
+.timeline{ left:14px; bottom:14px; width:320px; }
+.timeline .labels{ display:flex; justify-content:space-between; font-size:11px; color:#5a7086; }
+.timeline .row{ display:flex; gap:8px; align-items:center; margin-top:8px; }
+input[type="range"]{ width:100%; }
+small.hint{ color:#5a7086; }
+
+/* Scenario panel (right) */
+.scenarios{ right:14px; top:76px; width:320px; }
+.grid{ display:grid; grid-template-columns: 1fr 80px; gap:8px; align-items:center; }
+.grid .full{ grid-column:1/-1; }
+.badge{ display:inline-flex; align-items:center; gap:6px; padding:3px 8px; border-radius:999px; border:1px solid var(--ui-border); font-size:11px; }
+.badge.risk-low{ background:#f0fdf4; }
+.badge.risk-med{ background:#fff7ed; }
+.badge.risk-high{ background:#fef2f2; }
+
+/* Context panel (top-right, below scenarios) */
+.context{ right:14px; top:420px; width:320px; }
+.barlist{ display:grid; gap:8px; }
+.barlist .row{ display:grid; grid-template-columns: 1fr 50px; gap:8px; align-items:center; }
+.bar{ height:8px; background:#eef2f7; border-radius:6px; overflow:hidden; border:1px solid var(--ui-border); }
+.bar > i{ display:block; height:100%; width:0%; background:linear-gradient(90deg, var(--brand-accent), #9cc7f5); }
+
+/* Story panel (manual open) */
+.story-panel{ right:14px; bottom:14px; width:360px; max-width:85vw; display:none; }
+.story-body{ padding:16px; color:#334a62; font-size:14px; line-height:1.5; max-height:300px; overflow:auto; }
+.story-dots{ display:flex; gap:6px; align-items:center; padding:8px 12px; }
+.story-dot{ width:8px; height:8px; border-radius:50%; background:#dde6f2; cursor:pointer; }
+.story-dot.active{ background:var(--brand-accent); transform:scale(1.2); }
+
+/* Legend */
+.legend *{ box-sizing:border-box; }
+
+/* Admin 1 labels */
+.leaflet-tooltip.state-label{
+  background:transparent; border:none; box-shadow:none; padding:0;
+  color:#244b6b; font-weight:600; font-size:12px; letter-spacing:.2px;
+  text-shadow:0 0 2px #fff, 0 0 3px #fff, 0 0 4px #fff, 0 0 5px #fff; pointer-events:none;
+}
+
+/* Origin pulsing */
+.origin-pulse-icon .pulse{
+  position:relative; width:var(--d,24px); height:var(--d,24px); border-radius:50%;
+  background:radial-gradient(circle at 50% 45%, rgba(255,255,255,.95) 0 28%, rgba(255,103,31,1) 32%, rgba(255,103,31,.92) 60%, rgba(255,103,31,.85) 100%);
+  box-shadow:0 0 0 2px #ffffff inset, 0 2px 8px rgba(0,0,0,.18);
+}
+.origin-pulse-icon .pulse::before,
+.origin-pulse-icon .pulse::after{
+  content:""; position:absolute; left:50%; top:50%; width:100%; height:100%; border-radius:50%;
+  transform:translate(-50%,-50%) scale(.7); border:2px solid rgba(255,103,31,.7);
+  animation:pulseRing 2.2s ease-out infinite;
+}
+.origin-pulse-icon .pulse::after{ animation-delay:1.1s; }
+@keyframes pulseRing{ 0%{ transform:translate(-50%,-50%) scale(.7); opacity:.9; } 70%{ opacity:.2; } 100%{ transform:translate(-50%,-50%) scale(2.1); opacity:0; } }
+
+/* Destinations */
+.dest-icon{ pointer-events:auto; transition:transform .12s ease; }
+.dest-icon .dot{
+  position:relative; width:var(--d,18px); height:var(--d,18px); border-radius:50%;
+  background:radial-gradient(circle at 45% 30%, rgba(255,255,255,.95) 0 28%, rgba(65,143,222,1) 32%, rgba(65,143,222,.92) 60%, rgba(65,143,222,.85) 100%);
+  border:1px solid #fff; box-shadow:0 0 0 1px rgba(0,0,0,.06), 0 0 10px rgba(65,143,222,.35);
+}
+.dest-icon:hover{ transform:scale(1.1); }
+.dest-icon.focus{ transform:scale(1.18); box-shadow:0 0 0 2px rgba(65,143,222,.25); }
+
+/* KPI/notes */
+.kpi-card,.note-card{
+  background:#fff; border:1px solid var(--ui-border); border-radius:10px; box-shadow:0 2px 10px rgba(0,0,0,.08);
+  padding:6px 10px; min-width:140px; text-align:left;
+}
+.kpi-card .kpi{ font-size:18px; font-weight:800; color:#1d2a36; }
+.kpi-card .label{ font-size:12px; color:#46607a; font-weight:700; margin-top:2px; }
+.note-card{ font-size:12px; color:#1d2a36; }
+.note-card strong{ color:#d22630; }
+.donut{ width:44px; height:44px; border-radius:50%; background:conic-gradient(var(--donut-color,#418FDE) calc(var(--pct,0)*1deg), #e8eff7 0); border:2px solid #fff; box-shadow:0 0 0 1px rgba(0,0,0,.06), 0 0 10px rgba(65,143,222,.28); position:relative; display:inline-block; vertical-align:middle; }
+.donut::after{ content:""; position:absolute; inset:8px; background:#fff; border-radius:50%; box-shadow:inset 0 0 0 1px #e6eef6; }
+.donut-wrap{ display:flex; align-items:center; gap:8px; }
+.donut-wrap .txt .big{ font-weight:800; color:#1d2a36; }
+.donut-wrap .txt .small{ font-size:12px; color:#46607a; }
+
+/* Camps */
+.camp-icon{ width:18px; height:18px; border-radius:50%; background:#999; border:1px solid #fff; box-shadow:0 0 0 1px rgba(0,0,0,.06); position:relative; opacity:.65; }
+.camp-icon::after{ content:""; position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:10px; height:10px; clip-path:polygon(50% 0, 100% 70%, 0 70%); background:#f4f4f4; }
+.camp-icon.bad{ background:#bbb; opacity:.45; }
+
+/* Attention ping */
+@keyframes ping{ 0%{ transform:scale(1); box-shadow:0 0 0 0 rgba(255,184,28,.0);} 50%{ transform:scale(1.05); box-shadow:0 0 0 8px rgba(255,184,28,.25);} 100%{ transform:scale(1); box-shadow:0 0 0 0 rgba(255,184,28,.0);} }
+.attention{ animation: ping 1.2s ease-out 3; }
+
+/* Popups */
+.leaflet-popup-content-wrapper{ border-radius:12px; box-shadow:0 6px 20px rgba(0,0,0,0.12); }
+.leaflet-popup-content{ margin:14px; line-height:1.5; font-size:14px; }
+.leaflet-popup-content h4{ margin:0 0 10px; color:var(--brand-primary); font-weight:700; font-size:16px; }
+.leaflet-popup-content p{ margin:0 0 8px; }
+
+/* Responsive */
+@media (max-width: 920px){
+  .scenarios{ width:94vw; left:3vw; right:3vw; top:auto; bottom:80px; }
+  .context{ width:94vw; left:3vw; right:3vw; top:auto; bottom:14px; }
+  .timeline{ width:94vw; left:3vw; right:3vw; }
+  .story-panel{ left:8px; right:8px; width:auto; }
+  .app-footer{ flex-direction:column; align-items:flex-start; gap:8px; }
+}
+</style>
 </head>
 <body>
-    <header class="app-header">
-        <div class="brand">
-            <div class="logo">
-                <svg viewBox="0 0 3 2" xmlns="http://www.w3.org/2000/svg">
-                    <rect width="3" height="2" fill="#000"/>
-                    <rect width="3" height="1.3333" y="0.3333" fill="#ffffff"/>
-                    <rect width="3" height="0.6667" fill="#D21034"/>
-                    <polygon points="0,0 0,2 1,1" fill="#007229"/>
-                </svg>
-            </div>
-            <div class="brand-text">
-                <h1>Sudan Crisis: Al-Fasher Siege</h1>
-                <div class="sub">Displacement Monitoring & Potential Routes</div>
-            </div>
-        </div>
-        <nav class="toolbar">
-            <button class="btn active" id="btn-animation">
-                <i class="fas fa-play"></i>
-                <span class="btn-text">Animation</span>
-            </button>
-            <button class="btn active" id="btn-flows">
-                <i class="fas fa-wave-square"></i>
-                <span class="btn-text">Flows</span>
-            </button>
-            <button class="btn active" id="btn-points">
-                <i class="fas fa-circle"></i>
-                <span class="btn-text">Points</span>
-            </button>
-            <button class="btn" id="btn-routes">
-                <i class="fas fa-route"></i>
-                <span class="btn-text">Routes</span>
-            </button>
-            <button class="btn" id="btn-help">
-                <i class="fas fa-question-circle"></i>
-                <span class="btn-text">Help</span>
-            </button>
-        </nav>
-    </header>
-
-    <div class="map-wrap">
-        <div id="map"></div>
-        
-        <div class="control-panel">
-            <div class="panel-header">
-                <div class="panel-title">Crisis Overview & Controls</div>
-            </div>
-            
-            <div class="panel-section">
-                <div class="section-title">
-                    <i class="fas fa-chart-bar"></i>
-                    <span>Key Statistics</span>
-                </div>
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <div class="stat-value">240+</div>
-                        <div class="stat-label">Attacks</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-value">80%</div>
-                        <div class="stat-label">Displaced</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-value">220K</div>
-                        <div class="stat-label">In Camps</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-value">6+</div>
-                        <div class="stat-label">Months Siege</div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="panel-section">
-                <div class="section-title">
-                    <i class="fas fa-calendar-alt"></i>
-                    <span>Time Analysis</span>
-                </div>
-                <div class="timeline-control">
-                    <input type="range" class="timeline-slider" id="timeline-slider" min="0" max="100" value="100">
-                    <div class="timeline-labels">
-                        <span>Jan 2023</span>
-                        <span>Current</span>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="panel-section">
-                <div class="section-title">
-                    <i class="fas fa-project-diagram"></i>
-                    <span>Scenario Planning</span>
-                </div>
-                <div class="scenario-selector">
-                    <div class="scenario-btn active">
-                        <div class="scenario-icon">
-                            <i class="fas fa-1"></i>
-                        </div>
-                        <div>
-                            <div>Moderate Escalation</div>
-                            <div class="stat-label">Limited routes, medium risk</div>
-                        </div>
-                    </div>
-                    <div class="scenario-btn">
-                        <div class="scenario-icon">
-                            <i class="fas fa-2"></i>
-                        </div>
-                        <div>
-                            <div>Severe Escalation</div>
-                            <div class="stat-label">Multiple routes, high risk</div>
-                        </div>
-                    </div>
-                    <div class="scenario-btn">
-                        <div class="scenario-icon">
-                            <i class="fas fa-3"></i>
-                        </div>
-                        <div>
-                            <div>Humanitarian Corridors</div>
-                            <div class="stat-label">Planned safe routes</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="legend">
-            <div class="legend-title">Map Legend</div>
-            
-            <div class="legend-item">
-                <div class="legend-color" style="background: var(--yellow);"></div>
-                <div class="legend-label">Small flows (1-50K)</div>
-            </div>
-            <div class="legend-item">
-                <div class="legend-color" style="background: var(--orange);"></div>
-                <div class="legend-label">Medium flows (50-100K)</div>
-            </div>
-            <div class="legend-item">
-                <div class="legend-color" style="background: var(--red);"></div>
-                <div class="legend-label">Large flows (100K-1.6M)</div>
-            </div>
-            <div class="legend-item">
-                <div class="legend-color" style="background: var(--mint);"></div>
-                <div class="legend-label">Potential routes</div>
-            </div>
-            
-            <div class="legend-item">
-                <div class="legend-circle" style="background: #ff671f;"></div>
-                <div class="legend-label">Origin points</div>
-            </div>
-            <div class="legend-item">
-                <div class="legend-circle" style="background: var(--un-blue);"></div>
-                <div class="legend-label">Destination points</div>
-            </div>
-            <div class="legend-item">
-                <div class="legend-circle" style="background: #d22630; opacity: 0.6;"></div>
-                <div class="legend-label">Siege area</div>
-            </div>
-        </div>
+<header class="app-header" role="banner">
+  <div class="brand" title="Sudan | IDPs Pathways Across Sudan">
+    <div class="logo" role="img" aria-label="Sudan flag">
+      <svg viewBox="0 0 3 2" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
+        <rect width="3" height="2" fill="#000"/>
+        <rect width="3" height="1.3333" y="0.3333" fill="#ffffff"/>
+        <rect width="3" height="0.6667" fill="#D21034"/>
+        <polygon points="0,0 0,2 1,1" fill="#007229"/>
+      </svg>
     </div>
+    <div>
+      <h1>Sudan | Al Fasher Crisis</h1>
+      <div class="sub">Flows between origin <strong>states</strong> and destination <strong>localities</strong></div>
+    </div>
+  </div>
+  <nav class="toolbar" aria-label="Map controls">
+    <button id="btn-play" class="btn active" title="Play/Pause animation (Space)"><i class="fa-solid fa-play"></i><span>Animation</span></button>
+    <button id="btn-flows" class="btn active" title="Toggle flow lines (F)"><i class="fa-solid fa-wave-square"></i><span>Flows</span></button>
+    <button id="btn-points" class="btn active" title="Toggle points (P)"><i class="fa-solid fa-circle"></i><span>Points</span></button>
+    <button id="btn-routes" class="btn" title="Toggle Potential Routes from El Fasher (O)"><i class="fa-solid fa-route"></i><span>Routes</span></button>
+    <button id="btn-story" class="btn" title="Open story / slideshow (S)"><i class="fa-solid fa-book-open"></i><span>Story</span></button>
+    <button id="btn-reset" class="btn" title="Reset view (R)"><i class="fa-solid fa-rotate"></i><span>Reset</span></button>
+    <button id="btn-help" class="btn" title="Show help information"><i class="fa-solid fa-circle-question"></i><span>Help</span></button>
+  </nav>
+</header>
 
-    <footer class="footer">
-        <div>© IOM DTM — Sudan Crisis Monitoring</div>
-        <div class="keyboard-shortcuts">
-            <span>Shortcuts:</span>
-            <span class="kbd">Space</span>
-            <span class="kbd">F</span>
-            <span class="kbd">P</span>
-            <span class="kbd">R</span>
-            <span class="kbd">H</span>
+<div class="map-wrap">
+  <div id="map" aria-label="IDPs Pathways map of Sudan" role="region"></div>
+
+  <div class="loading-overlay" id="loading-overlay" aria-live="polite">
+    <div class="spinner" aria-hidden="true"></div>
+    <div>Loading displacement data…</div>
+  </div>
+
+  <!-- Timeline panel -->
+  <div class="panel timeline" id="panel-timeline" style="display:none">
+    <div class="head">
+      <div><strong>Timeline</strong></div>
+      <button id="btn-timeline-close" class="btn" title="Hide"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="body">
+      <div class="grid">
+        <label class="full" style="font-size:12px;color:#334a62">Select month (Jan 2023 → latest)</label>
+        <input id="timeline-slider" type="range" min="0" max="0" value="0" class="full">
+        <div style="font-size:12px;color:#334a62">Mode</div>
+        <div>
+          <select id="timeline-mode" style="width:100%; padding:6px; border:1px solid var(--ui-border); border-radius:8px">
+            <option value="month">Single month</option>
+            <option value="cumulative">Cumulative to month</option>
+          </select>
         </div>
-    </footer>
+        <div>Month</div>
+        <div><strong id="timeline-label">—</strong></div>
+        <div class="full"><small class="hint">Flows, camp status, and summaries update with the timeline.</small></div>
+      </div>
+    </div>
+  </div>
 
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-    <script>
-        // Initialize the map
-        const map = L.map('map').setView([13.636, 25.349], 7);
-        
-        // Add base layer
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-            attribution: '&copy; OpenStreetMap & CartoDB'
-        }).addTo(map);
-        
-        // Simulated data for visualization
-        const alFasher = [13.636, 25.349];
-        const siegeRadius = 20000; // 20km radius
-        
-        // Add siege area
-        const siegeCircle = L.circle(alFasher, {
-            radius: siegeRadius,
-            color: '#d22630',
-            weight: 2,
-            fillColor: '#d22630',
-            fillOpacity: 0.1
-        }).addTo(map);
-        
-        siegeCircle.bindTooltip("Al-Fasher Siege Area", {permanent: false, direction: 'top'});
-        
-        // Add origin point (Al-Fasher)
-        const originIcon = L.divIcon({
-            className: 'origin-pulse-icon',
-            html: `<div class="pulse" style="--d:28px"></div>`,
-            iconSize: [28, 28],
-            iconAnchor: [14, 14]
-        });
-        
-        L.marker(alFasher, {icon: originIcon})
-            .addTo(map)
-            .bindPopup(`
-                <div style="min-width:200px">
-                    <h3 style="margin:0 0 8px;color:#d22630">Al-Fasher</h3>
-                    <p style="margin:0 0 8px"><strong>Status:</strong> Under Siege</p>
-                    <p style="margin:0 0 8px"><strong>Since:</strong> May 2024</p>
-                    <p style="margin:0"><strong>Population:</strong> 1.8M affected</p>
-                </div>
-            `);
-        
-        // Simulated destination points
-        const destinations = [
-            {name: "Tawila", coords: [13.351266, 24.856704], value: 85000},
-            {name: "At Tina", coords: [15.167895, 23.127019], value: 65000},
-            {name: "Nyala", coords: [12.05, 24.8833], value: 120000},
-            {name: "Zalingei", coords: [12.9, 23.4667], value: 75000},
-            {name: "El Geneina", coords: [13.4667, 22.45], value: 95000}
-        ];
-        
-        // Add destination points
-        destinations.forEach(dest => {
-            const destIcon = L.divIcon({
-                className: 'dest-icon',
-                html: `<div class="dot" style="--d:${16 + (dest.value/50000)}px"></div>`,
-                iconSize: [20, 20],
-                iconAnchor: [10, 10]
-            });
-            
-            L.marker(dest.coords, {icon: destIcon})
-                .addTo(map)
-                .bindPopup(`
-                    <div style="min-width:200px">
-                        <h3 style="margin:0 0 8px">${dest.name}</h3>
-                        <p style="margin:0 0 8px"><strong>IDPs:</strong> ${dest.value.toLocaleString()}</p>
-                        <p style="margin:0"><strong>Status:</strong> Receiving displaced</p>
-                    </div>
-                `);
-        });
-        
-        // Simulated flow lines (current displacement)
-        const flows = [
-            {from: alFasher, to: [13.351266, 24.856704], value: 85000, color: 'var(--orange)'},
-            {from: alFasher, to: [15.167895, 23.127019], value: 65000, color: 'var(--yellow)'},
-            {from: alFasher, to: [12.05, 24.8833], value: 120000, color: 'var(--red)'},
-            {from: alFasher, to: [12.9, 23.4667], value: 75000, color: 'var(--orange)'},
-            {from: alFasher, to: [13.4667, 22.45], value: 95000, color: 'var(--red)'}
-        ];
-        
-        // Add flow lines
-        flows.forEach(flow => {
-            const line = L.polyline([flow.from, flow.to], {
-                color: getComputedStyle(document.documentElement).getPropertyValue(flow.color).trim(),
-                weight: Math.log(flow.value / 10000) * 1.5,
-                opacity: 0.7,
-                dashArray: flow.color === 'var(--mint)' ? '5, 5' : null
-            }).addTo(map);
-            
-            // Add animation effect
-            if (flow.color !== 'var(--mint)') {
-                let dashOffset = 0;
-                setInterval(() => {
-                    dashOffset = (dashOffset + 1) % 20;
-                    line.setStyle({dashOffset: dashOffset});
-                }, 100);
+  <!-- Scenarios panel -->
+  <div class="panel scenarios" id="panel-scenarios">
+    <div class="head">
+      <div><strong>Future Scenarios</strong></div>
+      <div class="badge" id="scenario-risk-badge"><i class="fa-solid fa-shield"></i> Risk: —</div>
+    </div>
+    <div class="body">
+      <div class="grid">
+        <label class="full">Template</label>
+        <select id="scenario-template" class="full" style="padding:6px; border:1px solid var(--ui-border); border-radius:8px">
+          <option value="corridor_tawila">Humanitarian Corridor → Tawila</option>
+          <option value="escape_west_attina">West Escape → At Tina</option>
+          <option value="north_corridor_mellit">Northern Corridor → Mellit (alt)</option>
+        </select>
+
+        <label>People</label>
+        <input id="scenario-people" type="number" min="1000" step="1000" value="50000"
+               style="padding:6px;border:1px solid var(--ui-border);border-radius:8px" />
+
+        <label>Convoy/day</label>
+        <input id="scenario-convoys" type="number" min="1" step="1" value="10"
+               style="padding:6px;border:1px solid var(--ui-border);border-radius:8px" />
+
+        <label>Capacity/convoy</label>
+        <input id="scenario-capacity" type="number" min="500" step="100" value="2000"
+               style="padding:6px;border:1px solid var(--ui-border);border-radius:8px" />
+
+        <label>Risk</label>
+        <input id="scenario-risk" type="range" min="0" max="100" value="45" />
+
+        <label>Road cond.</label>
+        <input id="scenario-condition" type="range" min="0" max="100" value="60" />
+
+        <button id="scenario-run" class="btn full"><i class="fa-solid fa-wand-magic-sparkles"></i> Apply scenario</button>
+
+        <div class="full" id="scenario-summary" style="font-size:12px;color:#334a62"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Context panel -->
+  <div class="panel context" id="panel-context" style="display:block">
+    <div class="head"><div><strong>Context & Comparison</strong></div></div>
+    <div class="body" style="display:grid; gap:12px">
+      <div>
+        <div style="font-weight:700;margin-bottom:6px;color:#0e2a5a">Totals (filtered)</div>
+        <div style="font-size:13px;color:#334a62">
+          <div><span class="highlight" id="total-displaced">0</span> displaced</div>
+          <div><span class="highlight" id="total-origins">0</span> origin states</div>
+          <div><span class="highlight" id="total-destinations">0</span> destination localities</div>
+          <div><span class="highlight" id="active-flows">0</span> active flows</div>
+        </div>
+      </div>
+
+      <div>
+        <div style="font-weight:700;margin-bottom:6px;color:#0e2a5a">Top origins</div>
+        <div id="bar-origins" class="barlist"></div>
+      </div>
+
+      <div>
+        <div style="font-weight:700;margin-bottom:6px;color:#0e2a5a">Top destinations</div>
+        <div id="bar-destinations" class="barlist"></div>
+      </div>
+
+      <div>
+        <div style="font-weight:700;margin-bottom:6px;color:#0e2a5a">More context</div>
+        <ul style="margin:0;padding-left:18px; color:#334a62; font-size:13px">
+          <li><a href="#" target="_blank" rel="noopener">IOM DTM Methodology</a></li>
+          <li><a href="#" target="_blank" rel="noopener">Humanitarian Response (Sudan)</a></li>
+          <li><a href="#" target="_blank" rel="noopener">Operational access notes</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Story panel (unchanged behavior: manual open only) -->
+  <div class="panel story-panel" id="story-panel" role="dialog" aria-modal="false" aria-live="polite">
+    <div class="head">
+      <div class="story-title" id="story-title">Understanding the Crisis in Al Fasher</div>
+      <div class="story-actions">
+        <button id="story-prev" class="btn" title="Previous (←)"><i class="fa-solid fa-arrow-left"></i></button>
+        <button id="story-toggle" class="btn" title="Play/Pause (Space)"><i class="fa-solid fa-play"></i></button>
+        <button id="story-next" class="btn" title="Next (→)"><i class="fa-solid fa-arrow-right"></i></button>
+        <button id="story-close" class="btn" title="Close (Esc)"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+    </div>
+    <div class="story-body" id="story-body"></div>
+    <div class="story-dots" id="story-dots"></div>
+    <div style="padding:8px 12px;font-size:12px; color:#46607a;"><span id="story-count">1/5</span></div>
+  </div>
+</div>
+
+<footer class="app-footer" role="contentinfo">
+  <div>
+    <strong>Keyboard:</strong>
+    <span class="kbd">Space</span> Play/Pause ·
+    <span class="kbd">F</span> Flows ·
+    <span class="kbd">P</span> Points ·
+    <span class="kbd">O</span> Routes ·
+    <span class="kbd">S</span> Story ·
+    <span class="kbd">R</span> Reset
+  </div>
+  <div><span>© IOM DTM — Prototype. Basemap © Mapbox/OSM.</span></div>
+</footer>
+
+<!-- JS libs -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+<script src="https://unpkg.com/@tweenjs/tween.js@18.6.4/dist/tween.umd.js"></script>
+<script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
+<script src="https://unpkg.com/topojson-client@3"></script>
+<script src="./src/CanvasFlowmapLayer.js"></script>
+
+<script>
+(function(){
+  const MAPBOX_TOKEN = 'pk.eyJ1Ijoib21lcm9zbWFuIiwiYSI6ImUxZDBkODBlNjQxMDE2M2Y3OTQ3MWIwNTJkMjgzZTI3In0.ekCHuxRflTOO0RpQ6rQR7Q';
+  const AL_FASHER = [13.636, 25.349];
+
+  // Map
+  const map = L.map('map', {
+    preferCanvas:true, zoomControl:false, minZoom:4, maxZoom:11, zoomSnap:0.5, zoomDelta:0.5, attributionControl:true
+  }).setView([16,30], 5.5);
+
+  const cartoLight = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { attribution:'&copy; OpenStreetMap & CartoDB' });
+  const mbLight   = L.tileLayer(`https://api.mapbox.com/styles/v1/mapbox/light-v10/tiles/{z}/{x}/{y}?access_token=${MAPBOX_TOKEN}`, { tileSize:512, zoomOffset:-1, attribution:'&copy; Mapbox & OpenStreetMap' });
+  const mbStreets = L.tileLayer(`https://api.mapbox.com/styles/v1/mapbox/streets-v11/tiles/{z}/{x}/{y}?access_token=${MAPBOX_TOKEN}`, { tileSize:512, zoomOffset:-1, attribution:'&copy; Mapbox & OpenStreetMap' });
+  const mbSat     = L.tileLayer(`https://api.mapbox.com/styles/v1/mapbox/satellite-v9/tiles/{z}/{x}/{y}?access_token=${MAPBOX_TOKEN}`, { tileSize:512, zoomOffset:-1, attribution:'&copy; Mapbox & OpenStreetMap' });
+  const mbOutdoor = L.tileLayer(`https://api.mapbox.com/styles/v1/mapbox/outdoors-v11/tiles/{z}/{x}/{y}?access_token=${MAPBOX_TOKEN}`, { tileSize:512, zoomOffset:-1, attribution:'&copy; Mapbox & OpenStreetMap' });
+  const mbCustom  = L.tileLayer(`https://api.mapbox.com/styles/v1/omerosman/cm8oy6is4006101si7ll3bs4h/tiles/{z}/{x}/{y}?access_token=${MAPBOX_TOKEN}`, { tileSize:512, zoomOffset:-1, attribution:'&copy; Mapbox & OpenStreetMap' });
+
+  mbLight.addTo(map);
+  const layerControl = L.control.layers({
+    "Mapbox Custom": mbCustom,
+    "Mapbox Light": mbLight,
+    "Mapbox Streets": mbStreets,
+    "Mapbox Outdoors": mbOutdoor,
+    "Mapbox Satellite": mbSat,
+    "Carto Light": cartoLight
+  }).addTo(map);
+
+  L.control.scale({ position:'bottomleft', metric:true, imperial:false }).addTo(map);
+  L.control.zoom({ position:'bottomright' }).addTo(map);
+
+  // Legend
+  const legend = L.control({ position: 'bottomleft' });
+  legend.onAdd = function(){
+    const div = L.DomUtil.create('div','legend');
+    div.innerHTML = `
+      <div style="background:#fff;border:1px solid var(--ui-border);border-radius:10px;padding:10px 12px;box-shadow:0 2px 10px rgba(0,0,0,.06);min-width:240px">
+        <div style="font-weight:700;color:#1d2a36;margin-bottom:8px">Flow volume (e_Volume)</div>
+        <div style="display:grid;grid-template-columns:18px 1fr;gap:8px;align-items:center;font-size:12px;color:#3c4f62;margin-bottom:8px">
+          <span style="height:4px;background:var(--line1);border-radius:2px;"></span><span>1 — 50,000</span>
+          <span style="height:4px;background:var(--line2);border-radius:2px;"></span><span>50,000 — 100,000</span>
+          <span style="height:4px;background:var(--line3);border-radius:2px;"></span><span>100,000 — 1,600,000</span>
+          <span style="height:4px;background:var(--potential);border-radius:2px;"></span><span>Potential route (scenario)</span>
+        </div>
+        <div style="display:grid;grid-template-columns:18px 1fr;gap:8px;align-items:center;font-size:12px;color:#3c4f62">
+          <span style="width:12px;height:12px;border-radius:50%;background:#ff671f;display:inline-block;box-shadow:0 0 0 2px #fff inset;"></span>
+          <span>Origin state (pulsing by total)</span>
+          <span style="width:12px;height:12px;border-radius:50%;background:var(--brand-accent);display:inline-block;border:1px solid #fff;box-shadow:0 0 8px rgba(65,143,222,.35)"></span>
+          <span>Destination locality (glow by total)</span>
+        </div>
+      </div>`;
+    return div;
+  };
+  legend.addTo(map);
+  const legendEl = document.querySelector('.legend');
+  if (legendEl){
+    L.DomEvent.disableScrollPropagation(legendEl);
+    L.DomEvent.disableClickPropagation(legendEl);
+  }
+
+  // State vars
+  let stateBoundariesLayer, admin1Labels, flowmapLayer, originPulseLayer;
+  let crisisLayer, campsLayer, campsTimeIndex = new Map();
+  let kpiMarker, donutMarker, noteMarker, siegeRing;
+  let routesGroup = null, routesLayer = null, routesMarkers = null, routesOrigin = null, routesVisible = false;
+
+  let isAnimationPlaying = true, showFlows = true, showPoints = true;
+
+  // Toolbar buttons
+  const btnPlay  = document.getElementById('btn-play');
+  const btnFlows = document.getElementById('btn-flows');
+  const btnPoints= document.getElementById('btn-points');
+  const btnReset = document.getElementById('btn-reset');
+  const btnStory = document.getElementById('btn-story');
+  const btnRoutes= document.getElementById('btn-routes');
+  const btnHelp  = document.getElementById('btn-help');
+
+  btnPlay.addEventListener('click', toggleAnimation);
+  btnFlows.addEventListener('click', toggleFlows);
+  btnPoints.addEventListener('click', togglePoints);
+  btnReset.addEventListener('click', ()=> map.setView([16,30], 5.5));
+  btnStory.addEventListener('click', () => window.toggleStory?.(true));
+  btnRoutes.addEventListener('click', toggleRoutes);
+  btnHelp.addEventListener('click', showHelp);
+
+  // Timeline controls
+  const panelTimeline   = document.getElementById('panel-timeline');
+  const timelineSlider  = document.getElementById('timeline-slider');
+  const timelineMode    = document.getElementById('timeline-mode');
+  const timelineLabel   = document.getElementById('timeline-label');
+  const btnTimelineClose= document.getElementById('btn-timeline-close');
+
+  btnTimelineClose.addEventListener('click', ()=> panelTimeline.style.display='none');
+
+  // Scenarios
+  const scenarioTemplate = document.getElementById('scenario-template');
+  const scenarioPeople   = document.getElementById('scenario-people');
+  const scenarioConvoys  = document.getElementById('scenario-convoys');
+  const scenarioCapacity = document.getElementById('scenario-capacity');
+  const scenarioRisk     = document.getElementById('scenario-risk');
+  const scenarioCond     = document.getElementById('scenario-condition');
+  const scenarioRun      = document.getElementById('scenario-run');
+  const scenarioSummary  = document.getElementById('scenario-summary');
+  const scenarioRiskBadge= document.getElementById('scenario-risk-badge');
+
+  scenarioRun.addEventListener('click', applyScenario);
+  scenarioRisk.addEventListener('input', updateScenarioBadge);
+  updateScenarioBadge();
+
+  // Keyboard
+  window.addEventListener('keydown', (e) => {
+    if (e.target && e.target.closest && e.target.closest('input, textarea, [contenteditable="true"]')) return;
+    const k = (e.key || '').toLowerCase();
+    if (e.code === 'Space'){ e.preventDefault(); toggleAnimation(); }
+    else if (k === 'f') toggleFlows();
+    else if (k === 'p') togglePoints();
+    else if (k === 'o') toggleRoutes();
+    else if (k === 's') window.toggleStory?.(true);
+    else if (k === 'r') map.setView([16,30], 5.5);
+    else if (k === 'h') showHelp();
+  });
+
+  function updateBtnStates(){
+    btnPlay.classList.toggle('active', isAnimationPlaying);
+    btnFlows.classList.toggle('active', showFlows);
+    btnPoints.classList.toggle('active', showPoints);
+    btnRoutes.classList.toggle('active', routesVisible);
+  }
+
+  function toggleAnimation(){
+    isAnimationPlaying = !isAnimationPlaying;
+    flowmapLayer?.setAnimationStarted?.(isAnimationPlaying);
+    updateBtnStates();
+  }
+
+  function toggleFlows(){
+    showFlows = !showFlows;
+    flowmapLayer?.setPathDisplayMode?.(showFlows ? 'all' : 'none');
+    updateBtnStates();
+  }
+
+  function togglePoints(){
+    showPoints = !showPoints;
+    flowmapLayer?.setPointVisibility?.(showPoints);
+    if (originPulseLayer){
+      if (showPoints && !map.hasLayer(originPulseLayer)) originPulseLayer.addTo(map);
+      if (!showPoints && map.hasLayer(originPulseLayer)) map.removeLayer(originPulseLayer);
+    }
+    updateBtnStates();
+  }
+
+  function showHelp(){
+    alert(`Dashboard help:
+- Use the timeline to filter flows by month or cumulatively.
+- Scenario panel lets you plan routes and see estimated days & risk.
+- Click states to focus flows; click markers for popups.
+- Toggle "Routes" to show built-in potential routes (El Fasher → Tawila / At Tina).`);
+  }
+
+  const overlay = document.getElementById('loading-overlay');
+
+  // Load data
+  let allRows = []; // full flows
+  let months  = []; // sorted unique months (YYYY-MM)
+  let monthToIndex = new Map();
+
+  Promise.all([
+    fetch('./data/ADMIN1.json').then(r => (r.ok ? r.json() : null)).catch(()=>null),
+    fetch('./data/sudan_states.geojson').then(r => (r.ok ? r.json() : null)).catch(()=>null),
+    new Promise((resolve, reject)=> {
+      Papa.parse('./data/IDPs_Pathway.csv', {
+        download:true, header:true, dynamicTyping:true, skipEmptyLines:true,
+        complete: res => resolve(res.data), error: reject
+      });
+    }),
+    new Promise((resolve)=> {
+      // optional camps time
+      Papa.parse('./data/camps_time.csv', {
+        download:true, header:true, dynamicTyping:true, skipEmptyLines:true,
+        complete: res => resolve(res.data||[]), error: ()=> resolve([])
+      });
+    })
+  ]).then(([admin1Maybe, fallbackStates, rows, campsTime]) => {
+    const states = toGeoJSON(admin1Maybe) || toGeoJSON(fallbackStates);
+    if (states) addStyledAdmin1(states);
+
+    allRows = rows.map(r => normalizeRowWithDate(r))
+      .filter(r => Number.isFinite(r.s_lat) && Number.isFinite(r.s_lon) && Number.isFinite(r.e_lat) && Number.isFinite(r.e_lon) && Number.isFinite(r.e_Volume) && r.e_Volume > 0);
+
+    // derive months
+    const monthSet = new Set(allRows.map(r => r.month).filter(Boolean));
+    months = [...monthSet].sort();
+    months.forEach((m,i)=> monthToIndex.set(m,i));
+
+    // totals per dest & origin for sizing
+    const { destinationTotals, originTotals } = computeTotals(allRows);
+    allRows.forEach(d => {
+      d.e_totalVolume = destinationTotals.get(d.e_locality_id) || d.e_Volume;
+      d.s_totalVolume = originTotals.get(d.s_state_id) || d.e_Volume;
+    });
+
+    addOriginPulseLayer(allRows);
+    buildFlowLayer(allRows); // full
+
+    addCrisisFacts();        // crisis facts shown by default (can be hidden via layer control)
+
+    // Camps: static + time index for popups
+    addCampsLayer(); // base (non-time)
+    indexCampsTime(campsTime); // time series -> popups
+
+    // Setup potential routes overlay; hidden until toggled
+    setupPotentialRoutes();
+
+    // Timeline: only if we detected month values
+    if (months.length){
+      panelTimeline.style.display = 'block';
+      timelineSlider.min = 0; timelineSlider.max = months.length-1; timelineSlider.value = months.length-1;
+      timelineLabel.textContent = months[months.length-1];
+      timelineSlider.addEventListener('input', onTimelineChange);
+      timelineMode.addEventListener('change', onTimelineChange);
+      onTimelineChange();
+    }
+
+    overlay.style.display = 'none';
+
+  }).catch(err => {
+    overlay.innerHTML = '<div style="color:#b00020;text-align:center">Failed to load data. Check console.</div>';
+    console.error(err);
+  });
+
+  function onTimelineChange(){
+    const idx = Number(timelineSlider.value||0);
+    const m = months[idx] || null;
+    timelineLabel.textContent = m || '—';
+
+    let filtered = allRows;
+    if (m){
+      if (timelineMode.value === 'month') filtered = allRows.filter(r => r.month === m);
+      else filtered = allRows.filter(r => r.month && monthToIndex.get(r.month) <= idx);
+    }
+
+    refreshFlowLayer(filtered);
+    refreshContextPanels(filtered);
+    updateSiegeDash(idx);
+    updateCampsStatusForMonth(m);
+  }
+
+  function updateSiegeDash(idx){
+    // give siege ring a subtle dash "pulse" tied to timeline position
+    if (!siegeRing) return;
+    const off = (idx * 3) % 24;
+    try { siegeRing.setStyle({ dashOffset:String(off) }); } catch {}
+  }
+
+  // ===== Admin1 boundaries (gray border as requested) =====
+  function addStyledAdmin1(states){
+    map.createPane('admin1-casing');  map.getPane('admin1-casing').style.zIndex = 350;
+    map.createPane('admin1-stroke');  map.getPane('admin1-stroke').style.zIndex = 351;
+    map.createPane('admin1-labels');  map.getPane('admin1-labels').style.zIndex = 352;
+
+    function strokeWeightForZoom(z){ return Math.max(0.8, Math.min(2.4, (z - 4) * 0.35)); }
+
+    const admin1StrokeStyle = () => ({
+      pane:'admin1-stroke', color:'#9aa4b2', /* gray border */
+      weight: strokeWeightForZoom(map.getZoom()), opacity:0.95,
+      fillColor:'#f3f4f6', fillOpacity:0.25, lineJoin:'round', lineCap:'round', smoothFactor:0.4, interactive:true
+    });
+    const admin1CasingStyle = () => ({
+      pane:'admin1-casing', color:'#ffffff', weight: strokeWeightForZoom(map.getZoom()) + 2,
+      opacity:0.9, fillOpacity:0, lineJoin:'round', lineCap:'round', smoothFactor:0.4, interactive:false
+    });
+
+    const admin1Casing = L.geoJSON(states, { style: admin1CasingStyle, interactive:false });
+    const admin1Stroke = L.geoJSON(states, {
+      style: admin1StrokeStyle,
+      onEachFeature: (feat, lyr) => {
+        const nm = getAdmin1Name(feat?.properties) || 'Admin 1';
+        lyr.on({
+          mouseover:e=>{
+            e.target.setStyle({ color:'#b0b7c3', weight: strokeWeightForZoom(map.getZoom()) + 1.2, fillOpacity:0.35 });
+            e.target.bringToFront();
+          },
+          mouseout:()=>admin1Stroke.resetStyle(lyr),
+          click:e=>{
+            try { map.fitBounds(e.target.getBounds(), { padding:[20,20] }); } catch{}
+            const code = getAdmin1Code(feat?.properties);
+            if (code && flowmapLayer?.selectFeaturesForPathDisplayById){
+              try { flowmapLayer.selectFeaturesForPathDisplayById('s_state_id', String(code), true, 'SELECTION_NEW'); } catch {}
             }
+          }
         });
-        
-        // Add potential routes (scenario planning)
-        const potentialRoutes = [
-            {from: alFasher, to: [14.5, 24.5], value: 50000, color: 'var(--mint)'},
-            {from: alFasher, to: [13.0, 23.8], value: 75000, color: 'var(--mint)'},
-            {from: alFasher, to: [12.2, 25.2], value: 60000, color: 'var(--mint)'}
-        ];
-        
-        // Button functionality
-        document.getElementById('btn-animation').addEventListener('click', function() {
-            this.classList.toggle('active');
-            // Animation toggle logic would go here
+        lyr.bindTooltip(nm, { sticky:true });
+      }
+    });
+
+    admin1Labels = L.layerGroup([], { pane:'admin1-labels' });
+    function rebuildLabels(){
+      admin1Labels.clearLayers();
+      if (map.getZoom() < 6) return;
+      admin1Stroke.eachLayer(l=>{
+        const nm = getAdmin1Name(l.feature?.properties) || '';
+        if (!nm) return;
+        const c = safeCenter(l); if (!c) return;
+        L.tooltip({ permanent:true, direction:'center', className:'state-label', pane:'admin1-labels' })
+          .setContent(nm).setLatLng(c).addTo(admin1Labels);
+      });
+    }
+
+    stateBoundariesLayer = L.featureGroup([admin1Casing, admin1Stroke]).addTo(map);
+    stateBoundariesLayer.bringToBack();
+    try { map.fitBounds(stateBoundariesLayer.getBounds(), { padding:[20,20] }); } catch{}
+    rebuildLabels();
+    admin1Labels.addTo(map);
+
+    layerControl.addOverlay(stateBoundariesLayer, 'Admin 1 Boundaries');
+    layerControl.addOverlay(admin1Labels, 'Admin 1 Labels');
+
+    map.on('zoomend', ()=>{
+      admin1Casing.setStyle(admin1CasingStyle());
+      admin1Stroke.setStyle(admin1StrokeStyle());
+      rebuildLabels();
+    });
+  }
+
+  // ===== Origins pulsing =====
+  function addOriginPulseLayer(rows){
+    map.createPane('origin-pulses'); map.getPane('origin-pulses').style.zIndex = 460;
+
+    const byState = new Map();
+    for (const d of rows){
+      if (!d.s_state_id) continue;
+      if (!byState.has(d.s_state_id)){
+        byState.set(d.s_state_id, { id:d.s_state_id, lat:d.s_lat, lon:d.s_lon, name:d.s_State||'Unknown', total:0 });
+      }
+      byState.get(d.s_state_id).total += Number(d.e_Volume)||0;
+    }
+
+    originPulseLayer = L.layerGroup([], { pane:'origin-pulses' });
+
+    const totals = [...byState.values()].map(v => v.total);
+    const tMin = Math.max(1, Math.min(...totals));
+    const tMax = Math.max(...totals);
+    const sizeFor = (v) => Math.round(scaleRadiusLog(v, tMin, tMax, 12, 28) * 2);
+
+    byState.forEach((v) => {
+      const size = sizeFor(v.total);
+      const icon = L.divIcon({
+        className: 'origin-pulse-icon',
+        html: `<div class="pulse" style="--d:${size}px"></div>`,
+        iconSize: [size, size], iconAnchor: [size/2, size/2]
+      });
+
+      const m = L.marker([v.lat, v.lon], { icon })
+        .bindTooltip(`Displacement Origin: ${escapeHtml(v.name)}<br>Total displaced: ${formatNumber(v.total)}`, { direction:'top', offset:[0,-4] })
+        .on('click', () => {
+          try { flowmapLayer?.selectFeaturesForPathDisplayById?.('s_state_id', String(v.id), true, 'SELECTION_NEW'); } catch {}
+        })
+        .bindPopup(`
+          <div style="min-width:240px">
+            <h4 style="margin:0 0 8px;color:var(--brand-primary);font-weight:700">Displacement Origin</h4>
+            <p><strong>State:</strong> ${escapeHtml(v.name)}</p>
+            <p><strong>Total Displaced:</strong> ${formatNumber(v.total)}</p>
+          </div>`);
+
+      originPulseLayer.addLayer(m);
+    });
+
+    originPulseLayer.addTo(map);
+    layerControl.addOverlay(originPulseLayer, 'Origin points (pulsing)');
+  }
+
+  // ===== Flow layer build/refresh (rebuild on timeline) =====
+  function buildFlowLayer(data){
+    if (flowmapLayer){ try{ map.removeLayer(flowmapLayer); }catch{} }
+
+    const originKeySet = new Set(data.map(d => latlonKey(d.s_lat, d.s_lon)));
+    const fc = { type:'FeatureCollection', features: data.map(d => ({
+      type:'Feature', geometry:{ type:'Point', coordinates:[d.s_lon, d.s_lat] }, properties:d
+    })) };
+
+    flowmapLayer = L.canvasFlowmapLayer(fc, {
+      originAndDestinationFieldIds:{
+        originUniqueIdField:'s_state_id',
+        originGeometry:{ x:'s_lon', y:'s_lat' },
+        destinationUniqueIdField:'e_locality_id',
+        destinationGeometry:{ x:'e_lon', y:'e_lat' }
+      },
+      pointToLayer:(feature, latlng)=>{
+        const isOriginSpot = originKeySet.has(latlonKey(latlng.lat, latlng.lng));
+        if (isOriginSpot) return L.circleMarker(latlng, { radius:0.1, opacity:0, fillOpacity:0 });
+        const vol = feature.properties?.e_totalVolume || feature.properties?.e_Volume || 0;
+        const d = Math.round(scaleRadiusLog(vol, 20000, 1600000, 10, 22));
+        const icon = L.divIcon({
+          className:'dest-icon',
+          html:`<div class="dot" style="--d:${d}px"></div>`,
+          iconSize:[d, d], iconAnchor:[d/2, d/2]
         });
-        
-        document.getElementById('btn-flows').addEventListener('click', function() {
-            this.classList.toggle('active');
-            // Flow visibility toggle logic would go here
+        return L.marker(latlng, { icon });
+      },
+      canvasBezierStyle:{
+        type:'classBreaks', field:'e_Volume',
+        classBreakInfos:[
+          { classMinValue:1, classMaxValue:50000,   symbol:{ strokeStyle:getCSS('--line1','#ffb81c'), lineWidth:0.7, lineCap:'round', shadowColor:'#fee8c8', shadowBlur:2 } },
+          { classMinValue:50000, classMaxValue:100000, symbol:{ strokeStyle:getCSS('--line2','#ff671f'), lineWidth:1.5, lineCap:'round', shadowColor:'#fdbb84', shadowBlur:2 } },
+          { classMinValue:100000, classMaxValue:1600000, symbol:{ strokeStyle:getCSS('--line3','#d22630'), lineWidth:3.0, lineCap:'round', shadowColor:'#e34a33', shadowBlur:2 } }
+        ],
+        defaultSymbol:{ strokeStyle:'#d0d7e2', lineWidth:0.6, lineCap:'round', shadowColor:'#d0d7e2', shadowBlur:1.2 }
+      },
+      pathDisplayMode:'all',
+      animationStarted:true,
+      animationEasingFamily:'Linear',
+      animationEasingType:'None',
+      animationDuration:3200,
+      onEachFeature:(feature, layer)=>attachInteractivity(feature, layer)
+    }).addTo(map);
+
+    // hover/click focus
+    let hoverLock = false;
+    flowmapLayer.on('mouseover', (e) => {
+      if (hoverLock) return;
+      hoverLock = true; setTimeout(()=> hoverLock = false, 50);
+
+      if (e.sharedDestinationFeatures?.length){
+        flowmapLayer.selectFeaturesForPathDisplay(e.sharedDestinationFeatures, 'SELECTION_NEW');
+        const l = e.layer; try{ l._icon?.classList?.add('focus'); setTimeout(()=>l._icon?.classList?.remove('focus'), 600);}catch{}
+      }
+      if (e.sharedOriginFeatures?.length){
+        flowmapLayer.selectFeaturesForPathDisplay(e.sharedOriginFeatures, 'SELECTION_NEW');
+      }
+    });
+    flowmapLayer.on('click', (e) => {
+      if (e.sharedDestinationFeatures?.length) flowmapLayer.selectFeaturesForPathDisplay(e.sharedDestinationFeatures, 'SELECTION_NEW');
+      else if (e.sharedOriginFeatures?.length) flowmapLayer.selectFeaturesForPathDisplay(e.sharedOriginFeatures, 'SELECTION_NEW');
+    });
+
+    updateBtnStates();
+  }
+
+  function refreshFlowLayer(filtered){
+    // recompute totals for sizing within subset
+    const { destinationTotals, originTotals } = computeTotals(filtered);
+    const data = filtered.map(d => ({ ...d,
+      e_totalVolume: destinationTotals.get(d.e_locality_id) || d.e_Volume,
+      s_totalVolume: originTotals.get(d.s_state_id) || d.e_Volume
+    }));
+    buildFlowLayer(data);
+  }
+
+  function attachInteractivity(feature, layer){
+    const name  = feature.properties?.e_locality || feature.properties?.s_State || 'Unknown';
+    const total = feature.properties?.e_totalVolume ?? feature.properties?.s_totalVolume ?? 0;
+
+    layer.bindTooltip(`${escapeHtml(name)}`, { direction:'top', offset:[0,-2] });
+    layer.bindPopup(`
+      <div style="min-width:240px">
+        <h4 style="margin:0 0 8px;color:var(--brand-primary);font-weight:700">Location</h4>
+        <p><strong>Name:</strong> ${escapeHtml(name)}</p>
+        <p><strong>Total linked displaced:</strong> ${formatNumber(total)}</p>
+        ${feature.properties?.main_needs ? `<p><strong>Main Needs:</strong> ${escapeHtml(String(feature.properties.main_needs))}</p>` : ''}
+        <p style="margin:6px 0 0"><small>Click markers/lines to focus flows</small></p>
+      </div>`);
+  }
+
+  // ===== Context (totals + bar lists) =====
+  function refreshContextPanels(data){
+    const { destinationTotals, originTotals } = computeTotals(data);
+    const totalsDisplaced = Array.from(originTotals.values()).reduce((s,v)=>s+v,0);
+    document.getElementById('total-displaced').textContent = (totalsDisplaced||0).toLocaleString();
+    document.getElementById('total-origins').textContent = originTotals.size.toLocaleString();
+    document.getElementById('total-destinations').textContent = destinationTotals.size.toLocaleString();
+    document.getElementById('active-flows').textContent = data.length.toLocaleString();
+
+    const topN = (mapCounts, idToName) => {
+      const arr = [...mapCounts.entries()].map(([k,v])=>({ id:k, name:idToName?.get(k)||k, total:v }));
+      arr.sort((a,b)=>b.total - a.total);
+      return arr.slice(0,6);
+    };
+
+    // maps id->name from first appearance in data
+    const origNames = new Map();
+    const destNames = new Map();
+    for (const d of data){ if (!origNames.has(d.s_state_id)) origNames.set(d.s_state_id, d.s_State); if (!destNames.has(d.e_locality_id)) destNames.set(d.e_locality_id, d.e_locality); }
+
+    renderBarList('bar-origins', topN(originTotals, origNames));
+    renderBarList('bar-destinations', topN(destinationTotals, destNames));
+  }
+
+  function renderBarList(elId, items){
+    const host = document.getElementById(elId);
+    host.innerHTML = '';
+    if (!items || !items.length){ host.innerHTML = '<div style="color:#8a99ac;font-size:12px">No data</div>'; return; }
+    const max = Math.max(...items.map(x=>x.total)) || 1;
+    for (const it of items){
+      const row = document.createElement('div'); row.className = 'row';
+      const left = document.createElement('div'); left.textContent = `${it.name || it.id}`;
+      const right = document.createElement('div'); right.textContent = it.total.toLocaleString(); right.style.textAlign='right';
+      const bar = document.createElement('div'); bar.className='bar'; bar.style.gridColumn='1 / -1';
+      const fill = document.createElement('i'); fill.style.width = `${Math.max(3, (it.total/max)*100)}%`; bar.appendChild(fill);
+      host.appendChild(row); row.appendChild(left); row.appendChild(right); host.appendChild(bar);
+    }
+  }
+
+  // ===== Crisis facts (shown by default; you can hide via control) =====
+  const SIEGE_START = new Date('2024-05-01');
+  const FACT_ATTACKS = 240;
+  const FACT_DISPLACED_PCT = 0.80;
+  const FACT_TRAPPED = 'Hundreds of thousands of civilians remain trapped';
+
+  function monthsSince(date){
+    const now = new Date(); const y = now.getFullYear() - date.getFullYear(); const m = now.getMonth() - date.getMonth();
+    let months = y*12 + m; if (now.getDate() < date.getDate()) months -= 1; return Math.max(0, months);
+  }
+
+  function addCrisisFacts(){
+    map.createPane('crisis'); map.getPane('crisis').style.zIndex = 480;
+    crisisLayer = L.layerGroup([], { pane:'crisis' }).addTo(map);
+    layerControl.addOverlay(crisisLayer, 'Crisis facts');
+
+    siegeRing = L.circle(AL_FASHER, {
+      radius: 22000, color: '#d22630', weight: 2, dashArray: '6,6', dashOffset: '0',
+      fillColor:'#d22630', fillOpacity:0.08
+    }).bindTooltip(`Under RSF siege since May 2024 · ~${monthsSince(SIEGE_START)} months`, {
+      direction:'center', permanent:false, sticky:true
+    }).addTo(crisisLayer);
+
+    const attacksIcon = L.divIcon({
+      className:'kpi-icon',
+      html:`<div class="kpi-card" id="kpi-card"><div class="kpi">${FACT_ATTACKS.toLocaleString()}+</div><div class="label">attacks</div></div>`,
+      iconSize:[1,1], iconAnchor:[0,0]
+    });
+    kpiMarker = L.marker([AL_FASHER[0]+0.045, AL_FASHER[1]-0.04], { icon:attacksIcon, pane:'crisis' }).addTo(crisisLayer);
+
+    const deg = Math.round(FACT_DISPLACED_PCT*360);
+    const donutIcon = L.divIcon({
+      className:'donut-icon',
+      html:`<div class="donut-wrap" id="donut-wrap"><div class="donut" style="--pct:${deg}"></div><div class="txt"><div class="big">${Math.round(FACT_DISPLACED_PCT*100)}%</div><div class="small">of population displaced</div></div></div>`,
+      iconSize:[1,1], iconAnchor:[0,0]
+    });
+    donutMarker = L.marker([AL_FASHER[0]+0.02, AL_FASHER[1]+0.07], { icon:donutIcon, pane:'crisis' }).addTo(crisisLayer);
+
+    const noteIcon = L.divIcon({
+      className:'note-icon',
+      html:`<div class="note-card" id="note-card"><strong>Critical:</strong> ${FACT_TRAPPED}</div>`,
+      iconSize:[1,1], iconAnchor:[0,0]
+    });
+    noteMarker = L.marker([AL_FASHER[0]-0.04, AL_FASHER[1]+0.02], { icon:noteIcon, pane:'crisis' }).addTo(crisisLayer);
+  }
+
+  // ===== Camps (base) + time series popups =====
+  function addCampsLayer(){
+    campsLayer = L.layerGroup([], { pane:'crisis' });
+    layerControl.addOverlay(campsLayer, 'Camps (status)');
+
+    Papa.parse('./data/camps.csv', {
+      download:true, header:true, dynamicTyping:true, skipEmptyLines:true,
+      complete: (res)=>{
+        const rows = (res.data || []).filter(r => Number.isFinite(parseFloat(r.lat)) && Number.isFinite(parseFloat(r.lon)));
+        if (!rows.length) return;
+        rows.forEach(r => {
+          const status = String(r.status||'').toLowerCase().trim();
+          const cls = status.includes('almost') && status.includes('empty') ? 'bad' : '';
+          const icon = L.divIcon({ className:'camp-pin', html:`<div class="camp-icon ${cls}"></div>`, iconSize:[18,18], iconAnchor:[9,9] });
+          const occ = Number(r.occupancy)||null, cap = Number(r.capacity)||null;
+          const occTxt = (occ && cap) ? `${occ.toLocaleString()} / ${cap.toLocaleString()}` : (occ ? occ.toLocaleString() : '—');
+
+          const marker = L.marker([parseFloat(r.lat), parseFloat(r.lon)], { icon, pane:'crisis' })
+            .bindTooltip(`${escapeHtml(r.name||'Camp')} · ${status || 'status unknown'}`, {direction:'top', offset:[0,-6]})
+            .bindPopup(makeCampPopup(r.name||'Camp', status, occTxt, r.name||'Camp'));
+
+          campsLayer.addLayer(marker);
         });
-        
-        document.getElementById('btn-points').addEventListener('click', function() {
-            this.classList.toggle('active');
-            // Points visibility toggle logic would go here
-        });
-        
-        document.getElementById('btn-routes').addEventListener('click', function() {
-            this.classList.toggle('active');
-            // Toggle potential routes visibility
-            potentialRoutes.forEach(route => {
-                if (this.classList.contains('active')) {
-                    L.polyline([route.from, route.to], {
-                        color: getComputedStyle(document.documentElement).getPropertyValue(route.color).trim(),
-                        weight: Math.log(route.value / 10000) * 1.5,
-                        opacity: 0.7,
-                        dashArray: '5, 5'
-                    }).addTo(map);
-                } else {
-                    // Remove routes logic would go here
-                }
-            });
-        });
-        
-        document.getElementById('btn-help').addEventListener('click', function() {
-            alert("Sudan Crisis Visualization Help\n\n" +
-                  "This map shows:\n" +
-                  "- Current displacement from Al-Fasher (solid lines)\n" +
-                  "- Potential future displacement routes (dashed lines)\n" +
-                  "- Siege area around Al-Fasher (red circle)\n\n" +
-                  "Use the controls to toggle different data layers and scenarios.");
-        });
-        
-        // Scenario buttons
-        const scenarioButtons = document.querySelectorAll('.scenario-btn');
-        scenarioButtons.forEach(btn => {
-            btn.addEventListener('click', function() {
-                scenarioButtons.forEach(b => b.classList.remove('active'));
-                this.classList.add('active');
-                // Scenario change logic would go here
-            });
-        });
-    </script>
+        campsLayer.addTo(map);
+      },
+      error:()=>{}
+    });
+  }
+
+  function makeCampPopup(name, status, occTxt, key){
+    const series = campsTimeIndex.get((key||'').toLowerCase()) || [];
+    let spark = '';
+    if (series.length){
+      const maxCap = Math.max(...series.map(s=> s.capacity||0), 1);
+      spark = `
+        <div style="margin-top:8px">
+          <div style="font-weight:700;margin-bottom:4px;color:#0e2a5a">Occupancy trend</div>
+          <div style="display:flex; gap:2px; align-items:flex-end; height:36px">
+            ${series.map(s => {
+              const pct = Math.max(2, Math.min(100, Math.round((s.occupancy||0)/maxCap*100)));
+              return `<i title="${s.month}: ${s.occupancy||0}/${s.capacity||'-'}" style="display:block;width:4px;height:${pct*0.36}px;background:#94b9f3"></i>`;
+            }).join('')}
+          </div>
+        </div>`;
+    }
+    return `
+      <div class="kpi-card" style="min-width:240px">
+        <div class="kpi" style="font-size:16px">${escapeHtml(name)}</div>
+        <div class="label">Status: ${escapeHtml(status||'unknown')}</div>
+        <div class="label">Occupancy: ${occTxt}</div>
+        ${spark}
+      </div>`;
+  }
+
+  function indexCampsTime(rows){
+    campsTimeIndex.clear();
+    (rows||[]).forEach(r=>{
+      const key = String(r.name||'').toLowerCase(); if (!key) return;
+      const rec = { month: toMonth(r.month||r.date), occupancy:Number(r.occupancy)||0, capacity:Number(r.capacity)||0, status:String(r.status||'').toLowerCase() };
+      if (!rec.month) return;
+      if (!campsTimeIndex.has(key)) campsTimeIndex.set(key, []);
+      campsTimeIndex.get(key).push(rec);
+    });
+    for (const [k,arr] of campsTimeIndex){
+      arr.sort((a,b)=> (a.month<b.month?-1:1));
+    }
+  }
+
+  function updateCampsStatusForMonth(month){
+    if (!campsLayer || !month) return;
+    campsLayer.eachLayer(m=>{
+      try{
+        const nm = (m.getTooltip()?.getContent() || '').split(' · ')[0] || '';
+        const key = nm.replace(/<\/?[^>]+(>|$)/g, '').toLowerCase();
+        const series = campsTimeIndex.get(key) || [];
+        const rec = series.find(s=> s.month === month);
+        const node = m._icon?.querySelector('.camp-icon');
+        if (node){
+          if (rec && String(rec.status).includes('almost') && String(rec.status).includes('empty')) node.classList.add('bad');
+          else node.classList.remove('bad');
+        }
+        if (rec){
+          const occTxt = (rec.occupancy && rec.capacity) ? `${rec.occupancy.toLocaleString()} / ${rec.capacity.toLocaleString()}` : (rec.occupancy ? rec.occupancy.toLocaleString() : '—');
+          m.setPopupContent(makeCampPopup(nm, rec.status||'status unknown', occTxt, nm));
+        }
+      }catch{}
+    });
+  }
+
+  // ===== Potential routes overlay (built-in) =====
+  function setupPotentialRoutes(){
+    map.createPane('potential'); map.getPane('potential').style.zIndex = 475;
+
+    const origin = { id:'ELFASHER', name:'El Fasher', lat:AL_FASHER[0], lon:AL_FASHER[1] };
+    const dests = [
+      { id:'SD02170', name:'Tawila',  lat:13.351266, lon:24.856704 },
+      { id:'SD02171', name:'At Tina', lat:15.167895, lon:23.127019 },
+      { id:'MELLIT',  name:'Mellit',  lat:14.129, lon:25.685 }
+    ];
+
+    const fc = {
+      type:'FeatureCollection',
+      features: dests.map((d,i)=>({
+        type:'Feature',
+        geometry:{ type:'Point', coordinates:[origin.lon, origin.lat] },
+        properties:{
+          s_state_id: origin.id, s_State: origin.name, s_lat: origin.lat, s_lon: origin.lon,
+          e_locality_id: d.id, e_locality: d.name, e_lat: d.lat, e_lon: d.lon, e_Volume: 100 + i*10
+        }
+      }))
+    };
+
+    routesLayer = L.canvasFlowmapLayer(fc, {
+      pane:'potential',
+      originAndDestinationFieldIds:{
+        originUniqueIdField:'s_state_id',
+        originGeometry:{ x:'s_lon', y:'s_lat' },
+        destinationUniqueIdField:'e_locality_id',
+        destinationGeometry:{ x:'e_lon', y:'e_lat' }
+      },
+      pointToLayer:()=> L.circleMarker([0,0],{radius:0.01,opacity:0,fillOpacity:0}),
+      canvasBezierStyle:{
+        type:'classBreaks', field:'e_Volume',
+        classBreakInfos:[
+          { classMinValue:1, classMaxValue:9999999, symbol:{ strokeStyle:getCSS('--potential','#0ea5e9'), lineWidth:3.2, lineCap:'round', shadowColor:'#7dd3fc', shadowBlur:3 } }
+        ],
+        defaultSymbol:{ strokeStyle:getCSS('--potential','#0ea5e9'), lineWidth:3.2, lineCap:'round', shadowColor:'#7dd3fc', shadowBlur:3 }
+      },
+      pathDisplayMode:'all',
+      animationStarted:true,
+      animationEasingFamily:'Linear',
+      animationEasingType:'None',
+      animationDuration:3000
+    });
+
+    routesMarkers = L.layerGroup([], { pane:'potential' });
+    dests.forEach(d=>{
+      const icon = L.divIcon({ className:'dest-icon', html:`<div class="dot" style="--d:22px"></div>`, iconSize:[22,22], iconAnchor:[11,11] });
+      L.marker([d.lat, d.lon], { icon, pane:'potential' })
+        .bindTooltip(`${escapeHtml(d.name)} • ${d.id}`, {direction:'top', offset:[0,-8]})
+        .addTo(routesMarkers);
+    });
+
+    routesOrigin = L.marker(AL_FASHER, {
+      pane:'potential',
+      icon: L.divIcon({ className:'origin-pulse-icon', html:'<div class="pulse" style="--d:28px"></div>', iconSize:[28,28], iconAnchor:[14,14] })
+    }).bindTooltip('Origin: El Fasher', {direction:'top', offset:[0,-4]});
+
+    routesGroup = L.featureGroup([routesLayer, routesMarkers, routesOrigin]);
+    layerControl.addOverlay(routesGroup, 'Potential routes (El Fasher → Tawila, At Tina, Mellit)');
+  }
+
+  function toggleRoutes(){
+    if (!routesGroup){ setupPotentialRoutes(); }
+    routesVisible = !routesVisible;
+    if (routesVisible){
+      if (!map.hasLayer(routesGroup)) routesGroup.addTo(map);
+      routesLayer?.setAnimationStarted?.(true);
+      try{
+        const b = L.latLngBounds([AL_FASHER]);
+        routesMarkers?.eachLayer?.(m=> b.extend(m.getLatLng()));
+        map.fitBounds(b.pad(0.2));
+      }catch{}
+    }else{
+      if (map.hasLayer(routesGroup)) map.removeLayer(routesGroup);
+    }
+    updateBtnStates();
+  }
+
+  // ===== Scenarios (panel → polylines with scoring) =====
+  const scenarioPane = map.createPane('scenario'); scenarioPane.style.zIndex = 490;
+  let scenarioLayerGroup = L.layerGroup([], { pane:'scenario' }).addTo(map);
+
+  const SCENARIOS = {
+    corridor_tawila: {
+      name: 'Humanitarian Corridor → Tawila',
+      legs: [
+        { coords:[AL_FASHER, [13.49,25.01], [13.38,24.92], [13.351266,24.856704]], type:'escorted' }
+      ]
+    },
+    escape_west_attina: {
+      name: 'West Escape → At Tina',
+      legs: [
+        { coords:[AL_FASHER, [13.91,24.58], [14.45,23.90], [15.167895,23.127019]], type:'highrisk' }
+      ]
+    },
+    north_corridor_mellit: {
+      name: 'Northern Corridor → Mellit (alt)',
+      legs: [
+        { coords:[AL_FASHER, [13.90,25.40], [14.00,25.55], [14.129,25.685]], type:'planned' }
+      ]
+    }
+  };
+
+  function applyScenario(){
+    scenarioLayerGroup.clearLayers();
+
+    const tpl = SCENARIOS[scenarioTemplate.value];
+    if (!tpl) return;
+
+    // parameters
+    const people  = Math.max(0, Number(scenarioPeople.value)||0);
+    const convoys = Math.max(1, Number(scenarioConvoys.value)||1);
+    const capConv = Math.max(100, Number(scenarioCapacity.value)||100);
+    const risk    = Math.max(0, Math.min(100, Number(scenarioRisk.value)||0));
+    const road    = Math.max(0, Math.min(100, Number(scenarioCond.value)||0));
+
+    const trips = Math.ceil(people / (convoys * capConv));
+    // crude speed factor: worse road & higher risk → slower; baseline 1.0 day per leg
+    const speedFactor = 1 + (100-road)/200 + risk/200; // 1.0..2.0+
+    const etaDays = Math.ceil(tpl.legs.length * speedFactor * Math.max(1, trips/5)); // simplistic ETA
+
+    // draw
+    tpl.legs.forEach(leg=>{
+      const style = styleForLeg(leg.type, risk);
+      L.polyline(leg.coords, { ...style, pane:'scenario' })
+        .bindTooltip(`${tpl.name} (${leg.type})`, {direction:'top'})
+        .addTo(scenarioLayerGroup);
+    });
+    L.marker(AL_FASHER, { pane:'scenario' })
+      .bindTooltip('Start: El Fasher', {direction:'top'}).addTo(scenarioLayerGroup);
+
+    scenarioSummary.innerHTML = `
+      <div><strong>${tpl.name}</strong></div>
+      <div style="margin-top:6px">People: <b>${people.toLocaleString()}</b> · Convoys/day: <b>${convoys}</b> · Capacity/convoy: <b>${capConv.toLocaleString()}</b></div>
+      <div>Trips needed: <b>${trips.toLocaleString()}</b> · Est. days: <b>${etaDays}</b></div>
+      <div>Risk: <b>${risk}</b> · Road condition: <b>${road}</b></div>
+    `;
+
+    updateScenarioBadge();
+    try { map.fitBounds(scenarioLayerGroup.getBounds().pad(0.2)); } catch{}
+  }
+
+  function styleForLeg(type, risk){
+    if (type === 'highrisk') return { color:'#d22630', weight:4, opacity:0.9, dashArray:'6,6' };
+    if (type === 'escorted') return { color:'#1d4ed8', weight:4, opacity:0.9, dashArray:'2,6' };
+    // planned default (mint)
+    const c = getCSS('--potential','#0ea5e9');
+    return { color:c, weight:4, opacity:0.95 };
+  }
+
+  function updateScenarioBadge(){
+    const r = Math.max(0, Math.min(100, Number(scenarioRisk.value)||0));
+    scenarioRiskBadge.textContent = `Risk: ${r}`;
+    scenarioRiskBadge.className = 'badge ' + (r<35?'risk-low':(r<65?'risk-med':'risk-high'));
+  }
+
+  // ===== Helpers =====
+  function toGeoJSON(source){
+    if (!source) return null;
+    if (source.type === 'Topology' && window.topojson?.feature){
+      const keys = Object.keys(source.objects || {});
+      const key = keys.find(k => /admin.?1/i.test(k)) || keys[0];
+      return key ? topojson.feature(source, source.objects[key]) : null;
+    }
+    return source;
+  }
+  function getCSS(varName, fallback){
+    const v = getComputedStyle(document.documentElement).getPropertyValue(varName);
+    return (v && v.trim()) ? v.trim() : fallback;
+  }
+  function getAdmin1Name(props = {}){
+    return props.ADM1_EN || props.NAME_1 || props.admin1Name || props.state_name || props.State || props.NAME || props.ADM1_PCODE || null;
+  }
+  function getAdmin1Code(props = {}){
+    const candidates = [props.ADM1_PCODE, props.STATE_CODE, props.code, props.STATECODE, props.state_code];
+    const code = (candidates.find(x => x) || '').toString().trim();
+    return code || null;
+  }
+  function safeCenter(layer){ try{ return layer.getBounds().getCenter(); } catch{ return null; } }
+  function latlonKey(lat, lon){ return `${Number(lat).toFixed(4)},${Number(lon).toFixed(4)}`; }
+  function formatNumber(x){ try{ return Number(x).toLocaleString(undefined); }catch{ return x; } }
+  function escapeHtml(str){ return String(str).replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[s])); }
+  function scaleRadiusLog(value, minV, maxV, rMin, rMax){
+    const v = Math.max(minV || 1, Math.min(maxV || value || 1, value || 1));
+    const a = Math.log(v) - Math.log(minV || 1);
+    const b = Math.log(maxV || v) - Math.log(minV || 1);
+    const t = b > 0 ? a / b : 0;
+    return rMin + (rMax - rMin) * t;
+  }
+
+  function normalizeRowWithDate(r){
+    const month = toMonth(r.month || r.date || r.period || r.timestamp);
+    return {
+      s_state_id: String(r.s_state_id || r.origin_state_id || r.state_code || '').trim(),
+      s_State: r.s_State || r.origin_state || r.state || 'Unknown',
+      s_lat: parseFloat(r.s_lat), s_lon: parseFloat(r.s_lon),
+      e_locality_id: String(r.e_locality_id || r.dest_locality_id || r.locality_code || '').trim(),
+      e_locality: r.e_locality || r.dest_locality || r.locality || 'Unknown',
+      e_lat: parseFloat(r.e_lat), e_lon: parseFloat(r.e_lon),
+      e_Volume: parseFloat(r.e_Volume || r.volume || r.total || 0) || 0,
+      main_needs: r.main_needs || r.needs || '',
+      month
+    };
+  }
+  function toMonth(v){
+    if (!v) return null;
+    try{
+      const s = String(v).trim();
+      // accept YYYY-MM or YYYY/MM or full date
+      const m = s.match(/^(\d{4})[-\/](\d{1,2})(?:[-\/]\d{1,2})?$/);
+      if (m){ const yy=m[1], mm=String(m[2]).padStart(2,'0'); return `${yy}-${mm}`; }
+      const d = new Date(s);
+      if (!isNaN(d)) return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    }catch{}
+    return null;
+  }
+
+  function computeTotals(data){
+    const destinationTotals = new Map();
+    const originTotals = new Map();
+    for (const d of data){
+      destinationTotals.set(d.e_locality_id, (destinationTotals.get(d.e_locality_id) || 0) + d.e_Volume);
+      originTotals.set(d.s_state_id, (originTotals.get(d.s_state_id) || 0) + d.e_Volume);
+    }
+    return { destinationTotals, originTotals };
+  }
+
+  // ===== Story engine (unchanged behavior; manual open) =====
+  (()=> {
+    const SLIDE_MS = 6000, FLY_DUR = 1.4, UI_DELAY = 420, TOUR_STEP = 3000;
+
+    const storyPanel = document.getElementById('story-panel');
+    const storyTitle = document.getElementById('story-title');
+    const storyBody  = document.getElementById('story-body');
+    const storyDots  = document.getElementById('story-dots');
+    const storyCount = document.getElementById('story-count');
+    const btnPrev   = document.getElementById('story-prev');
+    const btnNext   = document.getElementById('story-next');
+    const btnToggle = document.getElementById('story-toggle');
+    const btnClose  = document.getElementById('story-close');
+    const btnStory  = document.getElementById('btn-story');
+
+    let storyOpen=false, slideIdx=0, autoplay=true, autoplayTimer=null;
+    let prevAnimationState=null, currentCleanup=null;
+
+    function flyTo(lat, lon, zoom){
+      return new Promise(resolve => {
+        const onEnd = () => { map.off('moveend', onEnd); resolve(); };
+        map.on('moveend', onEnd);
+        map.flyTo([lat, lon], zoom, { duration: FLY_DUR, easeLinearity: 1, animate: true, noMoveStart: false });
+      });
+    }
+    const delay = (ms = UI_DELAY) => new Promise(r => setTimeout(r, ms));
+    const addAttention = id => document.getElementById(id)?.classList.add('attention');
+    const removeAttention = id => document.getElementById(id)?.classList.remove('attention');
+
+    function clearFlowSelection(){ try { flowmapLayer?.clearAllPathSelections?.(); flowmapLayer?.setPathDisplayMode?.('all'); } catch {} }
+    function setFlowAnimation(started){ try { flowmapLayer?.setAnimationStarted?.(started); } catch {} }
+    function pauseGlobalAnimationForStory(){ prevAnimationState = isAnimationPlaying; isAnimationPlaying=false; setFlowAnimation(false); updateBtnStates?.(); }
+    function restoreGlobalAnimationAfterStory(){ const resume = prevAnimationState === true; isAnimationPlaying=resume; setFlowAnimation(resume); updateBtnStates?.(); }
+    function stopAutoplay(){ if (autoplayTimer){ clearTimeout(autoplayTimer); autoplayTimer=null; } }
+    function scheduleAutoplay(){ stopAutoplay(); if (!autoplay) return; autoplayTimer = setTimeout(()=> goToSlide(slideIdx + 1, { userTriggered:false }), SLIDE_MS); }
+    function setAutoplay(val){ autoplay=!!val; btnToggle.innerHTML = autoplay ? '<i class="fa-solid fa-pause"></i>' : '<i class="fa-solid fa-play"></i>'; if (autoplay) scheduleAutoplay(); else stopAutoplay(); }
+
+    const slides = [
+      {
+        id:'siege',
+        title:'Under RSF siege since May 2024',
+        html:`<p>Al Fasher and surroundings have been under siege since <strong>May 2024</strong>.</p>
+              <p>A dashed red ring marks the siege area; tooltip shows elapsed months.</p>`,
+        async focus(){
+          cleanup();
+          pauseGlobalAnimationForStory(); clearFlowSelection();
+          await flyTo(AL_FASHER[0], AL_FASHER[1], 10); await delay(UI_DELAY);
+          let off=0, throb=true;
+          const interval = setInterval(()=>{
+            if (!siegeRing) return;
+            off = (off + 2) % 24;
+            try { siegeRing.setStyle({ dashOffset:String(off), weight: throb ? 3 : 2 }); } catch {}
+            throb = !throb;
+          }, 350);
+          currentCleanup = ()=>{ clearInterval(interval); try{ siegeRing?.setStyle?.({dashOffset:'0', weight:2}); }catch{} };
+        }
+      },
+      {
+        id:'attacks',
+        title:'More than 240 attacks',
+        html:`<p>A pinned KPI summarizes intensity: <strong>240+ attacks</strong>.</p>`,
+        async focus(){ cleanup(); pauseGlobalAnimationForStory();
+          const p = kpiMarker?.getLatLng?.() || L.latLng(AL_FASHER[0]+0.04, AL_FASHER[1]-0.04);
+          await flyTo(p.lat, p.lng, 10); await delay(UI_DELAY); addAttention('kpi-card'); currentCleanup = ()=> removeAttention('kpi-card'); }
+      },
+      {
+        id:'displaced',
+        title:'More than 80% displaced',
+        html:`<p>A <strong>donut</strong> shows <strong>80%</strong> displaced.</p>`,
+        async focus(){ cleanup(); pauseGlobalAnimationForStory();
+          const p = donutMarker?.getLatLng?.() || L.latLng(AL_FASHER[0]+0.02, AL_FASHER[1]+0.07);
+          await flyTo(p.lat, p.lng, 10); await delay(UI_DELAY); addAttention('donut-wrap'); currentCleanup = ()=> removeAttention('donut-wrap'); }
+      },
+      {
+        id:'trapped',
+        title:'Hundreds of thousands trapped',
+        html:`<p>An alert note highlights civilians <strong>trapped</strong>.</p>`,
+        async focus(){ cleanup(); pauseGlobalAnimationForStory();
+          const p = noteMarker?.getLatLng?.() || L.latLng(AL_FASHER[0]-0.04, AL_FASHER[1]+0.02);
+          await flyTo(p.lat, p.lng, 10); await delay(UI_DELAY); addAttention('note-card'); currentCleanup = ()=> removeAttention('note-card'); }
+      }
+    ];
+
+    async function goToSlide(idx, { userTriggered } = { userTriggered:false }){
+      stopAutoplay();
+      if (idx < 0) idx = slides.length - 1;
+      if (idx >= slides.length) idx = 0;
+      slideIdx = idx;
+      const s = slides[slideIdx];
+      storyTitle.textContent = s.title;
+      storyBody.innerHTML = s.html;
+      setDots();
+      await s.focus();
+      if (userTriggered) setAutoplay(false);
+      scheduleAutoplay();
+    }
+
+    function cleanup(){ if (currentCleanup){ try{ currentCleanup(); }catch{} currentCleanup=null; } removeAttention('kpi-card'); removeAttention('donut-wrap'); removeAttention('note-card'); }
+    function setDots(){
+      storyDots.innerHTML = '';
+      slides.forEach((_,i)=> {
+        const d = document.createElement('div');
+        d.className = 'story-dot' + (i===slideIdx?' active':'');
+        d.onclick = ()=> goToSlide(i, { userTriggered:true });
+        storyDots.appendChild(d);
+      });
+      storyCount.textContent = `${slideIdx+1}/${slides.length}`;
+    }
+
+    function toggleStory(open){
+      storyOpen = !!open;
+      storyPanel.style.display = storyOpen ? 'block' : 'none';
+      btnStory.classList.toggle('active', storyOpen);
+      updateBtnStates?.();
+
+      if (storyOpen){
+        pauseGlobalAnimationForStory();
+        slideIdx = 0; setDots(); setAutoplay(true); goToSlide(slideIdx, { userTriggered:false });
+      } else {
+        stopAutoplay(); cleanup(); restoreGlobalAnimationAfterStory();
+      }
+    }
+
+    btnPrev.onclick   = () => goToSlide(slideIdx - 1, { userTriggered:true });
+    btnNext.onclick   = () => goToSlide(slideIdx + 1, { userTriggered:true });
+    btnToggle.onclick = () => setAutoplay(!autoplay);
+    btnClose.onclick  = () => toggleStory(false);
+    btnStory.onclick  = () => toggleStory(!storyOpen);
+
+    window.addEventListener('keydown', (e)=>{
+      if (!storyOpen) return;
+      if (e.key === 'Escape') return toggleStory(false);
+      if (e.key === 'ArrowLeft')  return goToSlide(slideIdx - 1, { userTriggered:true });
+      if (e.key === 'ArrowRight') return goToSlide(slideIdx + 1, { userTriggered:true });
+      if (e.code === 'Space'){ e.preventDefault(); return setAutoplay(!autoplay); }
+    });
+
+    window.toggleStory = toggleStory;
+    window.goToSlide   = (i)=> goToSlide(i, { userTriggered:true });
+  })();
+
+})();
+</script>
 </body>
 </html>
