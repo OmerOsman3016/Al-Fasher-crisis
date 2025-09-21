@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>Sudan | IDPs Pathways Across Sudan (Improved)</title>
+
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+  <!-- Font Awesome for icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkfKc2jT4Z1JykB8qNdQv9N6hZJcCShhHCNreQvJX2fC8Yq+X8Y+9i7Ww==" crossorigin="anonymous" referrerpolicy="no-referrer"/>
+
+  <style>
+    :root {
+      --brand-primary: #2a5885;    /* IOM-ish deep blue */
+      --brand-accent:  #418FDE;    /* IOM accent blue */
+      --brand-warm1:   #ffb81c;    /* line class 1 */
+      --brand-warm2:   #ff671f;    /* line class 2 */
+      --brand-warm3:   #d22630;    /* line class 3 */
+    }
+
+    html, body {
+      height: 100%;
+    }
+
+    body {
+      margin: 0;
+      background: #f5f7fa;
+      color: #333;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+      display: flex;
+      flex-direction: column;
+    }
+
+    .map-container {
+      position: relative;
+      flex: 1 1 auto;
+      margin: 0;
+    }
+
+    #map {
+      position: absolute;
+      inset: 0;
+    }
+
+    /* Controls */
+    .map-controls {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      z-index: 1000;
+      background: rgba(255,255,255,0.95);
+      backdrop-filter: saturate(1.2) blur(3px);
+      padding: 10px;
+      border-radius: 10px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 6px;
+      min-width: 150px;
+    }
+
+    .control-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      justify-content: center;
+      width: 100%;
+      padding: 8px 10px;
+      border: none;
+      border-radius: 8px;
+      background: var(--brand-primary);
+      color: #fff;
+      font-size: 13px;
+      cursor: pointer;
+      transition: transform .06s ease, background .2s ease;
+    }
+
+    .control-btn:hover { background: #3a6ea5; }
+    .control-btn:active { transform: translateY(1px); }
+
+    .legend {
+      padding: 10px 12px;
+      background: rgba(255,255,255,0.95);
+      border-radius: 10px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+      line-height: 1.4;
+      font-size: 13px;
+    }
+
+    .legend h4 {
+      margin: 0 0 8px;
+      color: var(--brand-primary);
+      font-size: 14px;
+      letter-spacing: .3px;
+    }
+
+    .legend .row { display: flex; align-items: center; gap: 8px; margin: 6px 0; }
+    .legend i { width: 18px; height: 3px; display: inline-block; opacity: .95; border-radius: 2px; }
+
+    .loading-overlay {
+      position: absolute; inset: 0;
+      background: rgba(255,255,255,.85);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      z-index: 1100;
+    }
+
+    .spinner {
+      width: 44px; height: 44px; border: 4px solid #e7eef7; border-top-color: var(--brand-primary);
+      border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 12px;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .info-panel {
+      position: absolute; left: 12px; bottom: 14px; z-index: 1000;
+      background: rgba(255,255,255,0.95);
+      padding: 12px 14px; border-radius: 10px; box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+      max-width: min(320px, 70vw);
+      font-size: 13px;
+    }
+
+    .info-panel h3 { margin: 0 0 6px; color: var(--brand-primary); font-size: 16px; }
+    .info-panel p { margin: 0 0 8px; }
+    .info-panel .close-btn { position: absolute; top: 6px; right: 8px; border: none; background: transparent; font-size: 18px; color: #666; cursor: pointer; }
+
+    @media (max-width: 768px) {
+      .map-controls { min-width: 130px; padding: 8px; gap: 5px; }
+      .control-btn { font-size: 12px; padding: 7px 8px; }
+      .info-panel { font-size: 12px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="map-container">
+    <div id="map" aria-label="IDPs Pathways map of Sudan" role="region"></div>
+
+    <div class="loading-overlay" id="loading-overlay" aria-live="polite">
+      <div class="spinner" aria-hidden="true"></div>
+      <div>Loading displacement data…</div>
+    </div>
+
+    <div class="map-controls" aria-label="Map controls">
+      <button class="control-btn" id="reset-view" title="Reset view (R)" aria-label="Reset view">
+        <i class="fas fa-globe-africa" aria-hidden="true"></i> Reset View
+      </button>
+      <button class="control-btn" id="toggle-animation" title="Play/Pause animation (Space)" aria-label="Toggle animation">
+        <i class="fas fa-play" id="animation-icon" aria-hidden="true"></i> <span id="animation-text">Play</span>
+      </button>
+      <button class="control-btn" id="toggle-flows" title="Show/Hide flows (F)" aria-controls="map" aria-pressed="true">
+        <i class="fas fa-wave-square" aria-hidden="true"></i> <span id="flows-text">Hide Flows</span>
+      </button>
+      <button class="control-btn" id="toggle-points" title="Show/Hide points (P)" aria-controls="map" aria-pressed="true">
+        <i class="fas fa-map-marker-alt" aria-hidden="true"></i> <span id="points-text">Hide Points</span>
+      </button>
+    </div>
+
+    <div class="info-panel" id="info-panel">
+      <button class="close-btn" id="close-info" aria-label="Close help">&times;</button>
+      <h3>How to use this map</h3>
+      <p><strong>Click</strong> an origin state or destination point to focus flows.</p>
+      <p><strong>Hover</strong> features for quick details. Use the <strong>controls</strong> to toggle flows, points, and animation.</p>
+      <p>Shortcuts: <kbd>Space</kbd> play/pause, <kbd>F</kbd> flows, <kbd>P</kbd> points, <kbd>R</kbd> reset.</p>
+    </div>
+  </div>
+
+  <!-- JS libs -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script src="https://unpkg.com/@tweenjs/tween.js@18.6.4/dist/tween.umd.js"></script>
+  <script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
+  <!-- Local copy of CanvasFlowmapLayer (ensure this path is valid in your project) -->
+  <script src="./src/CanvasFlowmapLayer.js"></script>
+
+  <script>
+  (function() {
+    const MAPBOX_TOKEN = 'pk.eyJ1Ijoib21lcm9zbWFuIiwiYSI6ImUxZDBkODBlNjQxMDE2M2Y3OTQ3MWIwNTJkMjgzZTI3In0.ekCHuxRflTOO0RpQ6rQR7Q'; // consider moving to env/config
+
+    // --- Map init ---
+    const map = L.map('map', {
+      preferCanvas: true,
+      zoomControl: false,
+      minZoom: 4, maxZoom: 11,
+      zoomSnap: 0.5, zoomDelta: 0.5,
+      attributionControl: true
+    }).setView([16, 30], 5.5);
+
+    // Basemaps
+    const cartoLight = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { attribution: '&copy; OpenStreetMap & CartoDB' });
+    const mbLight   = L.tileLayer(`https://api.mapbox.com/styles/v1/mapbox/light-v10/tiles/{z}/{x}/{y}?access_token=${MAPBOX_TOKEN}`, { tileSize: 512, zoomOffset: -1, attribution: '&copy; Mapbox & OpenStreetMap' });
+    const mbStreets = L.tileLayer(`https://api.mapbox.com/styles/v1/mapbox/streets-v11/tiles/{z}/{x}/{y}?access_token=${MAPBOX_TOKEN}`, { tileSize: 512, zoomOffset: -1, attribution: '&copy; Mapbox & OpenStreetMap' });
+    const mbSat     = L.tileLayer(`https://api.mapbox.com/styles/v1/mapbox/satellite-v9/tiles/{z}/{x}/{y}?access_token=${MAPBOX_TOKEN}`, { tileSize: 512, zoomOffset: -1, attribution: '&copy; Mapbox & OpenStreetMap' });
+    const mbOutdoors= L.tileLayer(`https://api.mapbox.com/styles/v1/mapbox/outdoors-v11/tiles/{z}/{x}/{y}?access_token=${MAPBOX_TOKEN}`, { tileSize: 512, zoomOffset: -1, attribution: '&copy; Mapbox & OpenStreetMap' });
+    const mbCustom  = L.tileLayer('https://api.mapbox.com/styles/v1/omerosman/cm8oy6is4006101si7ll3bs4h/tiles/{z}/{x}/{y}?access_token=' + MAPBOX_TOKEN, { tileSize: 512, zoomOffset: -1, attribution: '&copy; Mapbox & OpenStreetMap' });
+
+    mbCustom.addTo(map);
+
+    L.control.layers({
+      "Mapbox Custom": mbCustom,
+      "Mapbox Light": mbLight,
+      "Mapbox Streets": mbStreets,
+      "Mapbox Outdoors": mbOutdoors,
+      "Mapbox Satellite": mbSat,
+      "Carto Light": cartoLight
+    }).addTo(map);
+
+    L.control.scale({ position: 'bottomleft', metric: true, imperial: false }).addTo(map);
+    L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+    let stateBoundariesLayer;    // for reference/fitBounds
+    let flowmapLayer;            // canvas flow layer instance
+    let isAnimationPlaying = true;
+    let showFlows = true;
+    let showPoints = true;
+
+    // UI bindings
+    const btnReset = document.getElementById('reset-view');
+    const btnAnim  = document.getElementById('toggle-animation');
+    const animIcon = document.getElementById('animation-icon');
+    const animText = document.getElementById('animation-text');
+    const btnFlows = document.getElementById('toggle-flows');
+    const flowsText= document.getElementById('flows-text');
+    const btnPoints= document.getElementById('toggle-points');
+    const pointsText= document.getElementById('points-text');
+    const helpClose= document.getElementById('close-info');
+
+    btnReset.addEventListener('click', () => map.setView([16,30], 5.5));
+
+    btnAnim.addEventListener('click', toggleAnimation);
+    btnFlows.addEventListener('click', toggleFlows);
+    btnPoints.addEventListener('click', togglePoints);
+    helpClose.addEventListener('click', () => document.getElementById('info-panel').style.display = 'none');
+
+    // Keyboard shortcuts
+    window.addEventListener('keydown', (e) => {
+      if (e.target.closest('input, textarea, [contenteditable="true"]')) return;
+      if (e.code === 'Space') { e.preventDefault(); toggleAnimation(); }
+      else if (e.key.toLowerCase() === 'f') toggleFlows();
+      else if (e.key.toLowerCase() === 'p') togglePoints();
+      else if (e.key.toLowerCase() === 'r') map.setView([16,30], 5.5);
+    });
+
+    function setAnimButtonState() {
+      if (isAnimationPlaying) { animIcon.className = 'fas fa-pause'; animText.textContent = 'Pause'; }
+      else { animIcon.className = 'fas fa-play'; animText.textContent = 'Play'; }
+    }
+    function setFlowsButtonState() { flowsText.textContent = showFlows ? 'Hide Flows' : 'Show Flows'; btnFlows.setAttribute('aria-pressed', String(showFlows)); }
+    function setPointsButtonState(){ pointsText.textContent= showPoints ? 'Hide Points' : 'Show Points'; btnPoints.setAttribute('aria-pressed', String(showPoints)); }
+
+    function toggleAnimation(){
+      isAnimationPlaying = !isAnimationPlaying;
+      if (flowmapLayer && typeof flowmapLayer.setAnimationStarted === 'function') flowmapLayer.setAnimationStarted(isAnimationPlaying);
+      setAnimButtonState();
+    }
+    function toggleFlows(){
+      showFlows = !showFlows;
+      if (flowmapLayer && typeof flowmapLayer.setPathDisplayMode === 'function') {
+        flowmapLayer.setPathDisplayMode(showFlows ? 'all' : 'none');
+      }
+      setFlowsButtonState();
+    }
+    function togglePoints(){
+      showPoints = !showPoints;
+      // If your local CanvasFlowmapLayer exposes setPointVisibility, use it. Fallback is no-op.
+      if (flowmapLayer && typeof flowmapLayer.setPointVisibility === 'function') {
+        flowmapLayer.setPointVisibility(showPoints);
+      } else {
+        console.warn('setPointVisibility not available on this CanvasFlowmapLayer build.');
+      }
+      setPointsButtonState();
+    }
+
+    // --- Load data ---
+    const overlay = document.getElementById('loading-overlay');
+    Promise.all([
+      fetch('./data/sudan_states.geojson').then(r => r.json()).catch(err => { console.error('States GeoJSON error', err); return null; }),
+      new Promise((resolve, reject) => {
+        Papa.parse('./data/IDPs_Pathway.csv', {
+          download: true, header: true, dynamicTyping: true, skipEmptyLines: true,
+          complete: (res) => resolve(res.data), error: reject
+        });
+      })
+    ]).then(([states, rows]) => {
+      if (states) {
+        stateBoundariesLayer = L.geoJSON(states, {
+          style: { color: '#666', weight: 1, opacity: 0.8, fillOpacity: 0.05 }
+        }).addTo(map);
+        try { map.fitBounds(stateBoundariesLayer.getBounds(), { padding: [20,20] }); } catch {}
+      }
+
+      // Clean & process tabular rows
+      const data = rows
+        .map(row => normalizeRow(row))
+        .filter(r => Number.isFinite(r.s_lat) && Number.isFinite(r.s_lon) && Number.isFinite(r.e_lat) && Number.isFinite(r.e_lon) && Number.isFinite(r.e_Volume) && r.e_Volume > 0);
+
+      const { destinationTotals, originTotals } = computeTotals(data);
+      data.forEach(d => {
+        d.e_totalVolume = destinationTotals.get(d.e_locality_id) || d.e_Volume;
+        d.s_totalVolume = originTotals.get(d.s_state_id) || d.e_Volume;
+      });
+
+      initFlowmap(data);
+      overlay.style.display = 'none';
+      setAnimButtonState(); setFlowsButtonState(); setPointsButtonState();
+    }).catch(err => {
+      overlay.innerHTML = '<div style="color:#b00020;text-align:center">Failed to load data. Check console.</div>';
+      console.error(err);
+    });
+
+    function normalizeRow(r) {
+      // Ensure expected fields exist & types are correct
+      return {
+        // origins
+        s_state_id: String(r.s_state_id || r.origin_state_id || r.state_code || '').trim(),
+        s_State: r.s_State || r.origin_state || r.state || 'Unknown',
+        s_lat: parseFloat(r.s_lat),
+        s_lon: parseFloat(r.s_lon),
+
+        // destinations
+        e_locality_id: String(r.e_locality_id || r.dest_locality_id || r.locality_code || '').trim(),
+        e_locality: r.e_locality || r.dest_locality || r.locality || 'Unknown',
+        e_lat: parseFloat(r.e_lat),
+        e_lon: parseFloat(r.e_lon),
+
+        // metrics
+        e_Volume: parseFloat(r.e_Volume || r.volume || r.total || 0) || 0,
+        main_needs: r.main_needs || r.needs || '',
+
+        // anything else is kept as-is
+        ...r
+      };
+    }
+
+    function computeTotals(data) {
+      const destinationTotals = new Map();
+      const originTotals = new Map();
+      for (const d of data) {
+        destinationTotals.set(d.e_locality_id, (destinationTotals.get(d.e_locality_id) || 0) + d.e_Volume);
+        originTotals.set(d.s_state_id, (originTotals.get(d.s_state_id) || 0) + d.e_Volume);
+      }
+      return { destinationTotals, originTotals };
+    }
+
+    function initFlowmap(data) {
+      // Build a FeatureCollection of origin points; CanvasFlowmapLayer will synthesize dest features & flows
+      const fc = {
+        type: 'FeatureCollection',
+        features: data.map(d => ({
+          type: 'Feature',
+          geometry: { type: 'Point', coordinates: [d.s_lon, d.s_lat] },
+          properties: d
+        }))
+      };
+
+      flowmapLayer = L.canvasFlowmapLayer(fc, {
+        originAndDestinationFieldIds: {
+          originUniqueIdField: 's_state_id',
+          originGeometry: { x: 's_lon', y: 's_lat' },
+          destinationUniqueIdField: 'e_locality_id',
+          destinationGeometry: { x: 'e_lon', y: 'e_lat' }
+        },
+
+        // Draw points as circle markers so we can style/tooltip/popups
+        pointToLayer: function(feature, latlng) {
+          const isOrigin = feature.properties && feature.properties.isOrigin;
+          const vol = isOrigin ? (feature.properties.s_totalVolume || 0) : (feature.properties.e_totalVolume || 0);
+          const r = isOrigin ? scaleRadius(vol, 20000, 6, 12) : scaleRadius(vol, 20000, 5, 10);
+          const color = isOrigin ? '#ff671f' : '#418FDE';
+          return L.circleMarker(latlng, {
+            radius: r,
+            weight: 1,
+            color: '#fff',
+            fillColor: color,
+            fillOpacity: isOrigin ? 0.85 : 0.75,
+            opacity: 1
+          });
+        },
+
+        // Flow (bezier) styling using class breaks on per-flow volume
+        canvasBezierStyle: {
+          type: 'classBreaks',
+          field: 'e_Volume',
+          classBreakInfos: [
+            { classMinValue: 1,      classMaxValue: 50000,   symbol: { strokeStyle: getComputedStyle(document.documentElement).getPropertyValue('--brand-warm1') || '#ffb81c', lineWidth: 0.7, lineCap: 'round', shadowColor: '#fee8c8', shadowBlur: 2 } },
+            { classMinValue: 50000,  classMaxValue: 100000,  symbol: { strokeStyle: getComputedStyle(document.documentElement).getPropertyValue('--brand-warm2') || '#ff671f', lineWidth: 1.5, lineCap: 'round', shadowColor: '#fdbb84', shadowBlur: 2 } },
+            { classMinValue: 100000, classMaxValue: 1600000, symbol: { strokeStyle: getComputedStyle(document.documentElement).getPropertyValue('--brand-warm3') || '#d22630', lineWidth: 3,   lineCap: 'round', shadowColor: '#e34a33', shadowBlur: 2 } }
+          ],
+          defaultSymbol: { strokeStyle: '#d0d7e2', lineWidth: 0.6, lineCap: 'round', shadowColor: '#d0d7e2', shadowBlur: 1.2 }
+        },
+
+        pathDisplayMode: 'all',          // show all paths initially; user can filter via selection
+        animationStarted: true,
+        animationEasingFamily: 'Linear',
+        animationEasingType: 'None',
+        animationDuration: 3200,
+
+        onEachFeature: (feature, layer) => attachInteractivity(feature, layer)
+      }).addTo(map);
+
+      // Initial selection (optional): focus flows from Khartoum (SD01). Change as needed.
+      try { flowmapLayer.selectFeaturesForPathDisplayById('s_state_id', 'SD01', true, 'SELECTION_NEW'); } catch {}
+
+      // Hover highlight (throttled) & click-to-select
+      let hoverLock = false;
+      flowmapLayer.on('mouseover', (e) => {
+        if (hoverLock) return; hoverLock = true; setTimeout(() => hoverLock = false, 50);
+        if (e.sharedOriginFeatures?.length) flowmapLayer.selectFeaturesForPathDisplay(e.sharedOriginFeatures, 'SELECTION_NEW');
+        if (e.sharedDestinationFeatures?.length) flowmapLayer.selectFeaturesForPathDisplay(e.sharedDestinationFeatures, 'SELECTION_NEW');
+      });
+
+      flowmapLayer.on('click', (e) => {
+        if (e.sharedOriginFeatures?.length) flowmapLayer.selectFeaturesForPathDisplay(e.sharedOriginFeatures, 'SELECTION_NEW');
+        else if (e.sharedDestinationFeatures?.length) flowmapLayer.selectFeaturesForPathDisplay(e.sharedDestinationFeatures, 'SELECTION_NEW');
+      });
+    }
+
+    function attachInteractivity(feature, layer) {
+      const isOrigin = feature.properties && feature.properties.isOrigin;
+      const title = isOrigin ? 'Displacement Origin' : 'Displacement Destination';
+      const name  = isOrigin ? (feature.properties.s_State || 'Unknown') : (feature.properties.e_locality || 'Unknown');
+      const total = isOrigin ? (feature.properties.s_totalVolume || 0) : (feature.properties.e_totalVolume || 0);
+
+      const tip = `${title}: ${escapeHtml(name)}`;
+      layer.bindTooltip(tip, { direction: 'top', offset: [0,-2] });
+
+      const popup = `
+        <div style="min-width:220px">
+          <h4 style="margin:0 0 8px;color:var(--brand-primary);font-weight:600">${title}</h4>
+          <p style="margin:0 0 6px"><strong>${isOrigin ? 'State' : 'Location'}:</strong> ${escapeHtml(name)}</p>
+          <p style="margin:0 0 6px"><strong>Total Displaced:</strong> ${formatNumber(total)}</p>
+          ${feature.properties.main_needs ? `<p style="margin:0 0 6px"><strong>Main Needs:</strong> ${escapeHtml(String(feature.properties.main_needs))}</p>` : ''}
+          <p style="margin:6px 0 0"><small>Click markers/lines to focus flows</small></p>
+        </div>`;
+      layer.bindPopup(popup);
+    }
+
+    // --- Utils ---
+    function scaleRadius(value, step, rMin, rMax) {
+      if (!Number.isFinite(value) || value <= 0) return rMin;
+      const v = Math.log(1 + value / Math.max(step, 1));
+      const t = Math.min(v / Math.log(1 + (20)), 1); // gentle cap
+      return rMin + (rMax - rMin) * t;
+    }
+
+    function formatNumber(x) {
+      try { return Number(x).toLocaleString(undefined); } catch { return x; }
+    }
+
+    function escapeHtml(str) {
+      return String(str).replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[s]));
+    }
+  })();
+  </script>
+</body>
+</html>
