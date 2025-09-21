@@ -31,7 +31,6 @@
     }
 
     .map-container { position: relative; flex: 1 1 auto; margin: 0; }
-
     #map { position: absolute; inset: 0; }
 
     .legend {
@@ -84,8 +83,6 @@
       <div>Loading displacement data…</div>
     </div>
 
-    <!-- Removed the map-controls toolbar -->
-
     <div class="info-panel" id="info-panel">
       <button class="close-btn" id="close-info" aria-label="Close help">&times;</button>
       <h3>How to use this map</h3>
@@ -99,6 +96,8 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   <script src="https://unpkg.com/@tweenjs/tween.js@18.6.4/dist/tween.umd.js"></script>
   <script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
+  <!-- TopoJSON client (handles ADMIN1.json if it's TopoJSON) -->
+  <script src="https://unpkg.com/topojson-client@3"></script>
   <!-- Local copy of CanvasFlowmapLayer (ensure this path is valid in your project) -->
   <script src="./src/CanvasFlowmapLayer.js"></script>
 
@@ -125,7 +124,7 @@
 
     mbCustom.addTo(map);
 
-    L.control.layers({
+    const layerControl = L.control.layers({
       "Mapbox Custom": mbCustom,
       "Mapbox Light": mbLight,
       "Mapbox Streets": mbStreets,
@@ -147,7 +146,7 @@
     const helpClose = document.getElementById('close-info');
     helpClose.addEventListener('click', () => document.getElementById('info-panel').style.display = 'none');
 
-    // Keyboard shortcuts (optional)
+    // Keyboard shortcuts
     window.addEventListener('keydown', (e) => {
       if (e.target && e.target.closest && e.target.closest('input, textarea, [contenteditable="true"]')) return;
       if (e.code === 'Space') { e.preventDefault(); toggleAnimation(); }
@@ -177,26 +176,58 @@
 
     // --- Load data ---
     const overlay = document.getElementById('loading-overlay');
+
     Promise.all([
-      fetch('./data/sudan_states.geojson').then(r => r.json()).catch(err => { console.error('States GeoJSON error', err); return null; }),
+      // Prefer ADMIN1.json; may be GeoJSON or TopoJSON
+      fetch('./data/ADMIN1.json').then(r => (r.ok ? r.json() : null)).catch(() => null),
+      // Fallback to an older states file if present
+      fetch('./data/sudan_states.geojson').then(r => (r.ok ? r.json() : null)).catch(() => null),
+      // CSV flows
       new Promise((resolve, reject) => {
         Papa.parse('./data/IDPs_Pathway.csv', {
           download: true, header: true, dynamicTyping: true, skipEmptyLines: true,
           complete: (res) => resolve(res.data), error: reject
         });
       })
-    ]).then(([states, rows]) => {
+    ]).then(([admin1Maybe, statesFallback, rows]) => {
+      // Prefer ADMIN1.json; if Topology, convert to GeoJSON
+      const states = toGeoJSON(admin1Maybe) || toGeoJSON(statesFallback);
+
       if (states) {
+        const baseStyle = { color: '#666', weight: 1, opacity: 0.8, fillOpacity: 0.05 };
         stateBoundariesLayer = L.geoJSON(states, {
-          style: { color: '#666', weight: 1, opacity: 0.8, fillOpacity: 0.05 }
+          style: baseStyle,
+          onEachFeature: (feat, lyr) => {
+            const nm = getAdmin1Name(feat && feat.properties) || 'Admin 1';
+            lyr.bindTooltip(nm, { sticky: true });
+            lyr.on({
+              mouseover: (e) => e.target.setStyle({ weight: 2, fillOpacity: 0.08 }),
+              mouseout:  (e) => stateBoundariesLayer.resetStyle(e.target),
+              click:     (e) => {
+                try { map.fitBounds(e.target.getBounds(), { padding: [20, 20] }); } catch {}
+              }
+            });
+          }
         }).addTo(map);
+
+        // Keep borders under the flows
+        stateBoundariesLayer.bringToBack();
+
+        // Fit once
         try { map.fitBounds(stateBoundariesLayer.getBounds(), { padding: [20,20] }); } catch {}
+
+        // Add toggle to the layer control
+        layerControl.addOverlay(stateBoundariesLayer, 'Admin 1 Boundaries');
       }
 
       // Clean & process tabular rows
       const data = rows
         .map(row => normalizeRow(row))
-        .filter(r => Number.isFinite(r.s_lat) && Number.isFinite(r.s_lon) && Number.isFinite(r.e_lat) && Number.isFinite(r.e_lon) && Number.isFinite(r.e_Volume) && r.e_Volume > 0);
+        .filter(r =>
+          Number.isFinite(r.s_lat) && Number.isFinite(r.s_lon) &&
+          Number.isFinite(r.e_lat) && Number.isFinite(r.e_lon) &&
+          Number.isFinite(r.e_Volume) && r.e_Volume > 0
+        );
 
       const { destinationTotals, originTotals } = computeTotals(data);
       data.forEach(d => {
@@ -211,6 +242,36 @@
       console.error(err);
     });
 
+    // --- Helpers for ADMIN1.json ---
+    function toGeoJSON(source) {
+      if (!source) return null;
+      // If it's Topology (TopoJSON), convert to GeoJSON using topojson-client
+      if (source.type === 'Topology' && window.topojson && topojson.feature) {
+        const objectNames = Object.keys(source.objects || {});
+        if (objectNames.length) {
+          // If there's an object named 'ADMIN1' prefer it; otherwise take the first
+          const key = objectNames.find(k => /admin.?1/i.test(k)) || objectNames[0];
+          return topojson.feature(source, source.objects[key]);
+        }
+      }
+      // Assume plain GeoJSON
+      return source;
+    }
+
+    function getAdmin1Name(props = {}) {
+      return (
+        props.ADM1_EN ||
+        props.ADM1_PCODE ||
+        props.NAME_1 ||
+        props.admin1Name ||
+        props.state_name ||
+        props.State ||
+        props.NAME ||
+        null
+      );
+    }
+
+    // --- Data shaping ---
     function normalizeRow(r) {
       return {
         // origins
@@ -296,21 +357,8 @@
         onEachFeature: (feature, layer) => attachInteractivity(feature, layer)
       }).addTo(map);
 
-      // Optional: initial selection
+      // Optional: initial selection (safe no-op if ID doesn't exist)
       try { flowmapLayer.selectFeaturesForPathDisplayById('s_state_id', 'SD02114', true, 'SELECTION_NEW'); } catch {}
-
-      // Hover & click focus
-      let hoverLock = false;
-      flowmapLayer.on('mouseover', (e) => {
-        if (hoverLock) return; hoverLock = true; setTimeout(() => hoverLock = false, 50);
-        if (e.sharedOriginFeatures?.length) flowmapLayer.selectFeaturesForPathDisplay(e.sharedOriginFeatures, 'SELECTION_NEW');
-        if (e.sharedDestinationFeatures?.length) flowmapLayer.selectFeaturesForPathDisplay(e.sharedDestinationFeatures, 'SELECTION_NEW');
-      });
-
-      flowmapLayer.on('click', (e) => {
-        if (e.sharedOriginFeatures?.length) flowmapLayer.selectFeaturesForPathDisplay(e.sharedOriginFeatures, 'SELECTION_NEW');
-        else if (e.sharedDestinationFeatures?.length) flowmapLayer.selectFeaturesForPathDisplay(e.sharedDestinationFeatures, 'SELECTION_NEW');
-      });
     }
 
     function attachInteractivity(feature, layer) {
@@ -331,6 +379,25 @@
           <p style="margin:6px 0 0"><small>Click markers/lines to focus flows</small></p>
         </div>`;
       layer.bindPopup(popup);
+
+      // Hover & click focus
+      let hoverLock = false;
+      layer.on('mouseover', () => {
+        if (hoverLock) return; hoverLock = true; setTimeout(() => hoverLock = false, 50);
+        if (flowmapLayer) {
+          if (isOrigin && layer.sharedOriginFeatures?.length) flowmapLayer.selectFeaturesForPathDisplay(layer.sharedOriginFeatures, 'SELECTION_NEW');
+          if (!isOrigin && layer.sharedDestinationFeatures?.length) flowmapLayer.selectFeaturesForPathDisplay(layer.sharedDestinationFeatures, 'SELECTION_NEW');
+        }
+      });
+
+      layer.on('click', () => {
+        if (!flowmapLayer) return;
+        if (isOrigin && layer.sharedOriginFeatures?.length) {
+          flowmapLayer.selectFeaturesForPathDisplay(layer.sharedOriginFeatures, 'SELECTION_NEW');
+        } else if (!isOrigin && layer.sharedDestinationFeatures?.length) {
+          flowmapLayer.selectFeaturesForPathDisplay(layer.sharedDestinationFeatures, 'SELECTION_NEW');
+        }
+      });
     }
 
     // --- Utils ---
