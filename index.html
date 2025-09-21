@@ -2,32 +2,39 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-  <title>Sudan | IDPs Pathways Across Sudan (Improved + Story)</title>
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
+  />
+  <title>Sudan | IDPs Pathways Dashboard</title>
 
   <!-- Leaflet CSS -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="anonymous"/>
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    crossorigin="anonymous"
+  />
   <!-- Font Awesome -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer"/>
-  <!-- IOM digital typeface per brand guide -->
-  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+    crossorigin="anonymous"
+    referrerpolicy="no-referrer"
+  />
+  <!-- IOM digital typeface -->
+  <link
+    href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700;800&display=swap"
+    rel="stylesheet"
+  />
 
   <style>
     :root{
       /* IOM primary + shades */
-      --iom-blue:#0033A0;         /* Primary IOM blue */
-      --iom-blue-60:#4066B8;
-      --iom-blue-40:#8099D0;
-      --iom-blue-20:#B3C2E3;
-      --iom-blue-10:#D9E0F1;
-      --blue-box:#E9EBF6;         /* Lightest box bg for callouts */
+      --iom-blue:#0033A0; --iom-blue-60:#4066B8; --iom-blue-40:#8099D0; --iom-blue-20:#B3C2E3; --iom-blue-10:#D9E0F1;
+      --blue-box:#E9EBF6;
 
       /* IOM secondary set */
-      --un-blue:#418FDE;          /* Light blue (UN blue) */
-      --yellow:#FFB81C;           /* brand yellow */
-      --orange:#FF671F;           /* brand orange */
-      --red:#D22630;              /* brand red */
-      --mint:#5CB8B2;             /* brand mint */
+      --un-blue:#418FDE; --yellow:#FFB81C; --orange:#FF671F; --red:#D22630; --mint:#5CB8B2;
 
       /* Map/UI tokens */
       --brand-primary:var(--iom-blue);
@@ -41,8 +48,11 @@
       --line2:var(--orange);
       --line3:var(--red);
 
-      /* Scenario routes — a single secondary (mint) */
+      /* Scenario routes */
       --potential:var(--mint);
+
+      /* Layout */
+      --sidebar-w: 340px;
     }
 
     html, body { height:100%; }
@@ -53,10 +63,11 @@
       -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
     }
 
-    /* ─── Header & Footer ─────────────────────────────────────────────── */
+    /* ─── Header ─────────────────────────────────────────────────────── */
     .app-header{
       display:flex; align-items:center; justify-content:space-between; gap:12px;
       padding:10px 16px; background:#fff; border-bottom:1px solid #e6edf5; position:relative;
+      box-shadow:0 2px 8px rgba(0,0,0,.05);
     }
     .app-header::after{
       content:""; position:absolute; left:0; right:0; bottom:-2px; height:2px;
@@ -67,7 +78,8 @@
     .brand .logo svg{ width:100%; height:100%; display:block; }
     .brand h1{ font-size:16px; line-height:1.15; margin:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-weight:800; color:#0e2a5a; }
     .brand .sub{ font-size:12px; color:#5a7086; font-weight:600; letter-spacing:.2px; }
-    .toolbar{ display:flex; align-items:center; flex-wrap:wrap; gap:6px; }
+
+    .header-actions{ display:flex; align-items:center; gap:8px; }
     .btn{
       display:inline-flex; align-items:center; gap:8px; border:1px solid #d1dbe7; background:#fff; color:#1d2a36;
       padding:6px 10px; border-radius:10px; font-size:12px; font-weight:700; cursor:pointer; user-select:none; transition:.2s ease;
@@ -75,21 +87,72 @@
     .btn:hover{ border-color:#b7c6da; box-shadow:0 1px 0 rgba(0,0,0,.03); }
     .btn.active{ border-color:var(--brand-accent); background:#eef6ff; }
 
-    .app-footer{
-      display:flex; align-items:center; justify-content:space-between; gap:10px;
-      background:#fff; border-top:1px solid #e6edf5; padding:8px 12px; font-size:12px; color:#45607a;
-    }
-    .kbd{
-      font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;
-      border:1px solid #c9d5e6; border-bottom-width:2px; padding:0 6px; border-radius:6px; background:#f7faff;
+    /* ─── Dashboard layout ───────────────────────────────────────────── */
+    .dash{
+      display:grid;
+      grid-template-columns: var(--sidebar-w) 1fr;
+      gap:12px;
+      padding:12px;
+      flex:1 1 auto;
+      min-height:0;
     }
 
-    /* ─── Map container ───────────────────────────────────────────────── */
-    .map-wrap{ position:relative; flex:1 1 auto; min-height:0; }
+    aside.sidebar{
+      background:#fff; border:1px solid #e6edf5; border-radius:12px; padding:12px;
+      box-shadow:0 1px 10px rgba(0,0,0,.04);
+      display:flex; flex-direction:column; gap:12px; min-height:0;
+    }
+    .block{
+      border:1px solid #e6edf5; border-radius:10px; padding:12px; background:#fff;
+    }
+    .block h3{
+      margin:0 0 8px; font-size:13px; color:#244b6b; font-weight:800; letter-spacing:.2px;
+    }
+    .control-row{ display:flex; align-items:center; justify-content:space-between; gap:8px; margin:8px 0; font-size:13px; }
+    .control-row label{ display:flex; align-items:center; gap:8px; cursor:pointer; }
+
+    .legend{
+      display:grid; grid-template-columns:18px 1fr; gap:8px 10px; align-items:center; font-size:12px; color:#3c4f62;
+    }
+    .legend .sw{ height:4px; border-radius:2px; }
+    .legend .pt{ width:12px; height:12px; border-radius:50%; display:inline-block; }
+
+    main.content{
+      display:grid;
+      grid-template-rows: auto 1fr;
+      gap:12px; min-height:0;
+    }
+
+    .kpis{
+      display:grid; grid-template-columns: repeat(4, minmax(160px,1fr)); gap:12px;
+    }
+    .kpi{
+      background:#fff; border:1px solid #e6edf5; border-radius:12px; padding:12px; box-shadow:0 1px 10px rgba(0,0,0,.04);
+    }
+    .kpi .label{ font-size:12px; color:#5a7086; font-weight:700; }
+    .kpi .value{ font-size:22px; font-weight:800; color:#1d2a36; line-height:1.1; margin-top:4px; }
+    .kpi .sub{ font-size:11px; color:#6a7f94; margin-top:4px; }
+
+    .map-and-table{
+      display:grid; grid-template-columns: 1.2fr 0.8fr; gap:12px; min-height:0;
+    }
+    .map-card, .table-card{
+      background:#fff; border:1px solid #e6edf5; border-radius:12px; box-shadow:0 1px 10px rgba(0,0,0,.04);
+      display:flex; flex-direction:column; min-height:0; overflow:hidden;
+    }
+    .card-h{ padding:10px 12px; border-bottom:1px solid #eef2f7; font-weight:800; color:#244b6b; }
+    .card-b{ position:relative; flex:1 1 auto; min-height:0; }
     #map{ position:absolute; inset:0; }
 
+    .table-wrap{ padding:8px 12px; overflow:auto; }
+    table{ border-collapse:separate; border-spacing:0 8px; width:100%; font-size:13px; }
+    thead th{ text-align:left; color:#5a7086; font-weight:700; padding:4px 6px; position:sticky; top:0; background:#fff; }
+    tbody tr{ background:#f9fbff; border:1px solid #e6edf5; }
+    tbody td{ padding:8px 6px; }
+    tbody tr:hover{ background:#eef6ff; cursor:pointer; }
+
     .loading-overlay{
-      position:absolute; inset:0; z-index:1100; background:rgba(255,255,255,.85);
+      position:absolute; inset:0; z-index:1100; background:rgba(255,255,255,.9);
       display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center;
     }
     .spinner{
@@ -98,8 +161,7 @@
     }
     @keyframes spin{ to{ transform:rotate(360deg); } }
 
-    /* ─── Origin pulsing points ──────────────────────────────────────── */
-    .origin-pulse-icon{ pointer-events:auto; }
+    /* Origin pulsing */
     .origin-pulse-icon .pulse{
       position:relative; width:var(--d,24px); height:var(--d,24px); border-radius:50%;
       background: radial-gradient(circle at 50% 45%, rgba(255,255,255,.95) 0 28%, rgba(255,103,31,1) 32%, rgba(255,103,31,.92) 60%, rgba(255,103,31,.85) 100%);
@@ -118,72 +180,41 @@
       100% { transform:translate(-50%,-50%) scale(2.1); opacity:0; }
     }
 
-    /* ─── Destination points ─────────────────────────────────────────── */
+    /* Destination glow icons */
     .dest-icon{ pointer-events:auto; transition:transform .12s ease; }
     .dest-icon .dot{
       position:relative; width:var(--d,18px); height:var(--d,18px); border-radius:50%;
       background: radial-gradient(circle at 45% 30%, rgba(255,255,255,.95) 0 28%, rgba(65,143,222,1) 32%, rgba(65,143,222,.92) 60%, rgba(65,143,222,.85) 100%);
-      border:1px solid #fff; box-shadow: 0 0 0 1px rgba(0,0,0,.06), 0 0 10px rgba(65,143,222,.35);
-    }
-    .dest-icon .dot::after{
-      content:""; position:absolute; left:35%; top:28%; width:18%; height:18%;
-      background:rgba(255,255,255,.9); border-radius:50%; filter:blur(.3px);
+      border:1px solid #fff; box-shadow:0 0 0 1px rgba(0,0,0,.06), 0 0 10px rgba(65,143,222,.35);
     }
     .dest-icon:hover{ transform:scale(1.1); }
     .dest-icon.focus{ transform:scale(1.18); box-shadow:0 0 0 2px rgba(65,143,222,.25); }
 
-    /* ─── Legend ─────────────────────────────────────────────────────── */
-    .legend * { box-sizing:border-box; }
-
-    /* ─── Crisis facts UI ───────────────────────────────────────────── */
-    .kpi-icon, .donut-icon, .note-icon { pointer-events:auto; }
-    .kpi-card, .note-card{
-      background:#fff; border:1px solid #d1dbe7; border-radius:10px; box-shadow:0 2px 10px rgba(0,0,0,.08);
-      padding:6px 10px; min-width:120px; text-align:left;
+    /* Tooltips & popups */
+    .leaflet-tooltip.state-label{
+      background:transparent; border:none; box-shadow:none; padding:0;
+      color:#244b6b; font-weight:600; font-size:12px; letter-spacing:.2px;
+      text-shadow: 0 0 2px #fff, 0 0 3px #fff, 0 0 4px #fff, 0 0 5px #fff;
+      pointer-events:none;
     }
-    .kpi-card .kpi{ font-size:18px; font-weight:800; color:#1d2a36; line-height:1.1; }
-    .kpi-card .label{ font-size:12px; color:#46607a; font-weight:700; margin-top:2px; }
-    .note-card{ font-size:12px; color:#1d2a36; }
-    .note-card strong{ color:#d22630; }
+    .leaflet-popup-content-wrapper { border-radius:12px; box-shadow:0 6px 20px rgba(0,0,0,0.12); }
+    .leaflet-popup-content { margin:16px; line-height:1.5; font-size:14px; }
+    .leaflet-popup-content h4 { margin:0 0 12px; color:var(--brand-primary); font-weight:700; font-size:16px; }
+    .leaflet-popup-content p { margin:0 0 10px; }
+    .leaflet-popup-content small { color:#5a7086; }
 
-    .donut{ width:44px; height:44px; border-radius:50%; background:conic-gradient(var(--donut-color,#418FDE) calc(var(--pct,0)*1deg), #e8eff7 0); border:2px solid #fff; box-shadow:0 0 0 1px rgba(0,0,0,.06), 0 0 10px rgba(65,143,222,.28); position:relative; display:inline-block; vertical-align:middle; }
-    .donut::after{ content:""; position:absolute; inset:8px; background:#fff; border-radius:50%; box-shadow:inset 0 0 0 1px #e6eef6; }
-    .donut-wrap{ display:flex; align-items:center; gap:8px; }
-    .donut-wrap .txt .big{ font-weight:800; color:#1d2a36; }
-    .donut-wrap .txt .small{ font-size:12px; color:#46607a; }
-
-    .camp-icon{ width:18px; height:18px; border-radius:50%; background:#999; border:1px solid #fff; box-shadow:0 0 0 1px rgba(0,0,0,.06); position:relative; opacity:.65; }
-    .camp-icon::after{ content:""; position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:10px; height:10px; clip-path:polygon(50% 0, 100% 70%, 0 70%); background:#f4f4f4; }
-    .camp-icon.bad{ background:#bbb; opacity:.45; }
-
-    /* ─── Story / Slideshow panel ───────────────────────────────────── */
-    .story-panel{
-      position:absolute; right:14px; bottom:14px; z-index:1200; width:320px; max-width:85vw;
-      background:#fff; border:1px solid #d1dbe7; border-radius:14px; box-shadow:0 10px 30px rgba(0,0,0,.12);
-      overflow:hidden; display:none;
+    /* Responsive */
+    @media (max-width:1100px){
+      .map-and-table{ grid-template-columns: 1fr; }
     }
-    .story-header{ display:flex; align-items:center; justify-content:space-between; gap:8px; padding:10px 12px; background:linear-gradient(0deg,#ffffff,#f8fbff); border-bottom:1px solid #eaf0f7; }
-    .story-title{ font-weight:800; color:#1d2a36; font-size:14px; }
-    .story-body{ padding:12px; color:#334a62; font-size:13px; line-height:1.35; }
-    .story-footer{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding:8px 10px; border-top:1px solid #eaf0f7; background:#fff; }
-    .story-dots{ display:flex; gap:6px; align-items:center; }
-    .story-dot{ width:8px; height:8px; border-radius:50%; background:#dde6f2; }
-    .story-dot.active{ background:var(--brand-accent); }
-    .story-actions .btn{ padding:6px 8px; border-radius:8px; }
-
-    /* attention ping for highlighted UI bits */
-    @keyframes ping {
-      0%{ transform:scale(1); box-shadow:0 0 0 0 rgba(255,184,28,.0); }
-      50%{ transform:scale(1.05); box-shadow:0 0 0 8px rgba(255,184,28,.25);}
-      100%{ transform:scale(1); box-shadow:0 0 0 0 rgba(255,184,28,.0);}
+    @media (max-width:900px){
+      .dash{ grid-template-columns: 1fr; }
+      aside.sidebar{ order:2; }
+      main.content{ order:1; }
+      .kpis{ grid-template-columns: repeat(2,1fr); }
     }
-    .attention{ animation: ping 1.2s ease-out 3; }
-
-    @media (max-width:768px){
-      .brand h1{ font-size:14px; }
-      .brand .sub{ display:none; }
-      .btn span{ display:none; }
-      .story-panel{ left:8px; right:8px; width:auto; }
+    @media (max-width:560px){
+      .kpis{ grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -191,8 +222,7 @@
 
   <!-- Header -->
   <header class="app-header" role="banner">
-    <div class="brand" title="Sudan | IDPs Pathways Across Sudan">
-      <!-- Sudan flag -->
+    <div class="brand" title="Sudan | IDPs Pathways Dashboard">
       <div class="logo" role="img" aria-label="Sudan flag">
         <svg viewBox="0 0 3 2" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
           <rect width="3" height="2" fill="#000"/>
@@ -203,64 +233,130 @@
       </div>
       <div>
         <h1>Sudan | Al Fasher Crisis</h1>
-        <div class="sub">Flows between origin <strong>states</strong> and destination <strong>localities</strong></div>
+        <div class="sub">Dashboard of displacement flows and key indicators</div>
       </div>
     </div>
-
-    <nav class="toolbar" aria-label="Map controls">
-      <button id="btn-play"  class="btn active" title="Play/Pause animation (Space)"><i class="fa-solid fa-play"></i><span>Animation</span></button>
-      <button id="btn-flows" class="btn active" title="Toggle flow lines (F)"><i class="fa-solid fa-wave-square"></i><span>Flows</span></button>
-      <button id="btn-points" class="btn active" title="Toggle points (P)"><i class="fa-solid fa-circle"></i><span>Points</span></button>
-
-      <!-- Potential routes toggle -->
-      <button id="btn-routes" class="btn" title="Toggle Potential Routes from El Fasher (O)"><i class="fa-solid fa-route"></i><span>Routes</span></button>
-
-      <button id="btn-story" class="btn"        title="Open story / slideshow (S)"><i class="fa-solid fa-book-open"></i><span>Story</span></button>
-      <button id="btn-reset" class="btn"        title="Reset view (R)"><i class="fa-solid fa-rotate"></i><span>Reset</span></button>
-    </nav>
+    <div class="header-actions">
+      <button id="btn-reset" class="btn" title="Reset view (R)"><i class="fa-solid fa-rotate"></i><span>Reset</span></button>
+      <button id="btn-help" class="btn" title="Help"><i class="fa-solid fa-circle-question"></i><span>Help</span></button>
+    </div>
   </header>
 
-  <!-- Map -->
-  <div class="map-wrap">
-    <div id="map" aria-label="IDPs Pathways map of Sudan" role="region"></div>
-
-    <div class="loading-overlay" id="loading-overlay" aria-live="polite">
-      <div class="spinner" aria-hidden="true"></div>
-      <div>Loading displacement data…</div>
-    </div>
-
-    <!-- Story / Slideshow Panel -->
-    <div class="story-panel" id="story-panel" role="dialog" aria-modal="false" aria-live="polite">
-      <div class="story-header">
-        <div class="story-title" id="story-title">Story</div>
-        <div class="story-actions">
-          <button id="story-prev"   class="btn" title="Previous (←)"><i class="fa-solid fa-arrow-left"></i></button>
-          <button id="story-toggle" class="btn" title="Play/Pause (Space)"><i class="fa-solid fa-play"></i></button>
-          <button id="story-next"   class="btn" title="Next (→)"><i class="fa-solid fa-arrow-right"></i></button>
-          <button id="story-close"  class="btn" title="Close (Esc)"><i class="fa-solid fa-xmark"></i></button>
+  <!-- Dashboard -->
+  <div class="dash">
+    <!-- Sidebar -->
+    <aside class="sidebar" aria-label="Filters and legend">
+      <div class="block">
+        <h3>Layers & Filters</h3>
+        <div class="control-row">
+          <label><input type="checkbox" id="chk-flows" checked> Flow lines</label>
+          <span class="hint"></span>
+        </div>
+        <div class="control-row">
+          <label><input type="checkbox" id="chk-points" checked> Points</label>
+          <span></span>
+        </div>
+        <div class="control-row">
+          <label><input type="checkbox" id="chk-routes"> Potential routes</label>
+          <span></span>
+        </div>
+        <div class="control-row">
+          <label for="min-volume">Min. flow volume</label>
+          <input type="number" id="min-volume" value="1" min="1" step="1000" style="width:110px;">
+        </div>
+        <div class="control-row">
+          <label for="basemap">Basemap</label>
+          <select id="basemap" style="width:140px;">
+            <option value="mbLight" selected>Mapbox Light</option>
+            <option value="mbStreets">Mapbox Streets</option>
+            <option value="mbOutdoor">Mapbox Outdoors</option>
+            <option value="mbSat">Mapbox Satellite</option>
+            <option value="cartoLight">Carto Light</option>
+            <option value="mbCustom">Mapbox Custom</option>
+          </select>
         </div>
       </div>
-      <div class="story-body" id="story-body"></div>
-      <div class="story-footer">
-        <div class="story-dots" id="story-dots"></div>
-        <div style="font-size:12px; color:#46607a;"><span id="story-count">1/5</span></div>
-      </div>
-    </div>
-  </div>
 
-  <!-- Footer -->
-  <footer class="app-footer" role="contentinfo">
-    <div>
-      <strong>Keyboard:</strong> <span class="kbd">Space</span> Play/Pause · <span class="kbd">F</span> Flows · <span class="kbd">P</span> Points · <span class="kbd">O</span> Routes · <span class="kbd">S</span> Story · <span class="kbd">R</span> Reset
-    </div>
-    <div>
-      <span>© IOM DTM — Visualization prototype. Basemap © Mapbox/OSM.</span>
-    </div>
-  </footer>
+      <div class="block">
+        <h3>Legend</h3>
+        <div class="legend">
+          <span class="sw" style="background:var(--line1)"></span><span>1 — 50,000</span>
+          <span class="sw" style="background:var(--line2)"></span><span>50,000 — 100,000</span>
+          <span class="sw" style="background:var(--line3)"></span><span>100,000 — 1,600,000</span>
+          <span class="sw" style="background:var(--potential)"></span><span>Potential route</span>
+          <span class="pt" style="background:#ff671f; box-shadow:0 0 0 2px #fff inset"></span><span>Origin state (pulsing)</span>
+          <span class="pt" style="background:var(--brand-accent); box-shadow:0 0 8px rgba(65,143,222,.35)"></span><span>Destination locality</span>
+        </div>
+      </div>
+
+      <div class="block">
+        <h3>About</h3>
+        <div style="font-size:12px; color:#334a62; line-height:1.45">
+          IOM DTM prototype. Click a state to focus its outbound flows, or click a destination bubble to focus inbound flows. Use “Min. flow volume” to hide small lines.
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main content -->
+    <main class="content">
+      <!-- KPIs -->
+      <section class="kpis" aria-label="Key indicators">
+        <div class="kpi">
+          <div class="label">Total displaced (sum flows)</div>
+          <div class="value" id="kpi-total">—</div>
+          <div class="sub">From all origin states</div>
+        </div>
+        <div class="kpi">
+          <div class="label">Origin states</div>
+          <div class="value" id="kpi-origins">—</div>
+          <div class="sub">Unique origins in dataset</div>
+        </div>
+        <div class="kpi">
+          <div class="label">Destination localities</div>
+          <div class="value" id="kpi-dests">—</div>
+          <div class="sub">Unique destinations in dataset</div>
+        </div>
+        <div class="kpi">
+          <div class="label">Active displacement flows</div>
+          <div class="value" id="kpi-flows">—</div>
+          <div class="sub">Rows after filters</div>
+        </div>
+      </section>
+
+      <!-- Map + Table -->
+      <section class="map-and-table">
+        <div class="map-card" aria-label="Map">
+          <div class="card-h">Map</div>
+          <div class="card-b">
+            <div id="map" role="region" aria-label="IDPs Pathways map of Sudan"></div>
+            <div class="loading-overlay" id="loading-overlay" aria-live="polite">
+              <div class="spinner" aria-hidden="true"></div>
+              <div>Loading displacement data…</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="table-card" aria-label="Top destinations">
+          <div class="card-h">Top destinations</div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th style="width:36px;">#</th>
+                  <th>Locality</th>
+                  <th style="text-align:right;">Total linked displaced</th>
+                </tr>
+              </thead>
+              <tbody id="tbl-dests"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
 
   <!-- JS libs -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-  <script src="https://unpkg.com/@tweenjs/tween.js@18.6.4/dist/tween.umd.js"></script>
   <script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
   <script src="https://unpkg.com/topojson-client@3"></script>
   <!-- Local CanvasFlowmapLayer -->
@@ -275,175 +371,175 @@
       preferCanvas:true, zoomControl:false, minZoom:4, maxZoom:11, zoomSnap:0.5, zoomDelta:0.5, attributionControl:true
     }).setView([16,30], 5.5);
 
-    // Basemaps (Mapbox Light default for clarity)
-    const cartoLight = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-      attribution:'&copy; OpenStreetMap & CartoDB'
-    });
+    // Basemaps
+    const cartoLight = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { attribution:'&copy; OpenStreetMap & CartoDB' });
     const mbLight   = L.tileLayer(`https://api.mapbox.com/styles/v1/mapbox/light-v10/tiles/{z}/{x}/{y}?access_token=${MAPBOX_TOKEN}`,   { tileSize:512, zoomOffset:-1, attribution:'&copy; Mapbox & OpenStreetMap' });
     const mbStreets = L.tileLayer(`https://api.mapbox.com/styles/v1/mapbox/streets-v11/tiles/{z}/{x}/{y}?access_token=${MAPBOX_TOKEN}`, { tileSize:512, zoomOffset:-1, attribution:'&copy; Mapbox & OpenStreetMap' });
     const mbSat     = L.tileLayer(`https://api.mapbox.com/styles/v1/mapbox/satellite-v9/tiles/{z}/{x}/{y}?access_token=${MAPBOX_TOKEN}`, { tileSize:512, zoomOffset:-1, attribution:'&copy; Mapbox & OpenStreetMap' });
     const mbOutdoor = L.tileLayer(`https://api.mapbox.com/styles/v1/mapbox/outdoors-v11/tiles/{z}/{x}/{y}?access_token=${MAPBOX_TOKEN}`, { tileSize:512, zoomOffset:-1, attribution:'&copy; Mapbox & OpenStreetMap' });
     const mbCustom  = L.tileLayer(`https://api.mapbox.com/styles/v1/omerosman/cm8oy6is4006101si7ll3bs4h/tiles/{z}/{x}/{y}?access_token=${MAPBOX_TOKEN}`, { tileSize:512, zoomOffset:-1, attribution:'&copy; Mapbox & OpenStreetMap' });
-
     mbLight.addTo(map);
 
-    const layerControl = L.control.layers({
-      "Mapbox Custom": mbCustom,
-      "Mapbox Light": mbLight,
-      "Mapbox Streets": mbStreets,
-      "Mapbox Outdoors": mbOutdoor,
-      "Mapbox Satellite": mbSat,
-      "Carto Light": cartoLight
-    }).addTo(map);
-
+    // Zoom & scale
     L.control.scale({ position:'bottomleft', metric:true, imperial:false }).addTo(map);
     L.control.zoom({ position:'bottomright' }).addTo(map);
 
-    // ─── Legend ────────────────────────────────────────────────────────
-    const legend = L.control({ position: 'bottomleft' });
-    legend.onAdd = function(){
-      const div = L.DomUtil.create('div','legend');
-      div.innerHTML = `
-        <div style="background:#fff;border:1px solid #d1dbe7;border-radius:10px;padding:8px 10px;box-shadow:0 2px 10px rgba(0,0,0,.06);min-width:220px">
-          <div style="font-weight:800;color:#0e2a5a;margin-bottom:6px">Flow volume (e_Volume)</div>
-          <div style="display:grid;grid-template-columns:18px 1fr;gap:8px;align-items:center;font-size:12px;color:#3c4f62;margin-bottom:6px">
-            <span style="height:4px;background:var(--line1);"></span><span>1 — 50,000</span>
-            <span style="height:4px;background:var(--line2);"></span><span>50,000 — 100,000</span>
-            <span style="height:4px;background:var(--line3);"></span><span>100,000 — 1,600,000</span>
-            <span style="height:4px;background:var(--potential);"></span><span>Potential route (scenario)</span>
-          </div>
-          <div style="display:grid;grid-template-columns:18px 1fr;gap:8px;align-items:center;font-size:12px;color:#3c4f62">
-            <span style="width:12px;height:12px;border-radius:50%;background:#ff671f;display:inline-block;box-shadow:0 0 0 2px #fff inset;"></span>
-            <span>Origin state (pulsing by total)</span>
-            <span style="width:12px;height:12px;border-radius:50%;background:var(--brand-accent);display:inline-block;border:1px solid #fff;box-shadow:0 0 8px rgba(65,143,222,.35)"></span>
-            <span>Destination locality (glow by total)</span>
-          </div>
-        </div>`;
-      return div;
-    };
-    legend.addTo(map);
-    const legendEl = document.querySelector('.legend');
-    if (legendEl){
-      L.DomEvent.disableScrollPropagation(legendEl);
-      L.DomEvent.disableClickPropagation(legendEl);
-    }
+    // UI elements
+    const overlay = document.getElementById('loading-overlay');
+    const chkFlows  = document.getElementById('chk-flows');
+    const chkPoints = document.getElementById('chk-points');
+    const chkRoutes = document.getElementById('chk-routes');
+    const minVolumeInput = document.getElementById('min-volume');
+    const basemapSel = document.getElementById('basemap');
 
-    // ─── State ────────────────────────────────────────────────────────
-    let stateBoundariesLayer, flowmapLayer, originPulseLayer;
-    let crisisLayer, campsLayer;
-    let kpiMarker, donutMarker, noteMarker, siegeRing;
-
-    // Potential routes state
-    let routesGroup = null, routesLayer = null, routesMarkers = null, routesOrigin = null, routesVisible = false;
-
-    let campsData = []; // parsed camps
-    let campsReady = Promise.resolve([]); // set later
-
-    let isAnimationPlaying = true, showFlows = true, showPoints = true;
-
-    // Toolbar buttons
-    const btnPlay = document.getElementById('btn-play');
-    const btnFlows = document.getElementById('btn-flows');
-    const btnPoints = document.getElementById('btn-points');
     const btnReset = document.getElementById('btn-reset');
-    const btnStory = document.getElementById('btn-story');
-    const btnRoutes = document.getElementById('btn-routes');
+    const btnHelp  = document.getElementById('btn-help');
 
-    btnPlay.addEventListener('click', toggleAnimation);
-    btnFlows.addEventListener('click', toggleFlows);
-    btnPoints.addEventListener('click', togglePoints);
     btnReset.addEventListener('click', ()=> map.setView([16,30], 5.5));
-    btnStory.addEventListener('click', () => window.toggleStory?.(true));
-    btnRoutes.addEventListener('click', toggleRoutes);
-
-    // Keyboard shortcuts
     window.addEventListener('keydown', (e) => {
-      if (e.target && e.target.closest && e.target.closest('input, textarea, [contenteditable="true"]')) return;
+      if (e.target && e.target.closest && e.target.closest('input, select, textarea, [contenteditable="true"]')) return;
       const k = (e.key || '').toLowerCase();
-      if (e.code === 'Space'){ e.preventDefault(); toggleAnimation(); }
-      else if (k === 'f') toggleFlows();
-      else if (k === 'p') togglePoints();
-      else if (k === 'o') toggleRoutes();
-      else if (k === 's') window.toggleStory?.(true);
-      else if (k === 'r') map.setView([16,30], 5.5);
+      if (k === 'r') map.setView([16,30], 5.5);
+    });
+    btnHelp.addEventListener('click', ()=> {
+      alert(`Dashboard tips:
+- Toggle Flow lines / Points / Potential routes in the sidebar.
+- Click a state to focus its outbound flows.
+- Click a destination bubble or a table row to focus inbound flows.
+- Set a 'Min. flow volume' to hide small links.
+- Reset (R) returns to the country view.`);
     });
 
-    function updateBtnStates(){
-      btnPlay.classList.toggle('active', isAnimationPlaying);
-      btnFlows.classList.toggle('active', showFlows);
-      btnPoints.classList.toggle('active', showPoints);
-      btnRoutes.classList.toggle('active', routesVisible);
-    }
+    // Basemap switcher
+    basemapSel.addEventListener('change', ()=> {
+      const v = basemapSel.value;
+      [cartoLight, mbLight, mbStreets, mbSat, mbOutdoor, mbCustom].forEach(l => { if (map.hasLayer(l)) map.removeLayer(l); });
+      ({cartoLight, mbLight, mbStreets, mbSat, mbOutdoor, mbCustom}[v]).addTo(map);
+    });
 
-    function toggleAnimation(){
-      isAnimationPlaying = !isAnimationPlaying;
-      flowmapLayer?.setAnimationStarted?.(isAnimationPlaying);
-      updateBtnStates();
-    }
+    // State
+    let stateBoundariesLayer, admin1Labels;
+    let flowmapLayer, originPulseLayer;
+    let crisisLayer, campsLayer, siegeRing;
+    let routesGroup = null, routesLayer = null, routesMarkers = null, routesOrigin = null, routesVisible = false;
 
-    function toggleFlows(){
-      showFlows = !showFlows;
-      flowmapLayer?.setPathDisplayMode?.(showFlows ? 'all' : 'none');
-      updateBtnStates();
-    }
-
-    function togglePoints(){
-      showPoints = !showPoints;
-      flowmapLayer?.setPointVisibility?.(showPoints);
-      if (originPulseLayer){
-        if (showPoints && !map.hasLayer(originPulseLayer)) originPulseLayer.addTo(map);
-        if (!showPoints && map.hasLayer(originPulseLayer)) map.removeLayer(originPulseLayer);
-      }
-      updateBtnStates();
-    }
-
-    const overlay = document.getElementById('loading-overlay');
+    let allRows = [];
+    let filteredRows = [];
+    let destAgg = [];
+    let originTotals, destinationTotals;
 
     // Load data
     Promise.all([
-      fetch('./data/ADMIN1.json').then(r => (r.ok ? r.json() : null)).catch(() => null),
-      fetch('./data/sudan_states.geojson').then(r => (r.ok ? r.json() : null)).catch(() => null),
+      fetch('./data/ADMIN1.json').then(r => (r.ok ? r.json() : null)).catch(()=>null),
+      fetch('./data/sudan_states.geojson').then(r => (r.ok ? r.json() : null)).catch(()=>null),
       new Promise((resolve, reject) => {
         Papa.parse('./data/IDPs_Pathway.csv', {
           download:true, header:true, dynamicTyping:true, skipEmptyLines:true,
-          complete: res => resolve(res.data),
-          error: reject
+          complete: res => resolve(res.data), error: reject
         });
       })
     ]).then(([admin1Maybe, fallbackStates, rows]) => {
       const states = toGeoJSON(admin1Maybe) || toGeoJSON(fallbackStates);
       if (states) addStyledAdmin1(states);
 
-      const data = rows
-        .map(r => normalizeRow(r))
-        .filter(r => Number.isFinite(r.s_lat) && Number.isFinite(r.s_lon) && Number.isFinite(r.e_lat) && Number.isFinite(r.e_lon) && Number.isFinite(r.e_Volume) && r.e_Volume > 0);
+      // Normalize + store
+      allRows = rows.map(r => normalizeRow(r))
+        .filter(r => Number.isFinite(r.s_lat) && Number.isFinite(r.s_lon) &&
+                     Number.isFinite(r.e_lat) && Number.isFinite(r.e_lon) &&
+                     Number.isFinite(r.e_Volume) && r.e_Volume > 0);
 
-      const { destinationTotals, originTotals } = computeTotals(data);
-      data.forEach(d => {
-        d.e_totalVolume = destinationTotals.get(d.e_locality_id) || d.e_Volume;
-        d.s_totalVolume = originTotals.get(d.s_state_id) || d.e_Volume;
-      });
-
-      addOriginPulseLayer(data);
-      initFlowmap(data);
+      applyFiltersAndRender();
 
       overlay.style.display = 'none';
 
-      // Crisis facts + optional Camps (visible only when Story is open)
+      // Crisis ring (optional) – subtle and static
       addCrisisFacts();
-
-      // Auto-open story on first load (after crisis markers exist)
-      
+      // Prepare potential routes (not visible by default)
+      setupPotentialRoutes();
 
     }).catch(err => {
       overlay.innerHTML = '<div style="color:#b00020;text-align:center">Failed to load data. Check console.</div>';
       console.error(err);
     });
 
-    // ---- Admin1 styled layer (no permanent labels) ---------------------
+    // Filter logic
+    chkFlows.addEventListener('change', ()=> flowmapLayer?.setPathDisplayMode?.(chkFlows.checked ? 'all' : 'none'));
+    chkPoints.addEventListener('change', ()=> {
+      flowmapLayer?.setPointVisibility?.(chkPoints.checked);
+      if (originPulseLayer){
+        if (chkPoints.checked && !map.hasLayer(originPulseLayer)) originPulseLayer.addTo(map);
+        if (!chkPoints.checked && map.hasLayer(originPulseLayer)) map.removeLayer(originPulseLayer);
+      }
+    });
+    chkRoutes.addEventListener('change', toggleRoutes);
+    minVolumeInput.addEventListener('change', ()=> applyFiltersAndRender());
+
+    function applyFiltersAndRender(){
+      const minV = Math.max(1, Number(minVolumeInput.value) || 1);
+      filteredRows = allRows.filter(r => r.e_Volume >= minV);
+
+      const totals = computeTotals(filteredRows);
+      destinationTotals = totals.destinationTotals;
+      originTotals = totals.originTotals;
+      destAgg = totals.destAgg;
+
+      // Attach totals to rows (for marker sizes)
+      filteredRows.forEach(d => {
+        d.e_totalVolume = destinationTotals.get(d.e_locality_id) || d.e_Volume;
+        d.s_totalVolume = originTotals.get(d.s_state_id) || d.e_Volume;
+      });
+
+      // (Re)build layers
+      if (originPulseLayer){ map.removeLayer(originPulseLayer); originPulseLayer = null; }
+      if (flowmapLayer){ map.removeLayer(flowmapLayer); flowmapLayer = null; }
+
+      addOriginPulseLayer(filteredRows);
+      initFlowmap(filteredRows);
+
+      // Update KPIs & table
+      updateKPIs(filteredRows, originTotals, destinationTotals);
+      buildTopDestTable(destAgg);
+
+      // Respect toggles
+      flowmapLayer?.setPathDisplayMode?.(chkFlows.checked ? 'all' : 'none');
+      flowmapLayer?.setPointVisibility?.(chkPoints.checked);
+    }
+
+    function updateKPIs(data, originTotals, destinationTotals){
+      const totalDisplaced = Array.from(originTotals.values()).reduce((s,v)=>s+v,0);
+      document.getElementById('kpi-total').textContent   = totalDisplaced.toLocaleString();
+      document.getElementById('kpi-origins').textContent = originTotals.size.toLocaleString();
+      document.getElementById('kpi-dests').textContent   = destinationTotals.size.toLocaleString();
+      document.getElementById('kpi-flows').textContent   = data.length.toLocaleString();
+    }
+
+    function buildTopDestTable(destAgg){
+      const tbody = document.getElementById('tbl-dests');
+      tbody.innerHTML = '';
+      const top = destAgg.slice().sort((a,b)=> b.total - a.total).slice(0, 15);
+      top.forEach((d,i)=>{
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${i+1}</td>
+          <td>${escapeHtml(d.name)}</td>
+          <td style="text-align:right;">${formatNumber(d.total)}</td>
+        `;
+        tr.title = 'Click to focus flows to this destination';
+        tr.addEventListener('click', ()=>{
+          try{
+            flowmapLayer?.selectFeaturesForPathDisplayById?.('e_locality_id', String(d.id), true, 'SELECTION_NEW');
+            map.flyTo([d.lat, d.lon], Math.max(map.getZoom()||8, 9), {duration: 0.8});
+          }catch{}
+        });
+        tbody.appendChild(tr);
+      });
+    }
+
+    // ---- Admin1 styled layer (with hover) ------------------------------
     function addStyledAdmin1(states){
       map.createPane('admin1-casing');  map.getPane('admin1-casing').style.zIndex = 350;
       map.createPane('admin1-stroke');  map.getPane('admin1-stroke').style.zIndex = 351;
+      map.createPane('admin1-labels');  map.getPane('admin1-labels').style.zIndex = 352;
 
       function strokeWeightForZoom(z){ return Math.max(0.8, Math.min(2.4, (z - 4) * 0.35)); }
 
@@ -482,21 +578,33 @@
               }
             }
           });
-          // Hover tooltip only (no permanent labels)
           lyr.bindTooltip(nm, { sticky:true });
         }
       });
 
+      admin1Labels = L.layerGroup([], { pane:'admin1-labels' });
+      function rebuildLabels(){
+        admin1Labels.clearLayers();
+        if (map.getZoom() < 6) return;
+        admin1Stroke.eachLayer(l => {
+          const nm = getAdmin1Name(l.feature?.properties) || '';
+          if (!nm) return;
+          const c = safeCenter(l); if (!c) return;
+          L.tooltip({ permanent:true, direction:'center', className:'state-label', pane:'admin1-labels' })
+            .setContent(nm).setLatLng(c).addTo(admin1Labels);
+        });
+      }
+
       stateBoundariesLayer = L.featureGroup([admin1Casing, admin1Stroke]).addTo(map);
       stateBoundariesLayer.bringToBack();
-
       try { map.fitBounds(stateBoundariesLayer.getBounds(), { padding:[20,20] }); } catch {}
 
-      layerControl.addOverlay(stateBoundariesLayer, 'Admin 1 Boundaries');
+      rebuildLabels(); admin1Labels.addTo(map);
 
       map.on('zoomend', ()=>{
         admin1Casing.setStyle(admin1CasingStyle());
         admin1Stroke.setStyle(admin1StrokeStyle());
+        rebuildLabels();
       });
     }
 
@@ -504,7 +612,7 @@
     function addOriginPulseLayer(rows){
       map.createPane('origin-pulses'); map.getPane('origin-pulses').style.zIndex = 460;
 
-      const byState = new Map(); // s_state_id -> {lat,lon,name,total}
+      const byState = new Map();
       for (const d of rows){
         if (!d.s_state_id) continue;
         if (!byState.has(d.s_state_id)){
@@ -518,7 +626,7 @@
       const totals = [...byState.values()].map(v => v.total);
       const tMin = Math.max(1, Math.min(...totals));
       const tMax = Math.max(...totals);
-      const sizeFor = (v) => Math.round(scaleRadiusLog(v, tMin, tMax, 12, 28) * 2); // diameter
+      const sizeFor = (v) => Math.round(scaleRadiusLog(v, tMin, tMax, 12, 28) * 2);
 
       byState.forEach((v) => {
         const size = sizeFor(v.total);
@@ -544,13 +652,11 @@
       });
 
       originPulseLayer.addTo(map);
-      layerControl.addOverlay(originPulseLayer, 'Origin points (pulsing)');
     }
 
-    // ---- Flowmap (destination markers with glow) ------------------------
+    // ---- Flowmap (no animation) ----------------------------------------
     function initFlowmap(data){
       const originKeySet = new Set(data.map(d => latlonKey(d.s_lat, d.s_lon)));
-
       const fc = { type:'FeatureCollection', features: data.map(d => ({
         type:'Feature', geometry:{ type:'Point', coordinates:[d.s_lon, d.s_lat] }, properties:d
       })) };
@@ -568,7 +674,7 @@
             return L.circleMarker(latlng, { radius:0.1, opacity:0, fillOpacity:0 });
           }
           const vol = feature.properties?.e_totalVolume || feature.properties?.e_Volume || 0;
-          const d = Math.round(scaleRadiusLog(vol, 20000, 1600000, 10, 22)); // diameter
+          const d = Math.round(scaleRadiusLog(vol, 20000, 1600000, 10, 22));
           const icon = L.divIcon({
             className:'dest-icon',
             html:`<div class="dot" style="--d:${d}px"></div>`,
@@ -586,10 +692,10 @@
           defaultSymbol:{ strokeStyle:'#d0d7e2', lineWidth:0.6, lineCap:'round', shadowColor:'#d0d7e2', shadowBlur:1.2 }
         },
         pathDisplayMode:'all',
-        animationStarted:true,
+        animationStarted:false,            // ← no animation
         animationEasingFamily:'Linear',
         animationEasingType:'None',
-        animationDuration:3200,
+        animationDuration:0,
         onEachFeature:(feature, layer)=>attachInteractivity(feature, layer)
       }).addTo(map);
 
@@ -616,8 +722,6 @@
           flowmapLayer.selectFeaturesForPathDisplay(e.sharedOriginFeatures, 'SELECTION_NEW');
         }
       });
-
-      updateBtnStates();
     }
 
     function attachInteractivity(feature, layer){
@@ -636,123 +740,49 @@
         </div>`);
     }
 
-    /* === Crisis facts layer (Al Fasher) — ONLY when Story open ========= */
-    const AL_FASHER = [13.636, 25.349]; // adjust if you have a more precise point
-    const SIEGE_START = new Date('2024-05-01');
-    const FACT_ATTACKS = 240; // "More than 240 attacks"
-    const FACT_DISPLACED_PCT = 0.80; // "More than 80% displaced"
-    const FACT_TRAPPED = 'Hundreds of thousands of civilians remain trapped';
-
-    function monthsSince(date){
-      const now = new Date();
-      const y = now.getFullYear() - date.getFullYear();
-      const m = now.getMonth() - date.getMonth();
-      let months = y*12 + m;
-      if (now.getDate() < date.getDate()) months -= 1;
-      return Math.max(0, months);
-    }
-
+    /* === Crisis facts ring (subtle, static) ============================ */
+    const AL_FASHER = [13.636, 25.349];
     function addCrisisFacts(){
       map.createPane('crisis'); map.getPane('crisis').style.zIndex = 480;
-      crisisLayer = L.layerGroup([], { pane:'crisis' }); // not added here; Story toggles it
+      crisisLayer = L.layerGroup([], { pane:'crisis' }).addTo(map);
 
-      // 1) Siege ring (dashed)
       siegeRing = L.circle(AL_FASHER, {
         radius: 22000, color: '#d22630', weight: 2, dashArray: '6,6', dashOffset: '0',
-        fillColor:'#d22630', fillOpacity:0.08
-      }).bindTooltip(`Under RSF siege since May 2024 · ~${monthsSince(SIEGE_START)} months`, {
-        direction:'center', permanent:false, sticky:true
-      }).addTo(crisisLayer);
-
-      // 2) KPI badge: 240+ attacks
-      const attacksIcon = L.divIcon({
-        className:'kpi-icon',
-        html:`<div class="kpi-card" id="kpi-card">
-                <div class="kpi">${FACT_ATTACKS.toLocaleString()}+</div>
-                <div class="label">attacks</div>
-              </div>`,
-        iconSize:[1,1], iconAnchor:[0,0]
-      });
-      kpiMarker = L.marker([AL_FASHER[0]+0.045, AL_FASHER[1]-0.04], { icon: attacksIcon, pane:'crisis' })
-        .addTo(crisisLayer);
-
-      // 3) Donut: 80% displaced
-      const deg = Math.round(FACT_DISPLACED_PCT*360);
-      const donutIcon = L.divIcon({
-        className:'donut-icon',
-        html:`<div class="donut-wrap" id="donut-wrap">
-                <div class="donut" style="--pct:${deg}"></div>
-                <div class="txt">
-                  <div class="big">${Math.round(FACT_DISPLACED_PCT*100)}%</div>
-                  <div class="small">of population displaced</div>
-                </div>
-              </div>`,
-        iconSize:[1,1], iconAnchor:[0,0]
-      });
-      donutMarker = L.marker([AL_FASHER[0]+0.02, AL_FASHER[1]+0.07], { icon: donutIcon, pane:'crisis' })
-        .addTo(crisisLayer);
-
-      // 4) Trapped note
-      const noteIcon = L.divIcon({
-        className:'note-icon',
-        html:`<div class="note-card" id="note-card"><strong>Critical:</strong> ${FACT_TRAPPED}</div>`,
-        iconSize:[1,1], iconAnchor:[0,0]
-      });
-      noteMarker = L.marker([AL_FASHER[0]-0.04, AL_FASHER[1]+0.02], { icon: noteIcon, pane:'crisis' })
-        .addTo(crisisLayer);
-
-      // 5) Optional: Camps
-      campsReady = addCampsLayer();
+        fillColor:'#d22630', fillOpacity:0.06
+      }).bindTooltip('Reported siege area', {direction:'center', permanent:false, sticky:true}).addTo(crisisLayer);
     }
 
-    /* Camps CSV: data/camps.csv
-       name,lat,lon,status,occupancy,capacity
-       Zamzam Camp,13.45,25.30,Almost empty,12000,220000
-       Abu Shouk,13.70,25.32,Almost empty,8000,110000
-       Al Salam,13.60,25.42,Almost empty,5000,90000
-    */
+    /* Camps (optional) – kept if data exists */
     function addCampsLayer(){
       campsLayer = L.layerGroup([], { pane:'crisis' });
-
-      return new Promise(resolve=>{
-        if (!window.Papa){ resolve([]); return; }
-        Papa.parse('./data/camps.csv', {
-          download:true, header:true, dynamicTyping:true, skipEmptyLines:true,
-          complete: (res) => {
-            const rows = (res.data || []).filter(r => Number.isFinite(parseFloat(r.lat)) && Number.isFinite(parseFloat(r.lon)));
-            campsData = rows.map(r => ({
-              name: r.name || 'Camp',
-              lat: parseFloat(r.lat), lon: parseFloat(r.lon),
-              status: String(r.status||'').toLowerCase().trim(),
-              occupancy: Number(r.occupancy)||null, capacity: Number(r.capacity)||null
-            }));
-
-            rows.forEach(r => {
-              const status = String(r.status||'').toLowerCase().trim();
-              const cls = status.includes('almost') && status.includes('empty') ? 'bad' : '';
-              const icon = L.divIcon({
-                className:'camp-pin',
-                html:`<div class="camp-icon ${cls}"></div>`,
-                iconSize:[18,18], iconAnchor:[9,9]
-              });
-              const occ = Number(r.occupancy)||null, cap = Number(r.capacity)||null;
-              const occTxt = (occ && cap) ? `${occ.toLocaleString()} / ${cap.toLocaleString()}` : (occ ? occ.toLocaleString() : '—');
-
-              L.marker([parseFloat(r.lat), parseFloat(r.lon)], { icon, pane:'crisis' })
-                .bindTooltip(`${escapeHtml(r.name||'Camp')} · ${status || 'status unknown'}`, {direction:'top', offset:[0,-6]})
-                .bindPopup(`
-                  <div class="kpi-card">
-                    <div class="kpi" style="font-size:16px">${escapeHtml(r.name||'Camp')}</div>
-                    <div class="label">Status: ${escapeHtml(status||'unknown')}</div>
-                    <div class="label">Occupancy: ${occTxt}</div>
-                  </div>`)
-                .addTo(campsLayer);
+      Papa.parse('./data/camps.csv', {
+        download:true, header:true, dynamicTyping:true, skipEmptyLines:true,
+        complete: (res) => {
+          const rows = (res.data || []).filter(r => Number.isFinite(parseFloat(r.lat)) && Number.isFinite(parseFloat(r.lon)));
+          rows.forEach(r => {
+            const status = String(r.status||'').toLowerCase().trim();
+            const cls = status.includes('almost') && status.includes('empty') ? 'bad' : '';
+            const icon = L.divIcon({
+              className:'camp-pin',
+              html:`<div class="camp-icon ${cls}"></div>`,
+              iconSize:[18,18], iconAnchor:[9,9]
             });
+            const occ = Number(r.occupancy)||null, cap = Number(r.capacity)||null;
+            const occTxt = (occ && cap) ? `${occ.toLocaleString()} / ${cap.toLocaleString()}` : (occ ? occ.toLocaleString() : '—');
 
-            resolve(campsData);
-          },
-          error:()=>{ resolve([]); }
-        });
+            L.marker([parseFloat(r.lat), parseFloat(r.lon)], { icon, pane:'crisis' })
+              .bindTooltip(`${escapeHtml(r.name||'Camp')} · ${status || 'status unknown'}`, {direction:'top', offset:[0,-6]})
+              .bindPopup(`
+                <div class="kpi-card">
+                  <div class="kpi" style="font-size:16px">${escapeHtml(r.name||'Camp')}</div>
+                  <div class="label">Status: ${escapeHtml(status||'unknown')}</div>
+                  <div class="label">Occupancy: ${occTxt}</div>
+                </div>`)
+              .addTo(campsLayer);
+          });
+          if (rows.length) campsLayer.addTo(map);
+        },
+        error:()=>{}
       });
     }
 
@@ -796,10 +826,8 @@
           defaultSymbol:{ strokeStyle:getCSS('--potential','#0ea5e9'), lineWidth:3.2, lineCap:'round', shadowColor:'#7dd3fc', shadowBlur:3 }
         },
         pathDisplayMode:'all',
-        animationStarted:true,
-        animationEasingFamily:'Linear',
-        animationEasingType:'None',
-        animationDuration:3000
+        animationStarted:false,   // no animation
+        animationDuration:0
       });
 
       routesMarkers = L.layerGroup([], { pane:'potential' });
@@ -820,15 +848,13 @@
       }).bindTooltip('Origin: El Fasher', {direction:'top', offset:[0,-4]});
 
       routesGroup = L.featureGroup([routesLayer, routesMarkers, routesOrigin]);
-      layerControl.addOverlay(routesGroup, 'Potential routes (El Fasher → Tawila, At Tina)');
     }
 
     function toggleRoutes(){
+      routesVisible = !!chkRoutes.checked;
       if (!routesGroup){ setupPotentialRoutes(); }
-      routesVisible = !routesVisible;
       if (routesVisible){
         if (!map.hasLayer(routesGroup)) routesGroup.addTo(map);
-        routesLayer?.setAnimationStarted?.(true);
         try{
           const b = L.latLngBounds([AL_FASHER]);
           routesMarkers?.eachLayer?.(m=> b.extend(m.getLatLng()));
@@ -837,7 +863,6 @@
       }else{
         if (map.hasLayer(routesGroup)) map.removeLayer(routesGroup);
       }
-      updateBtnStates();
     }
 
     // ─── Helpers ---------------------------------------------------------
@@ -848,7 +873,7 @@
         const key = keys.find(k => /admin.?1/i.test(k)) || keys[0];
         return key ? topojson.feature(source, source.objects[key]) : null;
       }
-      return source; // assume GeoJSON
+      return source;
     }
     function getCSS(varName, fallback){
       const v = getComputedStyle(document.documentElement).getPropertyValue(varName);
@@ -862,6 +887,7 @@
       const code = (candidates.find(x => x) || '').toString().trim();
       return code || null;
     }
+    function safeCenter(layer){ try { return layer.getBounds().getCenter(); } catch { return null; } }
     function normalizeRow(r){
       return {
         s_state_id: String(r.s_state_id || r.origin_state_id || r.state_code || '').trim(),
@@ -878,11 +904,17 @@
     function computeTotals(data){
       const destinationTotals = new Map();
       const originTotals = new Map();
+      const destAggIndex = new Map();
       for (const d of data){
         destinationTotals.set(d.e_locality_id, (destinationTotals.get(d.e_locality_id) || 0) + d.e_Volume);
         originTotals.set(d.s_state_id, (originTotals.get(d.s_state_id) || 0) + d.e_Volume);
+        if (!destAggIndex.has(d.e_locality_id)){
+          destAggIndex.set(d.e_locality_id, { id:d.e_locality_id, name:d.e_locality||'Unknown', lat:d.e_lat, lon:d.e_lon, total:0 });
+        }
+        destAggIndex.get(d.e_locality_id).total += d.e_Volume;
       }
-      return { destinationTotals, originTotals };
+      const destAgg = [...destAggIndex.values()];
+      return { destinationTotals, originTotals, destAgg };
     }
     function scaleRadiusLog(value, minV, maxV, rMin, rMax){
       const v = Math.max(minV || 1, Math.min(maxV || value || 1, value || 1));
@@ -894,294 +926,6 @@
     function latlonKey(lat, lon){ return `${Number(lat).toFixed(4)},${Number(lon).toFixed(4)}`; }
     function formatNumber(x){ try { return Number(x).toLocaleString(undefined); } catch { return x; } }
     function escapeHtml(str){ return String(str).replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[s])); }
-
-    /* ─── Story / Slideshow logic ─────────────────────────────────────── */
-    (()=>{
-      const SLIDE_MS = 6000;    // autoplay per slide
-      const FLY_DUR  = 1.4;     // flyTo seconds
-      const UI_DELAY = 420;     // ms delay after fly
-      const TOUR_STEP = 3000;   // ms per camp during tour
-
-      // Story UI
-      const storyPanel = document.getElementById('story-panel');
-      const storyTitle = document.getElementById('story-title');
-      const storyBody  = document.getElementById('story-body');
-      const storyDots  = document.getElementById('story-dots');
-      const storyCount = document.getElementById('story-count');
-      const btnPrev   = document.getElementById('story-prev');
-      const btnNext   = document.getElementById('story-next');
-      const btnToggle = document.getElementById('story-toggle');
-      const btnClose  = document.getElementById('story-close');
-      const btnStory  = document.getElementById('btn-story');
-
-      let storyOpen = false;
-      let slideIdx = 0;
-      let autoplay = true;
-      let autoplayTimer = null;
-      let prevAnimationState = null;
-      let currentCleanup = null;
-      let tour = null;
-
-      function flyTo(lat, lon, zoom){
-        return new Promise(resolve => {
-          if (!map) return resolve();
-          const onEnd = () => { map.off('moveend', onEnd); resolve(); };
-          map.on('moveend', onEnd);
-          map.flyTo([lat, lon], zoom, { duration: FLY_DUR, easeLinearity: 1, animate: true, noMoveStart: false });
-        });
-      }
-      const delay = (ms = UI_DELAY) => new Promise(r => setTimeout(r, ms));
-      const addAttention = id => document.getElementById(id)?.classList.add('attention');
-      const removeAttention = id => document.getElementById(id)?.classList.remove('attention');
-
-      function clearFlowSelection(){
-        try {
-          flowmapLayer?.clearAllPathSelections?.();
-          flowmapLayer?.setPathDisplayMode?.('all');
-        } catch {}
-      }
-      function setFlowAnimation(started){
-        try { flowmapLayer?.setAnimationStarted?.(started); } catch {}
-      }
-      function pauseGlobalAnimationForStory(){
-        prevAnimationState = isAnimationPlaying;
-        isAnimationPlaying = false;
-        setFlowAnimation(false);
-        updateBtnStates?.();
-      }
-      function restoreGlobalAnimationAfterStory(){
-        const resume = prevAnimationState === true;
-        isAnimationPlaying = resume;
-        setFlowAnimation(resume);
-        updateBtnStates?.();
-      }
-      function stopAutoplay(){ if (autoplayTimer){ clearTimeout(autoplayTimer); autoplayTimer = null; } }
-      function scheduleAutoplay(){
-        stopAutoplay();
-        if (!autoplay) return;
-        autoplayTimer = setTimeout(()=> goToSlide(slideIdx + 1, { userTriggered:false }), SLIDE_MS);
-      }
-      function setAutoplay(val){
-        autoplay = !!val;
-        btnToggle.innerHTML = autoplay ? '<i class="fa-solid fa-pause"></i>' : '<i class="fa-solid fa-play"></i>';
-        if (autoplay) scheduleAutoplay(); else stopAutoplay();
-      }
-      function buildDots(){
-        storyDots.innerHTML = '';
-        for (let i=0;i<slides.length;i++){
-          const d = document.createElement('div');
-          d.className = 'story-dot' + (i===slideIdx?' active':'');
-          d.title = `Slide ${i+1}`;
-          d.onclick = ()=> goToSlide(i, { userTriggered:true });
-          storyDots.appendChild(d);
-        }
-      }
-      function setDotsActive(){
-        [...storyDots.children].forEach((c,i)=> c.classList.toggle('active', i===slideIdx));
-        storyCount.textContent = `${slideIdx+1}/${slides.length}`;
-      }
-      function cleanupSlide(){
-        if (currentCleanup){ try{ currentCleanup(); }catch{} currentCleanup=null; }
-        removeAttention('kpi-card');
-        removeAttention('donut-wrap');
-        removeAttention('note-card');
-        if (tour){ tour.stop(); tour = null; }
-        if (window.siegeRing){
-          try { siegeRing.setStyle({ dashOffset:'0', weight:2 }); } catch {}
-        }
-      }
-
-      class CampTour{
-        constructor(rows, stepMs = TOUR_STEP){
-          this.rows = rows.slice();
-          const almost = this.rows.filter(r => String(r.status||'').toLowerCase().includes('almost') && String(r.status||'').toLowerCase().includes('empty'));
-          const pool = (almost.length ? almost : this.rows).slice();
-          pool.sort((a,b)=> (b.capacity||0)-(a.capacity||0) || (b.occupancy||0)-(a.occupancy||0));
-          this.path = pool.slice(0,3);
-          this.i = 0; this.timer = null; this.stepMs = stepMs; this._stopped = false;
-        }
-        async step(){
-          if (this._stopped || !this.path.length) return;
-          const r = this.path[this.i % this.path.length]; this.i++;
-          await flyTo(r.lat, r.lon, Math.max(map.getZoom()||8, 10));
-          await delay();
-          if (this._stopped) return;
-          let best=null, bestD=1e12;
-          campsLayer?.eachLayer?.(l=>{
-            if (l.getLatLng){
-              const d = map.distance(l.getLatLng(), L.latLng(r.lat, r.lon));
-              if (d<bestD){ bestD=d; best=l; }
-            }
-          });
-          try{
-            const node = best?._icon || best?._container;
-            node?.classList?.add('attention');
-            best?.openTooltip();
-            setTimeout(()=>{ node?.classList?.remove('attention'); best?.closeTooltip(); }, 1400);
-          }catch{}
-        }
-        start(){ if (this._stopped || !this.path.length) return; this.step(); this.timer = setInterval(()=>this.step(), this.stepMs); }
-        stop(){ this._stopped = true; if (this.timer) clearInterval(this.timer); this.timer=null; }
-      }
-
-      const slides = [
-        {
-          id:'siege',
-          title:'Under RSF siege since May 2024',
-          html:`<p>Al Fasher and surroundings have been under siege since <strong>May 2024</strong>.</p>
-                <p>A dashed red ring marks the siege area; tooltip shows elapsed months.</p>`,
-          async focus(){
-            cleanupSlide();
-            pauseGlobalAnimationForStory();
-            clearFlowSelection();
-
-            const target = AL_FASHER || [13.636,25.349];
-            await flyTo(target[0], target[1], 10);
-            await delay(UI_DELAY);
-
-            let off=0, throb=true;
-            const interval = setInterval(()=>{
-              if (!siegeRing) return;
-              off = (off + 2) % 24;
-              try { siegeRing.setStyle({ dashOffset:String(off), weight: throb ? 3 : 2 }); } catch {}
-              throb = !throb;
-            }, 350);
-            currentCleanup = ()=>{ clearInterval(interval); try{ siegeRing?.setStyle?.({dashOffset:'0', weight:2}); }catch{} };
-          }
-        },
-        {
-          id:'attacks',
-          title:'More than 240 attacks',
-          html:`<p>A pinned KPI summarizes intensity: <strong>240+ attacks</strong>.</p>`,
-          async focus(){
-            cleanupSlide();
-            pauseGlobalAnimationForStory();
-            const p = kpiMarker?.getLatLng?.() || L.latLng((AL_FASHER?.[0]||13.636)+0.04, (AL_FASHER?.[1]||25.349)-0.04);
-            await flyTo(p.lat, p.lng, Math.max(map.getZoom()||8, 10));
-            await delay(UI_DELAY);
-            addAttention('kpi-card'); currentCleanup = ()=> removeAttention('kpi-card');
-          }
-        },
-        {
-          id:'displaced',
-          title:'More than 80% displaced',
-          html:`<p>A <strong>donut marker</strong> shows the share displaced — currently set to <strong>80%</strong>.</p>`,
-          async focus(){
-            cleanupSlide();
-            pauseGlobalAnimationForStory();
-            const p = donutMarker?.getLatLng?.() || L.latLng((AL_FASHER?.[0]||13.636)+0.02, (AL_FASHER?.[1]||25.349)+0.07);
-            await flyTo(p.lat, p.lng, Math.max(map.getZoom()||8, 10));
-            await delay(UI_DELAY);
-            addAttention('donut-wrap'); currentCleanup = ()=> removeAttention('donut-wrap');
-          }
-        },
-        {
-          id:'trapped',
-          title:'Hundreds of thousands trapped',
-          html:`<p>An alert note highlights that <strong>hundreds of thousands</strong> of civilians remain <strong>trapped</strong>.</p>`,
-          async focus(){
-            cleanupSlide();
-            pauseGlobalAnimationForStory();
-            const p = noteMarker?.getLatLng?.() || L.latLng((AL_FASHER?.[0]||13.636)-0.04, (AL_FASHER?.[1]||25.349)+0.02);
-            await flyTo(p.lat, p.lng, Math.max(map.getZoom()||8, 10));
-            await delay(UI_DELAY);
-            addAttention('note-card'); currentCleanup = ()=> removeAttention('note-card');
-          }
-        },
-        {
-          id:'camps',
-          title:'Three biggest camps almost empty',
-          html:`<p>A mini tour focuses the <strong>three largest camps</strong> flagged <em>almost empty</em>. The map pans smoothly.</p>`,
-          async focus(){
-            cleanupSlide();
-            pauseGlobalAnimationForStory();
-            clearFlowSelection();
-
-            const rows = await campsReady;
-            if (!rows || !rows.length){
-              storyBody.innerHTML += `<p style="margin-top:8px;color:#8a99ac">No <code>data/camps.csv</code> found or no rows. Add it to enable this slide.</p>`;
-              return;
-            }
-            const tour = new CampTour(rows, 3000);
-            tour.start();
-            currentCleanup = ()=> tour?.stop();
-          }
-        }
-      ];
-
-      async function goToSlide(idx, { userTriggered } = { userTriggered:false }){
-        stopAutoplay();
-        if (idx < 0) idx = slides.length - 1;
-        if (idx >= slides.length) idx = 0;
-        slideIdx = idx;
-
-        const s = slides[slideIdx];
-        storyTitle.textContent = s.title;
-        storyBody.innerHTML = s.html;
-        setDotsActive();
-        await s.focus();
-        if (userTriggered) setAutoplay(false);
-        scheduleAutoplay();
-      }
-
-      function toggleStory(open){
-        storyOpen = !!open;
-        storyPanel.style.display = storyOpen ? 'block' : 'none';
-        btnStory.classList.toggle('active', storyOpen);
-        updateBtnStates?.();
-
-        if (storyOpen){
-          // show crisis facts only while story is open
-          if (crisisLayer && !map.hasLayer(crisisLayer)) crisisLayer.addTo(map);
-
-          pauseGlobalAnimationForStory();
-          slideIdx = 0;
-          storyDots.innerHTML = '';
-          for (let i=0;i<slides.length;i++){
-            const d = document.createElement('div');
-            d.className = 'story-dot' + (i===slideIdx?' active':'');
-            d.title = `Slide ${i+1}`;
-            d.onclick = ()=> goToSlide(i, { userTriggered:true });
-            storyDots.appendChild(d);
-          }
-          setDotsActive();
-          setAutoplay(true);
-          goToSlide(slideIdx, { userTriggered:false });
-        } else {
-          // hide crisis facts when story closes
-          if (crisisLayer && map.hasLayer(crisisLayer)) map.removeLayer(crisisLayer);
-
-          stopAutoplay();
-          cleanupSlide();
-          clearFlowSelection();
-          restoreGlobalAnimationAfterStory();
-        }
-      }
-
-      // Bind controls
-      btnPrev.onclick   = () => goToSlide(slideIdx - 1, { userTriggered:true });
-      btnNext.onclick   = () => goToSlide(slideIdx + 1, { userTriggered:true });
-      btnToggle.onclick = () => setAutoplay(!autoplay);
-      btnClose.onclick  = () => toggleStory(false);
-      btnStory.onclick  = () => toggleStory(!storyOpen);
-
-      // Keyboard support (only when panel open)
-      window.addEventListener('keydown', (e)=>{
-        if (!storyOpen) return;
-        if (e.key === 'Escape') return toggleStory(false);
-        if (e.key === 'ArrowLeft')  return goToSlide(slideIdx - 1, { userTriggered:true });
-        if (e.key === 'ArrowRight') return goToSlide(slideIdx + 1, { userTriggered:true });
-        if (e.code === 'Space'){ e.preventDefault(); return setAutoplay(!autoplay); }
-      });
-
-      // Pause autoplay if window loses focus
-      window.addEventListener('blur', ()=> stopAutoplay());
-
-      // Expose globally
-      window.toggleStory = toggleStory;
-      window.goToSlide   = (i)=> goToSlide(i, { userTriggered:true });
-    })();
-    /* ─── End Story Engine ───────────────────────────────────────────── */
 
   })();
   </script>
