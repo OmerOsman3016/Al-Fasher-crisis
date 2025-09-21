@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
@@ -56,19 +56,6 @@
       pointer-events:none;
     }
 
-    /* --- El Fasher emergency marker (pulsing) --- */
-    .pulse-icon { position: relative; width: 20px; height: 20px; }
-    .pulse-icon .dot{
-      position:absolute; inset:5px; width:10px; height:10px; border-radius:50%;
-      background:#d22630; border:2px solid #fff; box-shadow:0 0 0 rgba(210,38,48,.7);
-      animation:pulse 2s infinite;
-    }
-    @keyframes pulse{
-      0%{ box-shadow:0 0 0 0 rgba(210,38,48,.5); }
-      70%{ box-shadow:0 0 0 14px rgba(210,38,48,0); }
-      100%{ box-shadow:0 0 0 0 rgba(210,38,48,0); }
-    }
-
     @media (max-width:768px){ .info-panel{ font-size:12px; } }
   </style>
 </head>
@@ -86,7 +73,7 @@
       <h3>How to use this map</h3>
       <p><strong>Click</strong> an origin state or destination point to focus flows.</p>
       <p><strong>Hover</strong> features for quick details.</p>
-      <p>Shortcuts: <kbd>Space</kbd> play/pause, <kbd>F</kbd> flows, <kbd>P</kbd> points, <kbd>R</kbd> reset view, <kbd>E</kbd> El Fasher.</p>
+      <p>Shortcuts: <kbd>Space</kbd> play/pause, <kbd>F</kbd> flows, <kbd>P</kbd> points, <kbd>R</kbd> reset view.</p>
     </div>
   </div>
 
@@ -103,9 +90,6 @@
   (function(){
     const MAPBOX_TOKEN = 'pk.eyJ1Ijoib21lcm9zbWFuIiwiYSI6ImUxZDBkODBlNjQxMDE2M2Y3OTQ3MWIwNTJkMjgzZTI3In0.ekCHuxRflTOO0RpQ6rQR7Q';
 
-    // El Fasher (North Darfur) — siege context
-    const EL_FASHER = { name:'El Fasher (North Darfur)', lat:13.6279, lon:25.3493, since:'May 2024' };
-
     // Map init
     const map = L.map('map', {
       preferCanvas:true, zoomControl:false,
@@ -121,6 +105,7 @@
     const mbOutdoor = L.tileLayer(`https://api.mapbox.com/styles/v1/mapbox/outdoors-v11/tiles/{z}/{x}/{y}?access_token=${MAPBOX_TOKEN}`, { tileSize:512, zoomOffset:-1, attribution:'&copy; Mapbox & OpenStreetMap' });
     const mbCustom  = L.tileLayer('https://api.mapbox.com/styles/v1/omerosman/cm8oy6is4006101si7ll3bs4h/tiles/{z}/{x}/{y}?access_token=' + MAPBOX_TOKEN, { tileSize:512, zoomOffset:-1, attribution:'&copy; Mapbox & OpenStreetMap' });
     mbSat.addTo(map);   // Make Mapbox Satellite the default
+
 
     const layerControl = L.control.layers({
       "Mapbox Custom": mbCustom,
@@ -150,7 +135,6 @@
       else if (k === 'f') toggleFlows();
       else if (k === 'p') togglePoints();
       else if (k === 'r') map.setView([16,30], 5.5);
-      else if (k === 'e') map.flyTo([EL_FASHER.lat, EL_FASHER.lon], 9, { duration:1.2 }); // jump to El Fasher
     });
 
     function toggleAnimation(){
@@ -180,9 +164,6 @@
     ]).then(([admin1Maybe, fallbackStates, rows]) => {
       const states = toGeoJSON(admin1Maybe) || toGeoJSON(fallbackStates);
       if (states) addStyledAdmin1(states);
-
-      // Add El Fasher siege marker/overlay
-      const elFasherLayer = addElFasherSiegeLayer();
 
       // Clean & process tabular rows
       const data = rows
@@ -293,35 +274,6 @@
       });
     }
 
-    // ---- El Fasher marker layer
-    function addElFasherSiegeLayer(){
-      const layer = L.layerGroup();
-      // dashed alert ring
-      L.circle([EL_FASHER.lat, EL_FASHER.lon], {
-        radius: 12000, color:'#d22630', weight:2, dashArray:'6 6',
-        fillColor:'#d22630', fillOpacity:0.12
-      }).addTo(layer);
-
-      // pulsing pin
-      const icon = L.divIcon({ className:'pulse-icon', html:'<span class="dot" title="El Fasher"></span>', iconSize:[20,20] });
-      const m = L.marker([EL_FASHER.lat, EL_FASHER.lon], { icon }).addTo(layer);
-
-      m.bindTooltip(`${EL_FASHER.name} — siege since ${EL_FASHER.since}`, { direction:'top', offset:[0,-10], sticky:true });
-
-      m.bindPopup(`
-        <div style="min-width:260px">
-          <h4 style="margin:0 0 6px;color:var(--brand-primary)">El Fasher (North Darfur)</h4>
-          <p style="margin:0 0 6px"><strong>Status:</strong> Under RSF siege since <strong>${EL_FASHER.since}</strong>.</p>
-          <p style="margin:0 0 6px"><strong>Context:</strong> Ongoing shelling and severe civilian impact reported by UN/OHCHR and international coverage.</p>
-          <p style="margin:6px 0 0"><small>Press <kbd>E</kbd> to fly here.</small></p>
-        </div>
-      `);
-
-      layer.addTo(map);
-      layerControl.addOverlay(layer, 'El Fasher Siege (May 2024–present)');
-      return layer;
-    }
-
     // ---- Flowmap
     function initFlowmap(data){
       const fc = { type:'FeatureCollection', features: data.map(d => ({
@@ -360,6 +312,7 @@
         animationEasingFamily:'Linear',
         animationEasingType:'None',
         animationDuration:3200,
+
         onEachFeature:(feature, layer)=>attachInteractivity(feature, layer)
       }).addTo(map);
 
@@ -461,7 +414,7 @@
       return rMin + (rMax - rMin) * t;
     }
     function formatNumber(x){ try { return Number(x).toLocaleString(undefined); } catch { return x; } }
-    function escapeHtml(str){ return String(str).replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',''': '&#39;'}[s])); }
+    function escapeHtml(str){ return String(str).replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s])); }
   })();
   </script>
 </body>
