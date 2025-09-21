@@ -301,14 +301,18 @@
     function togglePoints(){
       showPoints = !showPoints;
       flowmapLayer?.setPointVisibility?.(showPoints);
+
       if (originPulseLayer){
         if (showPoints && !map.hasLayer(originPulseLayer)) originPulseLayer.addTo(map);
         if (!showPoints && map.hasLayer(originPulseLayer)) map.removeLayer(originPulseLayer);
       }
+
+      // Keep destination labels manual via layer control:
       if (destLabelsLayer){
-        if (showPoints && !map.hasLayer(destLabelsLayer)) destLabelsLayer.addTo(map);
         if (!showPoints && map.hasLayer(destLabelsLayer)) map.removeLayer(destLabelsLayer);
+        // Do NOT add labels automatically when turning points back on
       }
+
       updateBtnStates();
     }
 
@@ -347,7 +351,7 @@
       // Flowmap with improved destination markers
       initFlowmap(data);
 
-      // Top destination labels overlay
+      // Top destination labels overlay (HIDDEN BY DEFAULT; togglable from Layers)
       addDestinationLabels(destAgg);
 
       overlay.style.display = 'none';
@@ -485,7 +489,9 @@
     function addDestinationLabels(destAgg){
       map.createPane('dest-labels');
       map.getPane('dest-labels').style.zIndex = 470;
-      destLabelsLayer = L.layerGroup([], { pane:'dest-labels' }).addTo(map);
+
+      // HIDDEN by default: do NOT add to map now
+      destLabelsLayer = L.layerGroup([], { pane:'dest-labels' });
       layerControl.addOverlay(destLabelsLayer, 'Top destination labels');
 
       function topNForZoom(z){ if (z<5) return 3; if (z<6) return 5; if (z<7) return 8; if (z<8) return 12; return 18; }
