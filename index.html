@@ -99,11 +99,7 @@
       animation:pulseRing 2.2s ease-out infinite;
     }
     .origin-pulse-icon .pulse::after{ animation-delay:1.1s; }
-    @keyframes pulseRing {
-      0%   { transform:translate(-50%,-50%) scale(.7); opacity:.9; }
-      70%  { opacity:.2; }
-      100% { transform:translate(-50%,-50%) scale(2.1); opacity:0; }
-    }
+    @keyframes pulseRing { 0%{transform:translate(-50%,-50%) scale(.7);opacity:.9;} 70%{opacity:.2;} 100%{transform:translate(-50%,-50%) scale(2.1);opacity:0;} }
 
     /* ─── Destination points (IMPROVED) ──────────────────────────────── */
     .dest-icon{ pointer-events:auto; transition:transform .12s ease; }
@@ -124,7 +120,7 @@
     .dest-icon:hover{ transform:scale(1.1); }
     .dest-icon.focus{ transform:scale(1.18); box-shadow:0 0 0 2px rgba(65,143,222,.25); }
 
-    /* Top destination labels */
+    /* Top destination labels (will be hidden by default) */
     .leaflet-tooltip.dest-label{
       background:#fff; color:#1d2a36; border:1px solid #d1dbe7;
       box-shadow:0 2px 8px rgba(0,0,0,.08); border-radius:8px; padding:4px 8px;
@@ -189,8 +185,7 @@
     .story-dot.active{ background:var(--brand-accent); }
     .story-actions .btn{ padding:6px 8px; border-radius:8px; }
 
-    /* attention ping for highlighted UI bits */
-    @keyframes ping { 0%{ transform:scale(1); box-shadow:0 0 0 0 rgba(255,184,28,.0); } 50%{ transform:scale(1.05); box-shadow:0 0 0 8px rgba(255,184,28,.25);} 100%{ transform:scale(1); box-shadow:0 0 0 0 rgba(255,184,28,.0);} }
+    @keyframes ping { 0%{transform:scale(1);box-shadow:0 0 0 0 rgba(255,184,28,.0);} 50%{transform:scale(1.05);box-shadow:0 0 0 8px rgba(255,184,28,.25);} 100%{transform:scale(1);box-shadow:0 0 0 0 rgba(255,184,28,.0);} }
     .attention{ animation: ping 1.2s ease-out 3; }
 
     @media (max-width:768px){
@@ -386,13 +381,10 @@
     function togglePoints(){
       showPoints = !showPoints;
       flowmapLayer?.setPointVisibility?.(showPoints);
+      // NOTE: Top destination labels are intentionally NOT auto-toggled here (kept hidden by default).
       if (originPulseLayer){
         if (showPoints && !map.hasLayer(originPulseLayer)) originPulseLayer.addTo(map);
         if (!showPoints && map.hasLayer(originPulseLayer)) map.removeLayer(originPulseLayer);
-      }
-      if (destLabelsLayer){
-        if (showPoints && !map.hasLayer(destLabelsLayer)) destLabelsLayer.addTo(map);
-        if (!showPoints && map.hasLayer(destLabelsLayer)) map.removeLayer(destLabelsLayer);
       }
       updateBtnStates();
     }
@@ -428,12 +420,14 @@
 
       addOriginPulseLayer(data);         // UNCHANGED origin pulses
       initFlowmap(data);                 // improved destination markers
-      addDestinationLabels(destAgg);     // top-N labels overlay
+      addDestinationLabels(destAgg);     // created but HIDDEN by default
 
       overlay.style.display = 'none';
 
       // Crisis facts + optional Camps
-      addCrisisFacts();                  // creates siegeRing, kpiMarker, donutMarker, noteMarker
+      addCrisisFacts();
+      // 👉 Open Story automatically on page load
+      toggleStory(true);
       campsReady.then(()=>{/* ready for story */});
     }).catch(err => {
       overlay.innerHTML = '<div style="color:#b00020;text-align:center">Failed to load data. Check console.</div>';
@@ -565,11 +559,11 @@
       layerControl.addOverlay(originPulseLayer, 'Origin points (pulsing)');
     }
 
-    // ---- Destination labels overlay (Top N by zoom & in-bounds)
+    // ---- Destination labels overlay (Top N) — HIDDEN BY DEFAULT
     function addDestinationLabels(destAgg){
       map.createPane('dest-labels');
       map.getPane('dest-labels').style.zIndex = 470;
-      destLabelsLayer = L.layerGroup([], { pane:'dest-labels' }).addTo(map);
+      destLabelsLayer = L.layerGroup([], { pane:'dest-labels' }); // NOTE: not added to map
       layerControl.addOverlay(destLabelsLayer, 'Top destination labels');
 
       function topNForZoom(z){ if (z<5) return 3; if (z<6) return 5; if (z<7) return 8; if (z<8) return 12; return 18; }
@@ -851,7 +845,7 @@
         goToSlide(0, false);
       } else {
         stopTimer();
-        cleanupSlide(); // remove any attention/animations
+        cleanupSlide();
       }
     }
     function toggleAutoplay(){
@@ -879,7 +873,6 @@
     }
 
     function cleanupSlide(){
-      // remove attention classes & siege dash anim
       document.getElementById('kpi-card')?.classList.remove('attention');
       document.getElementById('donut-wrap')?.classList.remove('attention');
       document.getElementById('note-card')?.classList.remove('attention');
@@ -901,7 +894,7 @@
       scheduleNext();
     }
 
-    // Slides definition
+    // Slides
     const slides = [
       {
         id:'siege',
@@ -911,7 +904,6 @@
         focus: ()=> {
           if (!siegeRing) return;
           try { map.fitBounds(siegeRing.getBounds(), { padding:[30,30] }); } catch {}
-          // animate dash offset + weight pulse
           let off = 0, up = true;
           siegeAnimTimer = setInterval(()=>{
             off = (off + 2) % 24;
@@ -967,17 +959,15 @@
         storyBody.innerHTML += `<p style="margin-top:8px;color:#8a99ac">No <code>data/camps.csv</code> found or no rows. Add it to enable this slide.</p>`;
         return;
       }
-      // pick "almost empty" first; rank by capacity desc (fallback to occupancy desc)
       const almost = rows.filter(r => (r.status||'').includes('almost') && (r.status||'').includes('empty'));
       const base = (almost.length ? almost : rows).slice();
       base.sort((a,b)=> (b.capacity||0)-(a.capacity||0) || (b.occupancy||0)-(a.occupancy||0));
       const top3 = base.slice(0,3);
-      // step through each with a subtle marker attention
+      let campStep = 0;
       const step = () => {
         if (!top3.length) return;
         const r = top3[campStep % top3.length];
         map.setView([r.lat, r.lon], 10, { animate:true });
-        // flash nearest marker (approximate by distance)
         let best=null, bestD=1e9;
         campsLayer?.eachLayer(l=>{
           if (l.getLatLng){
@@ -994,7 +984,6 @@
         }catch{}
         campStep++;
       };
-      // run immediately and also a couple more times within slide duration
       step();
       setTimeout(step, 2000);
       setTimeout(step, 4000);
