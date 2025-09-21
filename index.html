@@ -19,9 +19,7 @@
       --brand-warm3:   #d22630;    /* line class 3 */
     }
 
-    html, body {
-      height: 100%;
-    }
+    html, body { height: 100%; }
 
     body {
       margin: 0;
@@ -32,52 +30,9 @@
       flex-direction: column;
     }
 
-    .map-container {
-      position: relative;
-      flex: 1 1 auto;
-      margin: 0;
-    }
+    .map-container { position: relative; flex: 1 1 auto; margin: 0; }
 
-    #map {
-      position: absolute;
-      inset: 0;
-    }
-
-    /* Controls */
-    .map-controls {
-      position: absolute;
-      top: 12px;
-      right: 12px;
-      z-index: 1000;
-      background: rgba(255,255,255,0.95);
-      backdrop-filter: saturate(1.2) blur(3px);
-      padding: 10px;
-      border-radius: 10px;
-      box-shadow: 0 6px 20px rgba(0,0,0,0.15);
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 6px;
-      min-width: 150px;
-    }
-
-    .control-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      justify-content: center;
-      width: 100%;
-      padding: 8px 10px;
-      border: none;
-      border-radius: 8px;
-      background: var(--brand-primary);
-      color: #fff;
-      font-size: 13px;
-      cursor: pointer;
-      transition: transform .06s ease, background .2s ease;
-    }
-
-    .control-btn:hover { background: #3a6ea5; }
-    .control-btn:active { transform: translateY(1px); }
+    #map { position: absolute; inset: 0; }
 
     .legend {
       padding: 10px 12px;
@@ -87,14 +42,7 @@
       line-height: 1.4;
       font-size: 13px;
     }
-
-    .legend h4 {
-      margin: 0 0 8px;
-      color: var(--brand-primary);
-      font-size: 14px;
-      letter-spacing: .3px;
-    }
-
+    .legend h4 { margin: 0 0 8px; color: var(--brand-primary); font-size: 14px; letter-spacing: .3px; }
     .legend .row { display: flex; align-items: center; gap: 8px; margin: 6px 0; }
     .legend i { width: 18px; height: 3px; display: inline-block; opacity: .95; border-radius: 2px; }
 
@@ -109,7 +57,6 @@
       width: 44px; height: 44px; border: 4px solid #e7eef7; border-top-color: var(--brand-primary);
       border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 12px;
     }
-
     @keyframes spin { to { transform: rotate(360deg); } }
 
     .info-panel {
@@ -119,14 +66,11 @@
       max-width: min(320px, 70vw);
       font-size: 13px;
     }
-
     .info-panel h3 { margin: 0 0 6px; color: var(--brand-primary); font-size: 16px; }
     .info-panel p { margin: 0 0 8px; }
     .info-panel .close-btn { position: absolute; top: 6px; right: 8px; border: none; background: transparent; font-size: 18px; color: #666; cursor: pointer; }
 
     @media (max-width: 768px) {
-      .map-controls { min-width: 130px; padding: 8px; gap: 5px; }
-      .control-btn { font-size: 12px; padding: 7px 8px; }
       .info-panel { font-size: 12px; }
     }
   </style>
@@ -140,27 +84,14 @@
       <div>Loading displacement data…</div>
     </div>
 
-    <div class="map-controls" aria-label="Map controls">
-      <button class="control-btn" id="reset-view" title="Reset view (R)" aria-label="Reset view">
-        <i class="fas fa-globe-africa" aria-hidden="true"></i> Reset View
-      </button>
-      <button class="control-btn" id="toggle-animation" title="Play/Pause animation (Space)" aria-label="Toggle animation">
-        <i class="fas fa-play" id="animation-icon" aria-hidden="true"></i> <span id="animation-text">Play</span>
-      </button>
-      <button class="control-btn" id="toggle-flows" title="Show/Hide flows (F)" aria-controls="map" aria-pressed="true">
-        <i class="fas fa-wave-square" aria-hidden="true"></i> <span id="flows-text">Hide Flows</span>
-      </button>
-      <button class="control-btn" id="toggle-points" title="Show/Hide points (P)" aria-controls="map" aria-pressed="true">
-        <i class="fas fa-map-marker-alt" aria-hidden="true"></i> <span id="points-text">Hide Points</span>
-      </button>
-    </div>
+    <!-- Removed the map-controls toolbar -->
 
     <div class="info-panel" id="info-panel">
       <button class="close-btn" id="close-info" aria-label="Close help">&times;</button>
       <h3>How to use this map</h3>
       <p><strong>Click</strong> an origin state or destination point to focus flows.</p>
-      <p><strong>Hover</strong> features for quick details. Use the <strong>controls</strong> to toggle flows, points, and animation.</p>
-      <p>Shortcuts: <kbd>Space</kbd> play/pause, <kbd>F</kbd> flows, <kbd>P</kbd> points, <kbd>R</kbd> reset.</p>
+      <p><strong>Hover</strong> features for quick details.</p>
+      <p>Shortcuts: <kbd>Space</kbd> play/pause animation, <kbd>F</kbd> toggle flows, <kbd>P</kbd> toggle points, <kbd>R</kbd> reset view.</p>
     </div>
   </div>
 
@@ -212,61 +143,36 @@
     let showFlows = true;
     let showPoints = true;
 
-    // UI bindings
-    const btnReset = document.getElementById('reset-view');
-    const btnAnim  = document.getElementById('toggle-animation');
-    const animIcon = document.getElementById('animation-icon');
-    const animText = document.getElementById('animation-text');
-    const btnFlows = document.getElementById('toggle-flows');
-    const flowsText= document.getElementById('flows-text');
-    const btnPoints= document.getElementById('toggle-points');
-    const pointsText= document.getElementById('points-text');
-    const helpClose= document.getElementById('close-info');
-
-    btnReset.addEventListener('click', () => map.setView([16,30], 5.5));
-
-    btnAnim.addEventListener('click', toggleAnimation);
-    btnFlows.addEventListener('click', toggleFlows);
-    btnPoints.addEventListener('click', togglePoints);
+    // Info panel close
+    const helpClose = document.getElementById('close-info');
     helpClose.addEventListener('click', () => document.getElementById('info-panel').style.display = 'none');
 
-    // Keyboard shortcuts
+    // Keyboard shortcuts (optional)
     window.addEventListener('keydown', (e) => {
-      if (e.target.closest('input, textarea, [contenteditable="true"]')) return;
+      if (e.target && e.target.closest && e.target.closest('input, textarea, [contenteditable="true"]')) return;
       if (e.code === 'Space') { e.preventDefault(); toggleAnimation(); }
-      else if (e.key.toLowerCase() === 'f') toggleFlows();
-      else if (e.key.toLowerCase() === 'p') togglePoints();
-      else if (e.key.toLowerCase() === 'r') map.setView([16,30], 5.5);
+      else if (e.key && e.key.toLowerCase() === 'f') toggleFlows();
+      else if (e.key && e.key.toLowerCase() === 'p') togglePoints();
+      else if (e.key && e.key.toLowerCase() === 'r') map.setView([16,30], 5.5);
     });
-
-    function setAnimButtonState() {
-      if (isAnimationPlaying) { animIcon.className = 'fas fa-pause'; animText.textContent = 'Pause'; }
-      else { animIcon.className = 'fas fa-play'; animText.textContent = 'Play'; }
-    }
-    function setFlowsButtonState() { flowsText.textContent = showFlows ? 'Hide Flows' : 'Show Flows'; btnFlows.setAttribute('aria-pressed', String(showFlows)); }
-    function setPointsButtonState(){ pointsText.textContent= showPoints ? 'Hide Points' : 'Show Points'; btnPoints.setAttribute('aria-pressed', String(showPoints)); }
 
     function toggleAnimation(){
       isAnimationPlaying = !isAnimationPlaying;
-      if (flowmapLayer && typeof flowmapLayer.setAnimationStarted === 'function') flowmapLayer.setAnimationStarted(isAnimationPlaying);
-      setAnimButtonState();
+      if (flowmapLayer && typeof flowmapLayer.setAnimationStarted === 'function') {
+        flowmapLayer.setAnimationStarted(isAnimationPlaying);
+      }
     }
     function toggleFlows(){
       showFlows = !showFlows;
       if (flowmapLayer && typeof flowmapLayer.setPathDisplayMode === 'function') {
         flowmapLayer.setPathDisplayMode(showFlows ? 'all' : 'none');
       }
-      setFlowsButtonState();
     }
     function togglePoints(){
       showPoints = !showPoints;
-      // If your local CanvasFlowmapLayer exposes setPointVisibility, use it. Fallback is no-op.
       if (flowmapLayer && typeof flowmapLayer.setPointVisibility === 'function') {
         flowmapLayer.setPointVisibility(showPoints);
-      } else {
-        console.warn('setPointVisibility not available on this CanvasFlowmapLayer build.');
       }
-      setPointsButtonState();
     }
 
     // --- Load data ---
@@ -300,14 +206,12 @@
 
       initFlowmap(data);
       overlay.style.display = 'none';
-      setAnimButtonState(); setFlowsButtonState(); setPointsButtonState();
     }).catch(err => {
       overlay.innerHTML = '<div style="color:#b00020;text-align:center">Failed to load data. Check console.</div>';
       console.error(err);
     });
 
     function normalizeRow(r) {
-      // Ensure expected fields exist & types are correct
       return {
         // origins
         s_state_id: String(r.s_state_id || r.origin_state_id || r.state_code || '').trim(),
@@ -325,7 +229,6 @@
         e_Volume: parseFloat(r.e_Volume || r.volume || r.total || 0) || 0,
         main_needs: r.main_needs || r.needs || '',
 
-        // anything else is kept as-is
         ...r
       };
     }
@@ -341,7 +244,6 @@
     }
 
     function initFlowmap(data) {
-      // Build a FeatureCollection of origin points; CanvasFlowmapLayer will synthesize dest features & flows
       const fc = {
         type: 'FeatureCollection',
         features: data.map(d => ({
@@ -359,7 +261,6 @@
           destinationGeometry: { x: 'e_lon', y: 'e_lat' }
         },
 
-        // Draw points as circle markers so we can style/tooltip/popups
         pointToLayer: function(feature, latlng) {
           const isOrigin = feature.properties && feature.properties.isOrigin;
           const vol = isOrigin ? (feature.properties.s_totalVolume || 0) : (feature.properties.e_totalVolume || 0);
@@ -375,7 +276,6 @@
           });
         },
 
-        // Flow (bezier) styling using class breaks on per-flow volume
         canvasBezierStyle: {
           type: 'classBreaks',
           field: 'e_Volume',
@@ -387,7 +287,7 @@
           defaultSymbol: { strokeStyle: '#d0d7e2', lineWidth: 0.6, lineCap: 'round', shadowColor: '#d0d7e2', shadowBlur: 1.2 }
         },
 
-        pathDisplayMode: 'all',          // show all paths initially; user can filter via selection
+        pathDisplayMode: 'all',
         animationStarted: true,
         animationEasingFamily: 'Linear',
         animationEasingType: 'None',
@@ -396,10 +296,10 @@
         onEachFeature: (feature, layer) => attachInteractivity(feature, layer)
       }).addTo(map);
 
-      // Initial selection (optional): focus flows from Khartoum (SD01). Change as needed.
+      // Optional: initial selection
       try { flowmapLayer.selectFeaturesForPathDisplayById('s_state_id', 'SD02114', true, 'SELECTION_NEW'); } catch {}
 
-      // Hover highlight (throttled) & click-to-select
+      // Hover & click focus
       let hoverLock = false;
       flowmapLayer.on('mouseover', (e) => {
         if (hoverLock) return; hoverLock = true; setTimeout(() => hoverLock = false, 50);
@@ -440,14 +340,8 @@
       const t = Math.min(v / Math.log(1 + (20)), 1); // gentle cap
       return rMin + (rMax - rMin) * t;
     }
-
-    function formatNumber(x) {
-      try { return Number(x).toLocaleString(undefined); } catch { return x; }
-    }
-
-    function escapeHtml(str) {
-      return String(str).replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[s]));
-    }
+    function formatNumber(x) { try { return Number(x).toLocaleString(undefined); } catch { return x; } }
+    function escapeHtml(str) { return String(str).replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[s])); }
   })();
   </script>
 </body>
