@@ -1,4 +1,4 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
@@ -39,15 +39,6 @@
     }
     @keyframes spin{ to{ transform:rotate(360deg); } }
 
-    .info-panel{
-      position:absolute; left:12px; bottom:14px; z-index:1000;
-      background:rgba(255,255,255,.95); padding:12px 14px; border-radius:10px;
-      box-shadow:0 6px 20px rgba(0,0,0,.15); max-width:min(320px,70vw); font-size:13px;
-    }
-    .info-panel h3{ margin:0 0 6px; color:var(--brand-primary); font-size:16px; }
-    .info-panel p{ margin:0 0 8px; }
-    .info-panel .close-btn{ position:absolute; top:6px; right:8px; border:none; background:transparent; font-size:18px; color:#666; cursor:pointer; }
-
     /* Admin1 labels */
     .leaflet-tooltip.state-label{
       background:transparent; border:none; box-shadow:none; padding:0;
@@ -66,14 +57,6 @@
     <div class="loading-overlay" id="loading-overlay" aria-live="polite">
       <div class="spinner" aria-hidden="true"></div>
       <div>Loading displacement data…</div>
-    </div>
-
-    <div class="info-panel" id="info-panel">
-      <button class="close-btn" id="close-info" aria-label="Close">&times;</button>
-      <h3>How to use this map</h3>
-      <p><strong>Click</strong> an origin state or destination point to focus flows.</p>
-      <p><strong>Hover</strong> features for quick details.</p>
-      <p>Shortcuts: <kbd>Space</kbd> play/pause, <kbd>F</kbd> flows, <kbd>P</kbd> points, <kbd>R</kbd> reset view.</p>
     </div>
   </div>
 
@@ -106,7 +89,6 @@
     const mbCustom  = L.tileLayer('https://api.mapbox.com/styles/v1/omerosman/cm8oy6is4006101si7ll3bs4h/tiles/{z}/{x}/{y}?access_token=' + MAPBOX_TOKEN, { tileSize:512, zoomOffset:-1, attribution:'&copy; Mapbox & OpenStreetMap' });
     mbSat.addTo(map);   // Make Mapbox Satellite the default
 
-
     const layerControl = L.control.layers({
       "Mapbox Custom": mbCustom,
       "Mapbox Light": mbLight,
@@ -121,11 +103,6 @@
 
     let stateBoundariesLayer, admin1Labels, flowmapLayer;
     let isAnimationPlaying = true, showFlows = true, showPoints = true;
-
-    // Info panel close
-    document.getElementById('close-info').addEventListener('click', () => {
-      document.getElementById('info-panel').style.display = 'none';
-    });
 
     // Keyboard shortcuts
     window.addEventListener('keydown', (e) => {
@@ -369,10 +346,8 @@
     }
     // Try to map Admin1 feature -> s_state_id code (e.g., "SD15")
     function getAdmin1Code(props = {}){
-      // common property names from humanitarian admin datasets
       const candidates = [props.ADM1_PCODE, props.STATE_CODE, props.code, props.STATECODE, props.state_code];
       const code = (candidates.find(x => x) || '').toString().trim();
-      // If not provided, try to infer from name via lookup table (customize if needed)
       return code || null;
     }
     function safeCenter(layer){
