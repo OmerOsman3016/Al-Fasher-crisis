@@ -414,7 +414,7 @@
       addCrisisFacts();
 
       // Auto-open the story once story engine is registered
-      setTimeout(() => window.toggleStory?.(true), 250);
+    
     }).catch(err => {
       overlay.innerHTML = '<div style="color:#b00020;text-align:center">Failed to load data. Check console.</div>';
       console.error(err);
