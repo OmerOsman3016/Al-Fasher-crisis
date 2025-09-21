@@ -174,8 +174,8 @@
     /* attention ping for highlighted UI bits */
     @keyframes ping {
       0%{ transform:scale(1); box-shadow:0 0 0 0 rgba(255,184,28,.0); }
-      50%{ transform:scale(1.05); box-shadow:0 0 0 8px rgba(255,184,28,.25);}
-      100%{ transform:scale(1); box-shadow:0 0 0 0 rgba(255,184,28,.0);}
+      50%{ transform:scale(1.05); box-shadow:0 0 0 8px rgba(255,184,28,.25); }
+      100%{ transform:scale(1); box-shadow:0 0 0 0 rgba(255,184,28,.0); }
     }
     .attention{ animation: ping 1.2s ease-out 3; }
 
@@ -208,15 +208,14 @@
     </div>
 
     <nav class="toolbar" aria-label="Map controls">
-      <button id="btn-play"  class="btn active" title="Play/Pause animation (Space)"><i class="fa-solid fa-play"></i><span>Animation</span></button>
-      <button id="btn-flows" class="btn active" title="Toggle flow lines (F)"><i class="fa-solid fa-wave-square"></i><span>Flows</span></button>
+      <!-- Removed Animation and Flows buttons -->
       <button id="btn-points" class="btn active" title="Toggle points (P)"><i class="fa-solid fa-circle"></i><span>Points</span></button>
 
       <!-- Potential routes toggle -->
       <button id="btn-routes" class="btn" title="Toggle Potential Routes from El Fasher (O)"><i class="fa-solid fa-route"></i><span>Routes</span></button>
 
-      <button id="btn-story" class="btn"        title="Open story / slideshow (S)"><i class="fa-solid fa-book-open"></i><span>Story</span></button>
-      <button id="btn-reset" class="btn"        title="Reset view (R)"><i class="fa-solid fa-rotate"></i><span>Reset</span></button>
+      <button id="btn-story" class="btn" title="Open story / slideshow (S)"><i class="fa-solid fa-book-open"></i><span>Story</span></button>
+      <button id="btn-reset" class="btn" title="Reset view (R)"><i class="fa-solid fa-rotate"></i><span>Reset</span></button>
     </nav>
   </header>
 
@@ -251,7 +250,11 @@
   <!-- Footer -->
   <footer class="app-footer" role="contentinfo">
     <div>
-      <strong>Keyboard:</strong> <span class="kbd">Space</span> Play/Pause · <span class="kbd">F</span> Flows · <span class="kbd">P</span> Points · <span class="kbd">O</span> Routes · <span class="kbd">S</span> Story · <span class="kbd">R</span> Reset
+      <strong>Keyboard:</strong>
+      <span class="kbd">P</span> Points ·
+      <span class="kbd">O</span> Routes ·
+      <span class="kbd">S</span> Story ·
+      <span class="kbd">R</span> Reset
     </div>
     <div>
       <span>© IOM DTM — Visualization prototype. Basemap © Mapbox/OSM.</span>
@@ -339,18 +342,14 @@
     let campsData = []; // parsed camps
     let campsReady = Promise.resolve([]); // set later
 
-    let isAnimationPlaying = true, showFlows = true, showPoints = true;
+    let showPoints = true;
 
     // Toolbar buttons
-    const btnPlay = document.getElementById('btn-play');
-    const btnFlows = document.getElementById('btn-flows');
     const btnPoints = document.getElementById('btn-points');
     const btnReset = document.getElementById('btn-reset');
     const btnStory = document.getElementById('btn-story');
     const btnRoutes = document.getElementById('btn-routes');
 
-    btnPlay.addEventListener('click', toggleAnimation);
-    btnFlows.addEventListener('click', toggleFlows);
     btnPoints.addEventListener('click', togglePoints);
     btnReset.addEventListener('click', ()=> map.setView([16,30], 5.5));
     btnStory.addEventListener('click', () => window.toggleStory?.(true));
@@ -360,31 +359,15 @@
     window.addEventListener('keydown', (e) => {
       if (e.target && e.target.closest && e.target.closest('input, textarea, [contenteditable="true"]')) return;
       const k = (e.key || '').toLowerCase();
-      if (e.code === 'Space'){ e.preventDefault(); toggleAnimation(); }
-      else if (k === 'f') toggleFlows();
-      else if (k === 'p') togglePoints();
+      if (k === 'p') togglePoints();
       else if (k === 'o') toggleRoutes();
       else if (k === 's') window.toggleStory?.(true);
       else if (k === 'r') map.setView([16,30], 5.5);
     });
 
     function updateBtnStates(){
-      btnPlay.classList.toggle('active', isAnimationPlaying);
-      btnFlows.classList.toggle('active', showFlows);
       btnPoints.classList.toggle('active', showPoints);
       btnRoutes.classList.toggle('active', routesVisible);
-    }
-
-    function toggleAnimation(){
-      isAnimationPlaying = !isAnimationPlaying;
-      flowmapLayer?.setAnimationStarted?.(isAnimationPlaying);
-      updateBtnStates();
-    }
-
-    function toggleFlows(){
-      showFlows = !showFlows;
-      flowmapLayer?.setPathDisplayMode?.(showFlows ? 'all' : 'none');
-      updateBtnStates();
     }
 
     function togglePoints(){
@@ -431,9 +414,6 @@
 
       // Crisis facts + optional Camps (visible only when Story is open)
       addCrisisFacts();
-
-      // Auto-open story on first load (after crisis markers exist)
-      
 
     }).catch(err => {
       overlay.innerHTML = '<div style="color:#b00020;text-align:center">Failed to load data. Check console.</div>';
@@ -559,7 +539,7 @@
         originAndDestinationFieldIds:{
           originUniqueIdField:'s_state_id',
           originGeometry:{ x:'s_lon', y:'s_lat' },
-          destinationUniqueIdField:'e_locality_id',
+        destinationUniqueIdField:'e_locality_id',
           destinationGeometry:{ x:'e_lon', y:'e_lat' }
         },
         pointToLayer:(feature, latlng)=>{
@@ -586,10 +566,11 @@
           defaultSymbol:{ strokeStyle:'#d0d7e2', lineWidth:0.6, lineCap:'round', shadowColor:'#d0d7e2', shadowBlur:1.2 }
         },
         pathDisplayMode:'all',
-        animationStarted:true,
+        /* Animation removed */
+        animationStarted:false,
         animationEasingFamily:'Linear',
         animationEasingType:'None',
-        animationDuration:3200,
+        animationDuration:0,
         onEachFeature:(feature, layer)=>attachInteractivity(feature, layer)
       }).addTo(map);
 
@@ -796,10 +777,8 @@
           defaultSymbol:{ strokeStyle:getCSS('--potential','#0ea5e9'), lineWidth:3.2, lineCap:'round', shadowColor:'#7dd3fc', shadowBlur:3 }
         },
         pathDisplayMode:'all',
-        animationStarted:true,
-        animationEasingFamily:'Linear',
-        animationEasingType:'None',
-        animationDuration:3000
+        animationStarted:false,   // keep static
+        animationDuration:0
       });
 
       routesMarkers = L.layerGroup([], { pane:'potential' });
@@ -828,7 +807,6 @@
       routesVisible = !routesVisible;
       if (routesVisible){
         if (!map.hasLayer(routesGroup)) routesGroup.addTo(map);
-        routesLayer?.setAnimationStarted?.(true);
         try{
           const b = L.latLngBounds([AL_FASHER]);
           routesMarkers?.eachLayer?.(m=> b.extend(m.getLatLng()));
@@ -918,7 +896,6 @@
       let slideIdx = 0;
       let autoplay = true;
       let autoplayTimer = null;
-      let prevAnimationState = null;
       let currentCleanup = null;
       let tour = null;
 
@@ -939,21 +916,6 @@
           flowmapLayer?.clearAllPathSelections?.();
           flowmapLayer?.setPathDisplayMode?.('all');
         } catch {}
-      }
-      function setFlowAnimation(started){
-        try { flowmapLayer?.setAnimationStarted?.(started); } catch {}
-      }
-      function pauseGlobalAnimationForStory(){
-        prevAnimationState = isAnimationPlaying;
-        isAnimationPlaying = false;
-        setFlowAnimation(false);
-        updateBtnStates?.();
-      }
-      function restoreGlobalAnimationAfterStory(){
-        const resume = prevAnimationState === true;
-        isAnimationPlaying = resume;
-        setFlowAnimation(resume);
-        updateBtnStates?.();
       }
       function stopAutoplay(){ if (autoplayTimer){ clearTimeout(autoplayTimer); autoplayTimer = null; } }
       function scheduleAutoplay(){
@@ -1032,7 +994,6 @@
                 <p>A dashed red ring marks the siege area; tooltip shows elapsed months.</p>`,
           async focus(){
             cleanupSlide();
-            pauseGlobalAnimationForStory();
             clearFlowSelection();
 
             const target = AL_FASHER || [13.636,25.349];
@@ -1055,7 +1016,6 @@
           html:`<p>A pinned KPI summarizes intensity: <strong>240+ attacks</strong>.</p>`,
           async focus(){
             cleanupSlide();
-            pauseGlobalAnimationForStory();
             const p = kpiMarker?.getLatLng?.() || L.latLng((AL_FASHER?.[0]||13.636)+0.04, (AL_FASHER?.[1]||25.349)-0.04);
             await flyTo(p.lat, p.lng, Math.max(map.getZoom()||8, 10));
             await delay(UI_DELAY);
@@ -1068,7 +1028,6 @@
           html:`<p>A <strong>donut marker</strong> shows the share displaced — currently set to <strong>80%</strong>.</p>`,
           async focus(){
             cleanupSlide();
-            pauseGlobalAnimationForStory();
             const p = donutMarker?.getLatLng?.() || L.latLng((AL_FASHER?.[0]||13.636)+0.02, (AL_FASHER?.[1]||25.349)+0.07);
             await flyTo(p.lat, p.lng, Math.max(map.getZoom()||8, 10));
             await delay(UI_DELAY);
@@ -1081,7 +1040,6 @@
           html:`<p>An alert note highlights that <strong>hundreds of thousands</strong> of civilians remain <strong>trapped</strong>.</p>`,
           async focus(){
             cleanupSlide();
-            pauseGlobalAnimationForStory();
             const p = noteMarker?.getLatLng?.() || L.latLng((AL_FASHER?.[0]||13.636)-0.04, (AL_FASHER?.[1]||25.349)+0.02);
             await flyTo(p.lat, p.lng, Math.max(map.getZoom()||8, 10));
             await delay(UI_DELAY);
@@ -1094,7 +1052,6 @@
           html:`<p>A mini tour focuses the <strong>three largest camps</strong> flagged <em>almost empty</em>. The map pans smoothly.</p>`,
           async focus(){
             cleanupSlide();
-            pauseGlobalAnimationForStory();
             clearFlowSelection();
 
             const rows = await campsReady;
@@ -1134,16 +1091,8 @@
           // show crisis facts only while story is open
           if (crisisLayer && !map.hasLayer(crisisLayer)) crisisLayer.addTo(map);
 
-          pauseGlobalAnimationForStory();
           slideIdx = 0;
-          storyDots.innerHTML = '';
-          for (let i=0;i<slides.length;i++){
-            const d = document.createElement('div');
-            d.className = 'story-dot' + (i===slideIdx?' active':'');
-            d.title = `Slide ${i+1}`;
-            d.onclick = ()=> goToSlide(i, { userTriggered:true });
-            storyDots.appendChild(d);
-          }
+          buildDots();
           setDotsActive();
           setAutoplay(true);
           goToSlide(slideIdx, { userTriggered:false });
@@ -1154,7 +1103,6 @@
           stopAutoplay();
           cleanupSlide();
           clearFlowSelection();
-          restoreGlobalAnimationAfterStory();
         }
       }
 
