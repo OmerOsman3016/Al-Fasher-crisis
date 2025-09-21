@@ -383,6 +383,8 @@
       flowmapLayer?.setPathDisplayMode?.(showFlows ? 'all' : 'none');
       updateBtnStates();
     }
+
+    // ⬇️ UPDATED: Points toggle no longer affects destination labels
     function togglePoints(){
       showPoints = !showPoints;
       flowmapLayer?.setPointVisibility?.(showPoints);
@@ -390,10 +392,7 @@
         if (showPoints && !map.hasLayer(originPulseLayer)) originPulseLayer.addTo(map);
         if (!showPoints && map.hasLayer(originPulseLayer)) map.removeLayer(originPulseLayer);
       }
-      if (destLabelsLayer){
-        if (showPoints && !map.hasLayer(destLabelsLayer)) destLabelsLayer.addTo(map);
-        if (!showPoints && map.hasLayer(destLabelsLayer)) map.removeLayer(destLabelsLayer);
-      }
+      // NOTE: intentionally no add/remove for destLabelsLayer here
       updateBtnStates();
     }
 
@@ -428,13 +427,15 @@
 
       addOriginPulseLayer(data);         // UNCHANGED origin pulses
       initFlowmap(data);                 // improved destination markers
-      addDestinationLabels(destAgg);     // top-N labels overlay
+      addDestinationLabels(destAgg);     // ⬅️ created but not added to map (hidden by default)
 
       overlay.style.display = 'none';
 
       // Crisis facts + optional Camps
-      addCrisisFacts();                  // creates siegeRing, kpiMarker, donutMarker, noteMarker
-      campsReady.then(()=>{/* ready for story */});
+      addCrisisFacts();
+
+      // Auto-open Story panel on load (after markers exist)
+      setTimeout(() => toggleStory(true), 400);
     }).catch(err => {
       overlay.innerHTML = '<div style="color:#b00020;text-align:center">Failed to load data. Check console.</div>';
       console.error(err);
@@ -569,7 +570,9 @@
     function addDestinationLabels(destAgg){
       map.createPane('dest-labels');
       map.getPane('dest-labels').style.zIndex = 470;
-      destLabelsLayer = L.layerGroup([], { pane:'dest-labels' }).addTo(map);
+
+      // ⬇️ Create the layer but DO NOT add to map (hidden by default)
+      destLabelsLayer = L.layerGroup([], { pane:'dest-labels' });
       layerControl.addOverlay(destLabelsLayer, 'Top destination labels');
 
       function topNForZoom(z){ if (z<5) return 3; if (z<6) return 5; if (z<7) return 8; if (z<8) return 12; return 18; }
