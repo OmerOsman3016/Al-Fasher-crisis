@@ -82,7 +82,7 @@
       pointer-events:none;
     }
 
-    /* ─── Pulsing origin points ──────────────────────────────────────── */
+    /* ─── Pulsing origin points (UNCHANGED) ──────────────────────────── */
     .origin-pulse-icon{ pointer-events:auto; }
     .origin-pulse-icon .pulse{
       position:relative; width:var(--d,24px); height:var(--d,24px); border-radius:50%;
@@ -108,7 +108,7 @@
       100% { transform:translate(-50%,-50%) scale(2.1); opacity:0; }
     }
 
-    /* ─── Destination points (improved) ─────────────────────────────── */
+    /* ─── Destination points (IMPROVED) ──────────────────────────────── */
     .dest-icon{ pointer-events:auto; transition:transform .12s ease; }
     .dest-icon .dot{
       position:relative; width:var(--d,18px); height:var(--d,18px); border-radius:50%;
@@ -120,9 +120,9 @@
       border:1px solid #fff;
       box-shadow:
         0 0 0 1px rgba(0,0,0,.06),
-        0 0 10px rgba(65,143,222,.35); /* halo for satellite */
+        0 0 10px rgba(65,143,222,.35);
     }
-    .dest-icon .dot::after{ /* small specular highlight */
+    .dest-icon .dot::after{
       content:""; position:absolute; left:35%; top:28%; width:18%; height:18%;
       background:rgba(255,255,255,.9); border-radius:50%; filter:blur(.3px);
     }
@@ -135,6 +135,46 @@
       box-shadow:0 2px 8px rgba(0,0,0,.08); border-radius:8px; padding:4px 8px;
       font-size:12px; font-weight:600;
     }
+
+    /* ─── Crisis facts UI ───────────────────────────────────────────── */
+    .kpi-icon, .donut-icon, .note-icon { pointer-events:auto; }
+
+    .kpi-card, .note-card{
+      background:#fff; border:1px solid #d1dbe7; border-radius:10px;
+      box-shadow:0 2px 10px rgba(0,0,0,.08);
+      padding:6px 10px; min-width:120px; text-align:left;
+    }
+    .kpi-card .kpi{ font-size:18px; font-weight:800; color:#1d2a36; line-height:1.1; }
+    .kpi-card .label{ font-size:12px; color:#46607a; font-weight:600; margin-top:2px; }
+
+    .note-card{ font-size:12px; color:#1d2a36; }
+    .note-card strong{ color:#d22630; }
+
+    .donut{
+      width:44px; height:44px; border-radius:50%;
+      background:conic-gradient(var(--donut-color,#418FDE) calc(var(--pct,0)*1deg), #e8eff7 0);
+      border:2px solid #fff; box-shadow:0 0 0 1px rgba(0,0,0,.06), 0 0 10px rgba(65,143,222,.28);
+      position:relative; display:inline-block; vertical-align:middle;
+    }
+    .donut::after{
+      content:""; position:absolute; inset:8px; background:#fff; border-radius:50%;
+      box-shadow:inset 0 0 0 1px #e6eef6;
+    }
+    .donut-wrap{ display:flex; align-items:center; gap:8px; }
+    .donut-wrap .txt .big{ font-weight:800; color:#1d2a36; }
+    .donut-wrap .txt .small{ font-size:12px; color:#46607a; }
+
+    .camp-icon{
+      width:18px; height:18px; border-radius:50%; background:#999;
+      border:1px solid #fff; box-shadow:0 0 0 1px rgba(0,0,0,.06);
+      position:relative; opacity:.65;
+    }
+    .camp-icon::after{
+      content:""; position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
+      width:10px; height:10px; clip-path:polygon(50% 0, 100% 70%, 0 70%);
+      background:#f4f4f4;
+    }
+    .camp-icon.bad{ background:#bbb; opacity:.45; }
 
     @media (max-width:768px){
       .brand h1{ font-size:14px; }
@@ -205,6 +245,7 @@
   (function(){
     const MAPBOX_TOKEN = 'pk.eyJ1Ijoib21lcm9zbWFuIiwiYSI6ImUxZDBkODBlNjQxMDE2M2Y3OTQ3MWIwNTJkMjgzZTI3In0.ekCHuxRflTOO0RpQ6rQR7Q';
 
+    // Map init
     const map = L.map('map', {
       preferCanvas:true, zoomControl:false,
       minZoom:4, maxZoom:11, zoomSnap:0.5, zoomDelta:0.5, attributionControl:true
@@ -254,12 +295,12 @@
     };
     legend.addTo(map);
 
-    // Prevent map drag while interacting with legend
     const legendEl = document.querySelector('.legend');
     if (legendEl){ L.DomEvent.disableScrollPropagation(legendEl); L.DomEvent.disableClickPropagation(legendEl); }
 
     // ─── State ────────────────────────────────────────────────────────
     let stateBoundariesLayer, admin1Labels, flowmapLayer, originPulseLayer, destLabelsLayer;
+    let crisisLayer, campsLayer;
     let isAnimationPlaying = true, showFlows = true, showPoints = true;
 
     // Toolbar buttons
@@ -273,6 +314,7 @@
     btnPoints.addEventListener('click', togglePoints);
     btnReset.addEventListener('click', ()=> map.setView([16,30], 5.5));
 
+    // Keyboard shortcuts
     window.addEventListener('keydown', (e) => {
       if (e.target && e.target.closest && e.target.closest('input, textarea, [contenteditable="true"]')) return;
       const k = (e.key || '').toLowerCase();
@@ -287,7 +329,6 @@
       btnFlows.classList.toggle('active', showFlows);
       btnPoints.classList.toggle('active', showPoints);
     }
-
     function toggleAnimation(){
       isAnimationPlaying = !isAnimationPlaying;
       flowmapLayer?.setAnimationStarted?.(isAnimationPlaying);
@@ -301,18 +342,14 @@
     function togglePoints(){
       showPoints = !showPoints;
       flowmapLayer?.setPointVisibility?.(showPoints);
-
       if (originPulseLayer){
         if (showPoints && !map.hasLayer(originPulseLayer)) originPulseLayer.addTo(map);
         if (!showPoints && map.hasLayer(originPulseLayer)) map.removeLayer(originPulseLayer);
       }
-
-      // Keep destination labels manual via layer control:
       if (destLabelsLayer){
+        if (showPoints && !map.hasLayer(destLabelsLayer)) destLabelsLayer.addTo(map);
         if (!showPoints && map.hasLayer(destLabelsLayer)) map.removeLayer(destLabelsLayer);
-        // Do NOT add labels automatically when turning points back on
       }
-
       updateBtnStates();
     }
 
@@ -345,22 +382,20 @@
         d.s_totalVolume = originTotals.get(d.s_state_id) || d.e_Volume;
       });
 
-      // Unique origin pulses
-      addOriginPulseLayer(data);
-
-      // Flowmap with improved destination markers
-      initFlowmap(data);
-
-      // Top destination labels overlay (HIDDEN BY DEFAULT; togglable from Layers)
-      addDestinationLabels(destAgg);
+      addOriginPulseLayer(data);         // UNCHANGED origin pulses
+      initFlowmap(data);                 // improved destination markers
+      addDestinationLabels(destAgg);     // top-N labels overlay
 
       overlay.style.display = 'none';
+
+      // Crisis facts (Al Fasher) + optional Camps
+      addCrisisFacts();
     }).catch(err => {
       overlay.innerHTML = '<div style="color:#b00020;text-align:center">Failed to load data. Check console.</div>';
       console.error(err);
     });
 
-    // ---- Admin1 styled layer (casing + stroke + labels)
+    // ---- Admin1 styled layer
     function addStyledAdmin1(states){
       map.createPane('admin1-casing');  map.getPane('admin1-casing').style.zIndex = 350;
       map.createPane('admin1-stroke');  map.getPane('admin1-stroke').style.zIndex = 351;
@@ -369,7 +404,7 @@
       function strokeWeightForZoom(z){ return Math.max(0.8, Math.min(2.4, (z - 4) * 0.35)); }
       const admin1StrokeStyle = () => ({
         pane:'admin1-stroke',
-        color: getCSS('--brand-primary') || '#2a5885',
+        color: getCSS('--brand-primary','#2a5885'),
         weight: strokeWeightForZoom(map.getZoom()),
         opacity:0.95, fillColor:'#eaf2fb', fillOpacity:0.25,
         lineJoin:'round', lineCap:'round', smoothFactor:0.4, interactive:true
@@ -436,7 +471,7 @@
       });
     }
 
-    // ---- Origin pulsing layer
+    // ---- Origin pulsing layer (UNCHANGED)
     function addOriginPulseLayer(rows){
       map.createPane('origin-pulses');
       map.getPane('origin-pulses').style.zIndex = 460;
@@ -489,9 +524,7 @@
     function addDestinationLabels(destAgg){
       map.createPane('dest-labels');
       map.getPane('dest-labels').style.zIndex = 470;
-
-      // HIDDEN by default: do NOT add to map now
-      destLabelsLayer = L.layerGroup([], { pane:'dest-labels' });
+      destLabelsLayer = L.layerGroup([], { pane:'dest-labels' }).addTo(map);
       layerControl.addOverlay(destLabelsLayer, 'Top destination labels');
 
       function topNForZoom(z){ if (z<5) return 3; if (z<6) return 5; if (z<7) return 8; if (z<8) return 12; return 18; }
@@ -519,7 +552,6 @@
 
     // ---- Flowmap (improved destination markers)
     function initFlowmap(data){
-      // for origin detection to hide duplicate origin dots
       const originKeySet = new Set(data.map(d => latlonKey(d.s_lat, d.s_lon)));
 
       const fc = { type:'FeatureCollection', features: data.map(d => ({
@@ -536,10 +568,8 @@
         pointToLayer:(feature, latlng)=>{
           const isOriginSpot = originKeySet.has(latlonKey(latlng.lat, latlng.lng));
           if (isOriginSpot){
-            // hide origin here (we show the pulsing layer instead)
             return L.circleMarker(latlng, { radius:0.1, opacity:0, fillOpacity:0 });
           }
-          // Destination marker (divIcon with halo)
           const vol = feature.properties?.e_totalVolume || feature.properties?.e_Volume || 0;
           const d = Math.round(scaleRadiusLog(vol, 20000, 1600000, 10, 22)); // diameter
           const icon = L.divIcon({
@@ -574,7 +604,6 @@
         if (hoverLock) return; hoverLock = true; setTimeout(()=> hoverLock = false, 50);
         if (e.sharedDestinationFeatures?.length){
           flowmapLayer.selectFeaturesForPathDisplay(e.sharedDestinationFeatures, 'SELECTION_NEW');
-          // add focus style if marker element exists
           const l = e.layer;
           try{ l._icon?.classList?.add('focus'); setTimeout(()=>l._icon?.classList?.remove('focus'), 600);}catch{}
         }
@@ -595,7 +624,6 @@
     }
 
     function attachInteractivity(feature, layer){
-      // Decide a display name prioritizing destination labels
       const name  = feature.properties?.e_locality || feature.properties?.s_State || 'Unknown';
       const total = feature.properties?.e_totalVolume ?? feature.properties?.s_totalVolume ?? 0;
 
@@ -608,6 +636,124 @@
           ${feature.properties?.main_needs ? `<p style="margin:0 0 6px"><strong>Main Needs:</strong> ${escapeHtml(String(feature.properties.main_needs))}</p>` : ''}
           <p style="margin:6px 0 0"><small>Click markers/lines to focus flows</small></p>
         </div>`);
+    }
+
+    /* === Crisis facts layer (Al Fasher) ================================== */
+    const AL_FASHER = [13.636, 25.349];     // center (adjust to your precise point if needed)
+    const SIEGE_START = new Date('2024-05-01');
+    const FACT_ATTACKS = 240;               // "More than 240 attacks"
+    const FACT_DISPLACED_PCT = 0.80;        // "More than 80% displaced"
+    const FACT_TRAPPED = 'Hundreds of thousands of civilians remain trapped';
+
+    function monthsSince(date){
+      const now = new Date();
+      const y = now.getFullYear() - date.getFullYear();
+      const m = now.getMonth() - date.getMonth();
+      let months = y*12 + m;
+      if (now.getDate() < date.getDate()) months -= 1;
+      return Math.max(0, months);
+    }
+
+    function addCrisisFacts(){
+      // own pane so it sits above flows/points
+      map.createPane('crisis');
+      map.getPane('crisis').style.zIndex = 480;
+
+      crisisLayer = L.layerGroup([], { pane:'crisis' }).addTo(map);
+      layerControl.addOverlay(crisisLayer, 'Crisis facts');
+
+      // 1) Siege ring (dashed)
+      const siegeRing = L.circle(AL_FASHER, {
+        radius: 22000,                    // ~22km; tweak to match AOI
+        color: '#d22630', weight: 2, dashArray: '6,6',
+        fillColor:'#d22630', fillOpacity:0.08
+      }).bindTooltip(
+        `Under RSF siege since May 2024 · ~${monthsSince(SIEGE_START)} months`,
+        { direction:'center', permanent:false, sticky:true }
+      );
+      crisisLayer.addLayer(siegeRing);
+
+      // 2) KPI badge: 240+ attacks
+      const attacksIcon = L.divIcon({
+        className:'kpi-icon',
+        html:`<div class="kpi-card">
+                <div class="kpi">${FACT_ATTACKS.toLocaleString()}+</div>
+                <div class="label">attacks</div>
+              </div>`,
+        iconSize:[1,1], iconAnchor:[0,0]
+      });
+      L.marker([AL_FASHER[0]+0.045, AL_FASHER[1]-0.04], { icon: attacksIcon, pane:'crisis' })
+        .addTo(crisisLayer);
+
+      // 3) Donut: 80% displaced
+      const deg = Math.round(FACT_DISPLACED_PCT*360);
+      const donutIcon = L.divIcon({
+        className:'donut-icon',
+        html:`<div class="donut-wrap">
+                <div class="donut" style="--pct:${deg}"></div>
+                <div class="txt">
+                  <div class="big">${Math.round(FACT_DISPLACED_PCT*100)}%</div>
+                  <div class="small">of population displaced</div>
+                </div>
+              </div>`,
+        iconSize:[1,1], iconAnchor:[0,0]
+      });
+      L.marker([AL_FASHER[0]+0.02, AL_FASHER[1]+0.07], { icon: donutIcon, pane:'crisis' })
+        .addTo(crisisLayer);
+
+      // 4) Trapped note
+      const noteIcon = L.divIcon({
+        className:'note-icon',
+        html:`<div class="note-card"><strong>Critical:</strong> ${FACT_TRAPPED}</div>`,
+        iconSize:[1,1], iconAnchor:[0,0]
+      });
+      L.marker([AL_FASHER[0]-0.04, AL_FASHER[1]+0.02], { icon: noteIcon, pane:'crisis' })
+        .addTo(crisisLayer);
+
+      // 5) Optional: Camps (reads ./data/camps.csv)
+      addCampsLayer();
+    }
+
+    /* Camps: expects data/camps.csv with columns:
+       name,lat,lon,status,occupancy,capacity
+       - status examples: 'Almost empty','Low','Normal' (case-insensitive)
+       Rows with status including 'almost' + 'empty' render dim (near-vacancy).
+    */
+    function addCampsLayer(){
+      campsLayer = L.layerGroup([], { pane:'crisis' });
+      layerControl.addOverlay(campsLayer, 'Camps (status)');
+
+      if (!window.Papa){ return; }
+
+      Papa.parse('./data/camps.csv', {
+        download:true, header:true, dynamicTyping:true, skipEmptyLines:true,
+        complete: (res) => {
+          const rows = (res.data || []).filter(r => Number.isFinite(parseFloat(r.lat)) && Number.isFinite(parseFloat(r.lon)));
+          rows.forEach(r => {
+            const status = String(r.status||'').toLowerCase().trim();
+            const cls = status.includes('almost') && status.includes('empty') ? 'bad' : '';
+            const icon = L.divIcon({
+              className:'camp-pin',
+              html:`<div class="camp-icon ${cls}"></div>`,
+              iconSize:[18,18], iconAnchor:[9,9]
+            });
+            const occ = Number(r.occupancy)||null, cap = Number(r.capacity)||null;
+            const occTxt = (occ && cap) ? `${occ.toLocaleString()} / ${cap.toLocaleString()}` : (occ ? occ.toLocaleString() : '—');
+            L.marker([parseFloat(r.lat), parseFloat(r.lon)], { icon, pane:'crisis' })
+              .bindTooltip(`${escapeHtml(r.name||'Camp')} · ${status || 'status unknown'}`, {direction:'top', offset:[0,-6]})
+              .bindPopup(`
+                <div class="kpi-card">
+                  <div class="kpi" style="font-size:16px">${escapeHtml(r.name||'Camp')}</div>
+                  <div class="label">Status: ${escapeHtml(status||'unknown')}</div>
+                  <div class="label">Occupancy: ${occTxt}</div>
+                </div>
+              `)
+              .addTo(campsLayer);
+          });
+          if (rows.length){ campsLayer.addTo(map); }
+        },
+        error:()=>{/* silent */}
+      });
     }
 
     // ---- Helpers
@@ -677,6 +823,14 @@
     function latlonKey(lat, lon){ return `${Number(lat).toFixed(4)},${Number(lon).toFixed(4)}`; }
     function formatNumber(x){ try { return Number(x).toLocaleString(undefined); } catch { return x; } }
     function escapeHtml(str){ return String(str).replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[s])); }
+
+    /* CSV template hint:
+    data/camps.csv
+    name,lat,lon,status,occupancy,capacity
+    Zamzam Camp,13.45,25.30,Almost empty,12000,220000
+    Abu Shouk,13.70,25.32,Almost empty,8000,110000
+    Al Salam,13.60,25.42,Almost empty,5000,90000
+    */
   })();
   </script>
 </body>
