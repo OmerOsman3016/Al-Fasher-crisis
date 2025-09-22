@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-  <title>Sudan | IDPs Pathways Across Sudan (Improved)</title>
+  <title>Sudan | IDPs Pathways Across Sudan (Improved + El Fasher Scenario)</title>
 
   <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="anonymous"/>
@@ -136,6 +136,19 @@
       font-size:12px; font-weight:600;
     }
 
+    /* ─── NEW: Scenario nodes (potential flows) ─────────────────────── */
+    .scenario-node{ pointer-events:auto; }
+    .scenario-node .dot{
+      position:relative; width:var(--d,18px); height:var(--d,18px); border-radius:50%;
+      border:1px solid #fff; box-shadow:0 0 10px rgba(0,0,0,.18);
+    }
+    .scenario-node.origin .dot{
+      background: radial-gradient(circle at 45% 30%, rgba(255,255,255,.95) 0 28%, #ff671f 32%, rgba(255,103,31,.92) 60%, rgba(255,103,31,.85) 100%);
+    }
+    .scenario-node.dest .dot{
+      background: radial-gradient(circle at 45% 30%, rgba(255,255,255,.95) 0 28%, var(--brand-accent) 32%, rgba(65,143,222,.92) 60%, rgba(65,143,222,.85) 100%);
+    }
+
     @media (max-width:768px){
       .brand h1{ font-size:14px; }
       .brand .sub{ display:none; }
@@ -260,6 +273,7 @@
 
     // ─── State ────────────────────────────────────────────────────────
     let stateBoundariesLayer, admin1Labels, flowmapLayer, originPulseLayer, destLabelsLayer;
+    let scenarioFlowLayer, scenarioMarkers, scenarioGroup; // NEW: scenario overlay pieces
     let isAnimationPlaying = true, showFlows = true, showPoints = true;
 
     // Toolbar buttons
@@ -291,11 +305,13 @@
     function toggleAnimation(){
       isAnimationPlaying = !isAnimationPlaying;
       flowmapLayer?.setAnimationStarted?.(isAnimationPlaying);
+      scenarioFlowLayer?.setAnimationStarted?.(isAnimationPlaying); // NEW
       updateBtnStates();
     }
     function toggleFlows(){
       showFlows = !showFlows;
       flowmapLayer?.setPathDisplayMode?.(showFlows ? 'all' : 'none');
+      scenarioFlowLayer?.setPathDisplayMode?.(showFlows ? 'all' : 'none');   // NEW
       updateBtnStates();
     }
     function togglePoints(){
@@ -311,6 +327,12 @@
       if (destLabelsLayer){
         if (!showPoints && map.hasLayer(destLabelsLayer)) map.removeLayer(destLabelsLayer);
         // Do NOT add labels automatically when turning points back on
+      }
+
+      // NEW – hide/show scenario markers with Points toggle
+      if (scenarioMarkers){
+        if (showPoints && !map.hasLayer(scenarioMarkers)) scenarioMarkers.addTo(map);
+        if (!showPoints && map.hasLayer(scenarioMarkers)) map.removeLayer(scenarioMarkers);
       }
 
       updateBtnStates();
@@ -353,6 +375,9 @@
 
       // Top destination labels overlay (HIDDEN BY DEFAULT; togglable from Layers)
       addDestinationLabels(destAgg);
+
+      // NEW: add potential movement scenario (El Fasher → Tawila & At Tina)
+      addScenarioFlows();
 
       overlay.style.display = 'none';
     }).catch(err => {
@@ -608,6 +633,96 @@
           ${feature.properties?.main_needs ? `<p style="margin:0 0 6px"><strong>Main Needs:</strong> ${escapeHtml(String(feature.properties.main_needs))}</p>` : ''}
           <p style="margin:6px 0 0"><small>Click markers/lines to focus flows</small></p>
         </div>`);
+    }
+
+    // ---- NEW: Potential movement scenario overlay (El Fasher → Tawila & At Tina)
+    function addScenarioFlows(){
+      // Approximate locality coordinates (decimal degrees)
+      const EL_FASHER = { id:'SD02172', name:'El Fasher', lat:13.6279,  lon:25.3494 };
+      const TAWILA    = { id:'SD02170', name:'Tawila',    lat:13.5000,  lon:24.9000 };
+      const AT_TINA   = { id:'SD02171', name:'At Tina',   lat:13.46803, lon:24.76498 };
+
+      const edges = [
+        { s:EL_FASHER, e:TAWILA,  rel:2 },
+        { s:EL_FASHER, e:AT_TINA, rel:1 }
+      ];
+
+      const features = edges.map(ed => ({
+        type:'Feature',
+        geometry:{ type:'Point', coordinates:[ ed.s.lon, ed.s.lat ] },
+        properties:{
+          s_id:ed.s.id, s_name:ed.s.name, s_lat:ed.s.lat, s_lon:ed.s.lon,
+          e_id:ed.e.id, e_name:ed.e.name, e_lat:ed.e.lat, e_lon:ed.e.lon,
+          e_Volume: ed.rel * 100 // synthetic for styling only
+        }
+      }));
+      const fc = { type:'FeatureCollection', features };
+
+      scenarioGroup   = L.layerGroup().addTo(map);
+      scenarioMarkers = L.layerGroup().addTo(map);
+
+      // Origin marker (El Fasher)
+      const mkOrigin = L.marker([EL_FASHER.lat, EL_FASHER.lon], {
+        icon: L.divIcon({
+          className:'scenario-node origin',
+          html:`<div class="dot" style="--d:22px"></div>`,
+          iconSize:[22,22], iconAnchor:[11,11]
+        })
+      }).bindTooltip(`${EL_FASHER.name} (origin)`, {direction:'top', offset:[0,-6]});
+      scenarioMarkers.addLayer(mkOrigin);
+
+      // Destination markers
+      [TAWILA, AT_TINA].forEach(pt=>{
+        const mk = L.marker([pt.lat, pt.lon], {
+          icon: L.divIcon({
+            className:'scenario-node dest',
+            html:`<div class="dot" style="--d:18px"></div>`,
+            iconSize:[18,18], iconAnchor:[9,9]
+          })
+        }).bindTooltip(`${pt.name} (potential destination)`, {direction:'top', offset:[0,-6]});
+        scenarioMarkers.addLayer(mk);
+      });
+
+      // Animated potential paths
+      scenarioFlowLayer = L.canvasFlowmapLayer(fc, {
+        originAndDestinationFieldIds:{
+          originUniqueIdField:'s_id',
+          originGeometry:{ x:'s_lon', y:'s_lat' },
+          destinationUniqueIdField:'e_id',
+          destinationGeometry:{ x:'e_lon', y:'e_lat' }
+        },
+        pathDisplayMode:'all',
+        animationStarted:true,
+        animationDuration:3200,
+        animationEasingFamily:'Linear',
+        animationEasingType:'None',
+        canvasBezierStyle:{
+          type:'classBreaks',
+          field:'e_Volume',
+          classBreakInfos:[
+            { classMinValue:1, classMaxValue:150, symbol:{ strokeStyle: getCSS('--brand-accent','#418FDE'), lineWidth:1.6, lineCap:'round', shadowColor:'rgba(65,143,222,.35)', shadowBlur:2 } },
+            { classMinValue:150, classMaxValue:1000, symbol:{ strokeStyle: getCSS('--brand-accent','#418FDE'), lineWidth:2.4, lineCap:'round', shadowColor:'rgba(65,143,222,.5)',  shadowBlur:3 } }
+          ],
+          defaultSymbol:{ strokeStyle: getCSS('--brand-accent','#418FDE'), lineWidth:2 }
+        },
+        onEachFeature:(f,l)=>{
+          l.bindPopup(`
+            <div style="min-width:220px">
+              <h4 style="margin:0 0 8px;color:var(--brand-primary);font-weight:600">Potential movement (scenario)</h4>
+              <p style="margin:0 0 4px"><strong>From:</strong> ${escapeHtml(f.properties.s_name)}</p>
+              <p style="margin:0 0 8px"><strong>To:</strong> ${escapeHtml(f.properties.e_name)}</p>
+              <p style="margin:0"><small>This is a visualization of <em>potential</em> routes (not observed counts).</small></p>
+            </div>
+          `);
+        }
+      });
+
+      scenarioGroup.addLayer(scenarioFlowLayer);
+      scenarioGroup.addLayer(scenarioMarkers);
+
+      // Add to Layer Control and keep it ON by default
+      layerControl.addOverlay(scenarioGroup, 'Scenario: El Fasher → Tawila/At Tina (potential)');
+      if (!map.hasLayer(scenarioGroup)) scenarioGroup.addTo(map);
     }
 
     // ---- Helpers
