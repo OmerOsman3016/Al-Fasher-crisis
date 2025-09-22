@@ -1,225 +1,404 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-app="idps-modern-layout">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-  <title>Al Fasher | RSF-Controlled Locations (OSM)</title>
+  <title>Sudan | IDPs Pathways — Al Fasher Scenario (Modern + OSM RSF Overlay)</title>
 
   <!-- Leaflet CSS -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="anonymous" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="anonymous"/>
+  <!-- Font Awesome (icons) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer"/>
+
   <style>
+    /* =============================================================
+       THEME TOKENS (Light / Dark)
+       ============================================================= */
     :root{
-      --bg:#0f172a;          /* slate-900 */
-      --panel:#0b1224cc;     /* translucent */
-      --text:#e5e7eb;        /* gray-200 */
-      --muted:#93a4bd;       /* bluish gray */
-      --accent:#60a5fa;      /* blue-400 */
-      --danger:#ef4444;      /* red-500 */
-      --danger-2:#ea580c;    /* orange-600 */
+      /* Brand */
+      --brand-primary:#0033A0; /* IOM deep blue */
+      --brand-accent:#418FDE;  /* IOM accent blue */
+      --brand-amber:#FFB81C;   /* highlight */
+      /* Flow colors */
+      --line1:#FFB81C; --line2:#FF671F; --line3:#D22630;
+      /* Surfaces */
+      --bg:#f5f7fa; --panel:#ffffff; --text:#142332; --muted:#5a7086; --border:#e6edf5;
+      --glass: rgba(255,255,255,.72);
+      --shadow: 0 10px 30px rgba(18, 38, 63, .10);
+      /* RSF overlay */
+      --rsf:#ef4444; /* red-500 */
+      --rsf2:#ea580c; /* orange-600 */
+      --ref:#60a5fa; /* blue-400 */
     }
+    [data-theme="dark"]{
+      --bg:#0e1621; --panel:#121e2a; --text:#e6edf5; --muted:#99a8b8; --border:#203142; --glass: rgba(18,30,42,.5);
+      --shadow: 0 12px 30px rgba(0,0,0,.35);
+      --line1:#FFD36A; --line2:#FF874F; --line3:#FF525E; /* keep contrast */
+      --rsf:#ff6b6b; --rsf2:#ff8a4c; --ref:#7cb7ff;
+    }
+
+    /* Base */
     html, body { height:100%; }
     body{
-      margin:0; background:radial-gradient(1200px 700px at 20% 0%, #0b1224 0, #0b1224 40%, #0f172a 80%);
-      color:var(--text); font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
-      display:flex; flex-direction:column; min-height:100vh;
+      margin:0; background:var(--bg); color:var(--text);
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+      display:grid; grid-template-rows: auto 1fr auto; min-height:100vh;
     }
-    .app-header{
-      display:flex; align-items:center; gap:14px; padding:10px 14px; backdrop-filter:saturate(1.2) blur(6px);
-      background:linear-gradient(180deg, #0e1529e6, #0b1224cc); border-bottom:1px solid #1f2a44;
-    }
+
+    /* =============================================================
+       TOP BAR (glassmorphism)
+       ============================================================= */
+    .topbar{ position:sticky; top:0; z-index:1000; backdrop-filter:saturate(140%) blur(8px); background: var(--glass); border-bottom: 1px solid var(--border); box-shadow: var(--shadow); }
+    .topbar-inner{ display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px 16px; max-width:1400px; margin:0 auto; }
     .brand{ display:flex; align-items:center; gap:12px; min-width:0; }
-    .brand .flag{ width:38px; height:26px; border-radius:8px; overflow:hidden; box-shadow:0 0 0 1px #1f2a44 inset; }
-    .brand h1{ font-size:16px; line-height:1.1; margin:0; }
-    .brand .sub{ font-size:12px; color:var(--muted); }
+    .flag{ width:40px; height:26px; border-radius:6px; overflow:hidden; box-shadow:0 0 0 1px rgba(0,0,0,.08) inset; }
+    .flag svg{ width:100%; height:100%; display:block; }
+    .title-wrap h1{ font-size:16px; line-height:1.1; margin:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .title-wrap .sub{ font-size:12px; color:var(--muted); }
 
-    .toolbar{ margin-left:auto; display:flex; align-items:center; gap:8px; }
-    .btn{ appearance:none; border:1px solid #24314f; background:#0b1224; color:#dbe5ff; padding:6px 10px; border-radius:12px; font-weight:600; font-size:12px; cursor:pointer; }
-    .btn:hover{ border-color:#2f4065; box-shadow:0 0 0 2px #0b1224; }
+    .topbar-actions{ display:flex; align-items:center; gap:8px; }
+    .chip{ display:inline-flex; align-items:center; gap:8px; height:32px; padding:0 10px; font-size:12px; font-weight:600; color:var(--text); background:var(--panel); border:1px solid var(--border); border-radius:999px; box-shadow: var(--shadow); }
+    .chip .kbd{ font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size:11px; border:1px solid var(--border); border-radius:6px; padding:0 6px; background:transparent; }
+    .btn-ghost{ display:inline-flex; align-items:center; gap:8px; height:36px; padding:0 12px; cursor:pointer; color:var(--text); background:transparent; border:1px solid var(--border); border-radius:10px; font-weight:600; font-size:12px; }
 
-    .map-wrap{ position:relative; flex:1 1 auto; min-height:0; }
-    #map{ position:absolute; inset:0; }
+    /* =============================================================
+       MAP WRAPPER
+       ============================================================= */
+    .map-wrap{ position:relative; }
+    #map{ position:relative; height: calc(100vh - 120px); }
+    @media (max-width: 768px){ #map{ height: calc(100vh - 104px); } }
 
-    .legend{
-      position:absolute; left:12px; bottom:12px; z-index:600;
-      background:var(--panel); border:1px solid #223259; border-radius:12px; padding:10px 12px; color:#dbe5ff;
-      box-shadow:0 10px 30px rgba(0,0,0,.35);
-    }
-    .legend h3{ margin:0 0 8px; font-size:13px; letter-spacing:.2px; }
-    .legend .row{ display:grid; grid-template-columns:18px 1fr; gap:8px; align-items:center; font-size:12px; color:#b9c8e8; }
+    /* Loading Overlay */
+    .loading-overlay{ position:absolute; inset:0; z-index:1100; display:flex; align-items:center; justify-content:center; flex-direction:column; background:linear-gradient(180deg, rgba(255,255,255,.86), rgba(255,255,255,.6)); }
+    [data-theme="dark"] .loading-overlay{ background:linear-gradient(180deg, rgba(18,30,42,.86), rgba(18,30,42,.6)); }
+    .spinner{ width:44px; height:44px; border:4px solid #e7eef7; border-top-color:var(--brand-primary); border-radius:50%; animation:spin 1s linear infinite; margin-bottom:10px; }
+    @keyframes spin{ to{ transform:rotate(360deg); } }
 
-    .notice{ position:absolute; right:12px; bottom:12px; z-index:600; max-width:360px; line-height:1.35; font-size:12px; color:#c1cde6; background:var(--panel); border:1px solid #223259; border-radius:12px; padding:10px 12px; }
-    .notice a{ color:#cfe1ff; }
+    /* Admin1 labels */
+    .leaflet-tooltip.state-label{ background:transparent; border:none; box-shadow:none; padding:0; pointer-events:none; color:#244b6b; font-weight:700; font-size:12px; letter-spacing:.2px; text-shadow:0 0 2px #fff, 0 0 3px #fff, 0 0 4px #fff, 0 0 5px #fff; }
+    [data-theme="dark"] .leaflet-tooltip.state-label{ color:#d7e6f9; text-shadow:0 0 3px #0e1621, 0 0 6px #0e1621; }
 
-    .src-chip{ display:inline-block; padding:2px 6px; background:#0e1b35; border:1px solid #23345b; border-radius:999px; color:#cfe1ff; font-size:11px; }
+    /* Destination dots */
+    .dest-icon{ pointer-events:auto; transition:transform .12s ease; }
+    .dest-icon .dot{ position:relative; width:var(--d,18px); height:var(--d,18px); border-radius:50%; border:1px solid #fff; background: radial-gradient(circle at 45% 30%, rgba(255,255,255,.95) 0 28%, rgba(65,143,222,1) 32%, rgba(65,143,222,.92) 60%, rgba(65,143,222,.85) 100%); box-shadow: 0 0 0 1px rgba(0,0,0,.06), 0 0 10px rgba(65,143,222,.35); }
+    .dest-icon .dot::after{ content:""; position:absolute; left:35%; top:28%; width:18%; height:18%; background:rgba(255,255,255,.9); border-radius:50%; filter:blur(.3px); }
+    .dest-icon:hover{ transform:scale(1.1); }
+    .dest-icon.focus{ transform:scale(1.18); box-shadow:0 0 0 2px rgba(65,143,222,.25); }
+
+    /* Origin pulsing */
+    .origin-pulse-icon{ pointer-events:auto; }
+    .origin-pulse-icon .pulse{ position:relative; width:var(--d,24px); height:var(--d,24px); border-radius:50%; background: radial-gradient(circle at 50% 45%, rgba(255,255,255,.95) 0 28%, rgba(255,103,31,1) 32%, rgba(255,103,31,.92) 60%, rgba(255,103,31,.85) 100%); box-shadow: 0 0 0 2px #ffffff inset, 0 2px 8px rgba(0,0,0,.18); }
+    .origin-pulse-icon .pulse::before, .origin-pulse-icon .pulse::after{ content:""; position:absolute; left:50%; top:50%; width:100%; height:100%; border-radius:50%; transform:translate(-50%,-50%) scale(.7); border:2px solid rgba(255,103,31,.7); animation:pulseRing 2.2s ease-out infinite; }
+    .origin-pulse-icon .pulse::after{ animation-delay:1.1s; }
+    @keyframes pulseRing { 0%{ transform:translate(-50%,-50%) scale(.7); opacity:.9; } 70%{ opacity:.2; } 100%{ transform:translate(-50%,-50%) scale(2.1); opacity:0; } }
+
+    /* Scenario nodes */
+    .scenario-node{ pointer-events:auto; }
+    .scenario-node .dot{ position:relative; width:var(--d,18px); height:var(--d,18px); border-radius:50%; border:1px solid #fff; box-shadow:0 0 10px rgba(0,0,0,.18); }
+    .scenario-node.origin .dot{ background: radial-gradient(circle at 45% 30%, rgba(255,255,255,.95) 0 28%, #ff671f 32%, rgba(255,103,31,.92) 60%, rgba(255,103,31,.85) 100%); }
+    .scenario-node.dest .dot{ background: radial-gradient(circle at 45% 30%, rgba(255,255,255,.95) 0 28%, var(--brand-accent) 32%, rgba(65,143,222,.92) 60%, rgba(65,143,222,.85) 100%); }
+
+    /* Legend (glass card) */
+    .legend{ background:var(--glass); border:1px solid var(--border); border-radius:12px; padding:10px 12px; box-shadow:var(--shadow); }
+
+    /* =============================================================
+       FLOATING CONTROL DOCK (modern icon-only)
+       ============================================================= */
+    .control-dock{ position:absolute; right:12px; bottom:16px; z-index:1200; display:flex; flex-direction:column; gap:8px; }
+    .fab{ width:44px; height:44px; border-radius:12px; display:flex; align-items:center; justify-content:center; cursor:pointer; background:var(--panel); color:var(--text); border:1px solid var(--border); box-shadow:var(--shadow); transition:.15s ease; }
+    .fab:hover{ transform: translateY(-1px); }
+    .fab.active{ outline:2px solid var(--brand-accent); }
+    .fab i{ font-size:16px; }
+
+    /* Footer (compact) */
+    .app-footer{ display:flex; align-items:center; justify-content:center; gap:8px; padding:8px 12px; font-size:12px; color:var(--muted); }
+
+    @media (max-width:768px){ .title-wrap h1{ font-size:14px; } .title-wrap .sub{ display:none; } }
   </style>
 </head>
 <body>
-  <header class="app-header" role="banner">
-    <div class="brand">
-      <div class="flag" aria-label="Sudan flag">
-        <svg viewBox="0 0 3 2" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
-          <rect width="3" height="2" fill="#000"/>
-          <rect width="3" height="1.3333" y="0.3333" fill="#ffffff"/>
-          <rect width="3" height="0.6667" fill="#D21034"/>
-          <polygon points="0,0 0,2 1,1" fill="#007229"/>
-        </svg>
+  <!-- =============================== TOPBAR =============================== -->
+  <div class="topbar">
+    <div class="topbar-inner">
+      <div class="brand" title="Sudan | IDPs Pathways">
+        <div class="flag" role="img" aria-label="Sudan flag">
+          <svg viewBox="0 0 3 2" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
+            <rect width="3" height="2" fill="#000"/>
+            <rect width="3" height="1.3333" y="0.3333" fill="#ffffff"/>
+            <rect width="3" height="0.6667" fill="#D21034"/>
+            <polygon points="0,0 0,2 1,1" fill="#007229"/>
+          </svg>
+        </div>
+        <div class="title-wrap">
+          <h1>Sudan | Al Fasher Crisis (Scenario + RSF Control)</h1>
+          <div class="sub">State → Locality displacement flows · Leaflet + CanvasFlowmap · OSM RSF overlay</div>
+        </div>
       </div>
-      <div>
-        <h1>Al Fasher | RSF-Controlled Locations (Public Reporting)</h1>
-        <div class="sub">Base: OpenStreetMap · Last updated: <span id="stamp"></span></div>
+      <div class="topbar-actions">
+        <div class="chip" title="Keyboard shortcuts"><i class="fa-regular fa-keyboard"></i> <span class="kbd">Space</span> · <span class="kbd">F</span> · <span class="kbd">P</span> · <span class="kbd">R</span></div>
+        <button id="btn-theme" class="btn-ghost" title="Toggle dark mode"><i class="fa-regular fa-moon"></i><span>Theme</span></button>
       </div>
-    </div>
-    <div class="toolbar" aria-label="Map controls">
-      <button id="btn-reset" class="btn" title="Reset view">Reset view</button>
-    </div>
-  </header>
-
-  <div class="map-wrap">
-    <div id="map" role="region" aria-label="Map of RSF-controlled or held locations around Al Fasher"></div>
-
-    <!-- Legend -->
-    <div class="legend" id="legend">
-      <h3>Layers & symbology</h3>
-      <div class="row"><span style="width:14px;height:14px;border-radius:50%;background:var(--danger);box-shadow:0 0 10px rgba(239,68,68,.5);"></span><span>RSF control (point)</span></div>
-      <div class="row"><span style="width:18px;height:6px;border-radius:4px;background:linear-gradient(90deg,var(--danger),var(--danger-2));"></span><span>Approximate area of control</span></div>
-      <div class="row"><span style="width:14px;height:14px;border-radius:50%;background:var(--accent);"></span><span>Reference place</span></div>
-    </div>
-
-    <!-- Disclaimer/notice -->
-    <div class="notice">
-      <strong>Important:</strong> Locations and extents are <em>approximate</em> and compiled from public reports for humanitarian visualization. Control is fluid and may change rapidly.
     </div>
   </div>
 
-  <!-- Leaflet JS -->
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin="anonymous"></script>
+  <!-- =============================== MAP =============================== -->
+  <div class="map-wrap">
+    <div id="map" aria-label="IDPs Pathways map of Sudan" role="region"></div>
+    <div class="loading-overlay" id="loading-overlay" aria-live="polite">
+      <div class="spinner" aria-hidden="true"></div>
+      <div>Loading displacement data…</div>
+    </div>
+
+    <!-- Floating control dock -->
+    <div class="control-dock" aria-label="Map controls">
+      <button id="btn-play"  class="fab active" title="Play/Pause animation (Space)"><i class="fa-solid fa-play"></i></button>
+      <button id="btn-flows" class="fab active" title="Toggle flow lines (F)"><i class="fa-solid fa-wave-square"></i></button>
+      <button id="btn-points" class="fab active" title="Toggle points (P)"><i class="fa-solid fa-circle"></i></button>
+      <button id="btn-reset" class="fab"         title="Reset view (R)"><i class="fa-solid fa-rotate"></i></button>
+    </div>
+  </div>
+
+  <!-- =============================== FOOTER =============================== -->
+  <footer class="app-footer" role="contentinfo">
+    <span>© IOM DTM — Prototype. Basemap © Mapbox/OSM.</span>
+  </footer>
+
+  <!-- =============================== SCRIPTS =============================== -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <script src="https://unpkg.com/@tweenjs/tween.js@18.6.4/dist/tween.umd.js"></script>
+  <script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
+  <script src="https://unpkg.com/topojson-client@3"></script>
+  <!-- Local CanvasFlowmapLayer -->
+  <script src="./src/CanvasFlowmapLayer.js"></script>
+
   <script>
   (function(){
-    // Timestamp in UI
-    document.getElementById('stamp').textContent = new Date().toISOString().slice(0,10);
+    const MAPBOX_TOKEN = 'pk.eyJ1Ijoib21lcm9zbWFuIiwiYSI6ImUxZDBkODBlNjQxMDE2M2Y3OTQ3MWIwNTJkMjgzZTI3In0.ekCHuxRflTOO0RpQ6rQR7Q';
 
-    // --- Init map
-    const map = L.map('map', { preferCanvas:true, zoomSnap:0.5, zoomDelta:0.5, minZoom:5, maxZoom:19 });
+    const map = L.map('map', { preferCanvas:true, zoomControl:false, minZoom:4, maxZoom:11, zoomSnap:0.5, zoomDelta:0.5, attributionControl:true }).setView([16,30], 5.5);
 
-    // --- OpenStreetMap basemaps
-    const osmStd = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; OpenStreetMap contributors'
-    });
-    const osmHOT = L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
-      attribution: '&copy; OpenStreetMap contributors, tiles style by Humanitarian OpenStreetMap Team'
-    }).addTo(map); // default
+    // ===== Basemaps =====
+    const cartoLight = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { attribution:'&copy; OpenStreetMap & CartoDB' });
+    const mbLight   = L.tileLayer(`https://api.mapbox.com/styles/v1/mapbox/light-v10/tiles/{z}/{x}/{y}?access_token=${MAPBOX_TOKEN}`, { tileSize:512, zoomOffset:-1, attribution:'&copy; Mapbox & OpenStreetMap' });
+    const mbStreets = L.tileLayer(`https://api.mapbox.com/styles/v1/mapbox/streets-v11/tiles/{z}/{x}/{y}?access_token=${MAPBOX_TOKEN}`, { tileSize:512, zoomOffset:-1, attribution:'&copy; Mapbox & OpenStreetMap' });
+    const mbSat     = L.tileLayer(`https://api.mapbox.com/styles/v1/mapbox/satellite-v9/tiles/{z}/{x}/{y}?access_token=${MAPBOX_TOKEN}`, { tileSize:512, zoomOffset:-1, attribution:'&copy; Mapbox & OpenStreetMap' });
+    const mbOutdoor = L.tileLayer(`https://api.mapbox.com/styles/v1/mapbox/outdoors-v11/tiles/{z}/{x}/{y}?access_token=${MAPBOX_TOKEN}`, { tileSize:512, zoomOffset:-1, attribution:'&copy; Mapbox & OpenStreetMap' });
+    const mbCustom  = L.tileLayer('https://api.mapbox.com/styles/v1/omerosman/cm8oy6is4006101si7ll3bs4h/tiles/{z}/{x}/{y}?access_token=' + MAPBOX_TOKEN, { tileSize:512, zoomOffset:-1, attribution:'&copy; Mapbox & OpenStreetMap' });
+    const osmStd    = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap contributors' });
+    const osmHOT    = L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap contributors, tiles & style © HOT' });
 
-    const baseLayers = { 'OSM Humanitarian': osmHOT, 'OSM Standard': osmStd };
+    mbSat.addTo(map);
 
-    // --- RSF control features (public reporting, Sep 2025)
-    // Coordinates are [lon, lat]
-    const rsfGeoJSON = {
-      type:'FeatureCollection',
-      features:[
-        {
-          type:'Feature',
-          geometry:{ type:'Point', coordinates:[25.310667, 13.4885222] },
-          properties:{
-            id:'zamzam',
-            name:'Zamzam IDP Camp',
-            status:'Reported RSF control (13 Apr 2025 →), continued presence Sep 2025',
-            updated:'2025-09-22',
-            radius_m: 1800,
-            refs:[
-              {label:'Reuters/IOM', url:'https://www.reuters.com/world/africa/between-60000-80000-households-displaced-darfur-camp-after-sudan-rsf-takeover-2025-04-14/'},
-              {label:'OCHA Flash', url:'https://www.unocha.org/publications/report/sudan/sudan-displacement-zamzam-camp-north-darfur-state-flash-update-no-3-2-may-2025'},
-              {label:'Wikipedia (coords)', url:'https://en.wikipedia.org/wiki/Zamzam_Refugee_Camp'}
-            ]
-          }
-        },
-        {
-          type:'Feature',
-          geometry:{ type:'Point', coordinates:[25.350139, 13.6714833] },
-          properties:{
-            id:'abushouk',
-            name:'Abu Shouk IDP Camp',
-            status:'Assessed RSF control/presence (Aug–Sep 2025)',
-            updated:'2025-09-22',
-            radius_m: 1600,
-            refs:[
-              {label:'Yale HRL (Sep 2025)', url:'https://files-profile.medicine.yale.edu/documents/45e77af9-a3cb-4bae-9bc2-61efe1d1595f'},
-              {label:'OHCHR (Aug 2025)', url:'https://www.ohchr.org/en/press-releases/2025/08/sudan-turk-outraged-after-rsf-kills-least-57-civilians-el-fasher-and-abu'}
-            ]
-          }
-        }
-      ]
-    };
+    const layerControl = L.control.layers({ "Mapbox Custom": mbCustom, "Mapbox Light": mbLight, "Mapbox Streets": mbStreets, "Mapbox Outdoors": mbOutdoor, "Mapbox Satellite": mbSat, "Carto Light": cartoLight }, null, { collapsed:true }).addTo(map);
+    layerControl.addBaseLayer(osmHOT, 'OSM Humanitarian');
+    layerControl.addBaseLayer(osmStd, 'OSM Standard');
 
-    const refPlaces = {
-      type:'FeatureCollection',
-      features:[
-        { type:'Feature', geometry:{ type:'Point', coordinates:[25.34936, 13.62793] }, properties:{ name:'Al Fasher (city center, ref.)' } }
-      ]
-    };
-
-    // Styles
-    function rsfMarker(p){
-      const d = 18;
-      return L.divIcon({
-        className:'rsf-dot',
-        html:`<div style="width:${d}px;height:${d}px;border-radius:50%;background:var(--danger);box-shadow:0 0 0 2px #fff,0 0 16px rgba(239,68,68,.55);"></div>`,
-        iconSize:[d,d], iconAnchor:[d/2,d/2]
-      });
-    }
-
-    function makePopup(props){
-      const links = (props.refs||[]).map(r=>`<a class="src-chip" href="${r.url}" target="_blank" rel="noopener">${r.label}</a>`).join(' ');
-      return `
-        <div style="min-width:240px">
-          <h4 style="margin:0 0 6px;color:#cfe1ff">${escapeHtml(props.name)}</h4>
-          <div style="font-size:13px;color:#c1cde6;margin-bottom:6px">${escapeHtml(props.status)}</div>
-          <div style="font-size:12px;color:#9cb6e6"><strong>Updated:</strong> ${escapeHtml(props.updated||'')}
-            <div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap">${links}</div>
-          </div>
-          <div style="margin-top:8px;font-size:12px;color:#a8b9da">Extent circle shows an <em>approximate</em> footprint for visualization.</div>
-        </div>`;
-    }
-
-    const rsfLayer = L.layerGroup();
-    L.geoJSON(rsfGeoJSON, {
-      pointToLayer: (feat, latlng) => L.marker(latlng, { icon: rsfMarker(feat.properties) }),
-      onEachFeature: (feat, layer) => {
-        layer.bindTooltip(feat.properties.name, { direction:'top', offset:[0,-4] });
-        layer.bindPopup(makePopup(feat.properties));
-        // Add a soft circle to approximate area
-        const r = Number(feat.properties.radius_m)||1200;
-        const halo = L.circle(layer.getLatLng(), {
-          radius:r,
-          color:'#ef4444', weight:1.25, opacity:0.9,
-          fillColor:'#ef4444', fillOpacity:0.12, interactive:false
-        }).addTo(rsfLayer);
-        layer.on('add', ()=>halo.addTo(map));
-        layer.on('remove', ()=>map.removeLayer(halo));
-      }
-    }).addTo(rsfLayer);
-
-    const refsLayer = L.geoJSON(refPlaces, {
-      pointToLayer: (f, ll) => L.circleMarker(ll, {
-        radius:5, color:'#60a5fa', weight:2, fillColor:'#60a5fa', fillOpacity:0.4
-      }).bindTooltip(f.properties.name, {direction:'top'})
-    });
-
-    rsfLayer.addTo(map);
-
-    // Layer control
-    const overlays = { 'RSF Control (approx.)': rsfLayer, 'Reference places': refsLayer };
-    L.control.layers(baseLayers, overlays, { collapsed:true }).addTo(map);
     L.control.scale({ position:'bottomleft', metric:true, imperial:false }).addTo(map);
+    L.control.zoom({ position:'topright' }).addTo(map);
 
-    // Fit to data
-    const all = L.featureGroup([rsfLayer, refsLayer]).addTo(map);
-    map.fitBounds(all.getBounds(), { padding:[24,24] });
+    // Legend
+    const legend = L.control({ position: 'bottomleft' });
+    legend.onAdd = function(){
+      const div = L.DomUtil.create('div','legend');
+      div.innerHTML = `
+        <div style="min-width:220px">
+          <div style="font-weight:800;color:var(--text);margin-bottom:6px">Flow volume (e_Volume)</div>
+          <div style="display:grid;grid-template-columns:18px 1fr;gap:8px;align-items:center;font-size:12px;color:var(--muted);margin-bottom:6px">
+            <span style="height:4px;background:var(--line1);"></span><span>1 — 50,000</span>
+            <span style="height:4px;background:var(--line2);"></span><span>50,000 — 100,000</span>
+            <span style="height:4px;background:var(--line3);"></span><span>100,000 — 1,600,000</span>
+          </div>
+          <div style="display:grid;grid-template-columns:18px 1fr;gap:8px;align-items:center;font-size:12px;color:var(--muted)">
+            <span style="width:12px;height:12px;border-radius:50%;background:#ff671f;display:inline-block;box-shadow:0 0 0 2px #fff inset;"></span>
+            <span>Origin state (pulsing)</span>
+            <span style="width:12px;height:12px;border-radius:50%;background:var(--brand-accent);display:inline-block;border:1px solid #fff;box-shadow:0 0 8px rgba(65,143,222,.35)"></span>
+            <span>Destination locality (glow)</span>
+          </div>
+        </div>`;
+      return div;
+    };
+    legend.addTo(map);
 
-    // Reset btn
-    document.getElementById('btn-reset').addEventListener('click', ()=> map.fitBounds(all.getBounds(), { padding:[24,24] }));
+    const legendEl = document.querySelector('.legend');
+    if (legendEl){ L.DomEvent.disableScrollPropagation(legendEl); L.DomEvent.disableClickPropagation(legendEl); }
 
-    // small utilities
-    function escapeHtml(str){ return String(str||'').replace(/[&<>"']/g, s=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[s])); }
+    // ===== State =====
+    let stateBoundariesLayer, admin1Labels, flowmapLayer, originPulseLayer, destLabelsLayer;
+    let scenarioFlowLayer, scenarioMarkers, scenarioGroup;
+    let rsfLayer, refsLayer, rsfBounds; // NEW: OSM RSF overlay
+    let isAnimationPlaying = true, showFlows = true, showPoints = true;
+
+    // Controls (floating)
+    const btnPlay   = document.getElementById('btn-play');
+    const btnFlows  = document.getElementById('btn-flows');
+    const btnPoints = document.getElementById('btn-points');
+    const btnReset  = document.getElementById('btn-reset');
+    const btnTheme  = document.getElementById('btn-theme');
+
+    btnPlay.addEventListener('click', toggleAnimation);
+    btnFlows.addEventListener('click', toggleFlows);
+    btnPoints.addEventListener('click', togglePoints);
+    btnReset.addEventListener('click', resetView);
+    btnTheme.addEventListener('click', ()=>{ const dark = document.body.getAttribute('data-theme') === 'dark'; document.body.setAttribute('data-theme', dark ? '' : 'dark'); });
+
+    window.addEventListener('keydown', (e) => {
+      if (e.target && e.target.closest && e.target.closest('input, textarea, [contenteditable="true"]')) return;
+      const k = (e.key || '').toLowerCase();
+      if (e.code === 'Space'){ e.preventDefault(); toggleAnimation(); }
+      else if (k === 'f') toggleFlows();
+      else if (k === 'p') togglePoints();
+      else if (k === 'r') resetView();
+    });
+
+    function updateBtnStates(){ btnPlay.classList.toggle('active', isAnimationPlaying); btnFlows.classList.toggle('active', showFlows); btnPoints.classList.toggle('active', showPoints); }
+    function toggleAnimation(){ isAnimationPlaying = !isAnimationPlaying; flowmapLayer?.setAnimationStarted?.(isAnimationPlaying); scenarioFlowLayer?.setAnimationStarted?.(isAnimationPlaying); updateBtnStates(); }
+    function toggleFlows(){ showFlows = !showFlows; flowmapLayer?.setPathDisplayMode?.(showFlows ? 'all' : 'none'); scenarioFlowLayer?.setPathDisplayMode?.(showFlows ? 'all' : 'none'); updateBtnStates(); }
+    function togglePoints(){
+      showPoints = !showPoints; flowmapLayer?.setPointVisibility?.(showPoints);
+      if (originPulseLayer){ if (showPoints && !map.hasLayer(originPulseLayer)) originPulseLayer.addTo(map); if (!showPoints && map.hasLayer(originPulseLayer)) map.removeLayer(originPulseLayer); }
+      if (destLabelsLayer){ if (!showPoints && map.hasLayer(destLabelsLayer)) map.removeLayer(destLabelsLayer); }
+      if (scenarioMarkers){ if (showPoints && !map.hasLayer(scenarioMarkers)) scenarioMarkers.addTo(map); if (!showPoints && map.hasLayer(scenarioMarkers)) map.removeLayer(scenarioMarkers); }
+      updateBtnStates();
+    }
+
+    // ===== Load CSV/Geo data for main flow viz =====
+    const overlay = document.getElementById('loading-overlay');
+    Promise.all([
+      fetch('./data/ADMIN1.json').then(r => (r.ok ? r.json() : null)).catch(() => null),
+      fetch('./data/sudan_states.geojson').then(r => (r.ok ? r.json() : null)).catch(() => null),
+      new Promise((resolve, reject) => { Papa.parse('./data/IDPs_Pathway.csv', { download:true, header:true, dynamicTyping:true, skipEmptyLines:true, complete: res => resolve(res.data), error: reject }); })
+    ]).then(([admin1Maybe, fallbackStates, rows]) => {
+      const states = toGeoJSON(admin1Maybe) || toGeoJSON(fallbackStates);
+      if (states) addStyledAdmin1(states);
+
+      const data = rows.map(r => normalizeRow(r)).filter(r => Number.isFinite(r.s_lat) && Number.isFinite(r.s_lon) && Number.isFinite(r.e_lat) && Number.isFinite(r.e_lon) && Number.isFinite(r.e_Volume) && r.e_Volume > 0);
+      const { destinationTotals, originTotals, destAgg } = computeTotals(data);
+      data.forEach(d => { d.e_totalVolume = destinationTotals.get(d.e_locality_id) || d.e_Volume; d.s_totalVolume = originTotals.get(d.s_state_id) || d.e_Volume; });
+
+      addOriginPulseLayer(data);
+      initFlowmap(data);
+      addDestinationLabels(destAgg); // hidden by default via layer control
+      addScenarioFlows();            // El Fasher → Tawila & At Tina
+
+      // NEW: build OSM RSF overlay
+      addRsfControlOverlay();
+
+      overlay.style.display = 'none';
+    }).catch(err => { overlay.innerHTML = '<div style="color:#ff6b6b;text-align:center">Failed to load data. Check console.</div>'; console.error(err); });
+
+    // ===== Admin1 styled =====
+    function addStyledAdmin1(states){
+      map.createPane('admin1-casing');  map.getPane('admin1-casing').style.zIndex = 350;
+      map.createPane('admin1-stroke');  map.getPane('admin1-stroke').style.zIndex = 351;
+      map.createPane('admin1-labels');  map.getPane('admin1-labels').style.zIndex = 352;
+
+      function strokeWeightForZoom(z){ return Math.max(0.8, Math.min(2.4, (z - 4) * 0.35)); }
+      const admin1StrokeStyle = () => ({ pane:'admin1-stroke', color:getCSS('--brand-primary')||'#2a5885', weight:strokeWeightForZoom(map.getZoom()), opacity:0.95, fillColor:'#eaf2fb', fillOpacity:0.25, lineJoin:'round', lineCap:'round', smoothFactor:0.4, interactive:true });
+      const admin1CasingStyle = () => ({ pane:'admin1-casing', color:'#ffffff', weight:strokeWeightForZoom(map.getZoom())+2, opacity:0.9, fillOpacity:0, lineJoin:'round', lineCap:'round', smoothFactor:0.4, interactive:false });
+
+      const admin1Casing = L.geoJSON(states, { style: admin1CasingStyle, interactive:false });
+      const admin1Stroke = L.geoJSON(states, { style: admin1StrokeStyle, onEachFeature: (feat, lyr) => { const nm = getAdmin1Name(feat?.properties) || 'Admin 1'; lyr.on({ mouseover:e=>{ e.target.setStyle({ color:getCSS('--brand-amber','#ffb81c'), weight:strokeWeightForZoom(map.getZoom())+1.2, fillOpacity:0.35 }); e.target.bringToFront(); }, mouseout:()=>admin1Stroke.resetStyle(lyr), click:e=>{ try { map.fitBounds(e.target.getBounds(), { padding:[20,20] }); } catch{} const code = getAdmin1Code(feat?.properties); if (code && flowmapLayer?.selectFeaturesForPathDisplayById){ try { flowmapLayer.selectFeaturesForPathDisplayById('s_state_id', String(code), true, 'SELECTION_NEW'); } catch {} } } }); lyr.bindTooltip(nm, { sticky:true }); } });
+
+      admin1Labels = L.layerGroup([], { pane:'admin1-labels' });
+      function rebuildLabels(){ admin1Labels.clearLayers(); if (map.getZoom() < 6) return; admin1Stroke.eachLayer(l => { const nm = getAdmin1Name(l.feature?.properties) || ''; if (!nm) return; const c = safeCenter(l); if (!c) return; L.tooltip({ permanent:true, direction:'center', className:'state-label', pane:'admin1-labels' }).setContent(nm).setLatLng(c).addTo(admin1Labels); }); }
+
+      stateBoundariesLayer = L.featureGroup([admin1Casing, admin1Stroke]).addTo(map);
+      stateBoundariesLayer.bringToBack();
+      try { map.fitBounds(stateBoundariesLayer.getBounds(), { padding:[20,20] }); } catch {}
+
+      rebuildLabels(); admin1Labels.addTo(map);
+      layerControl.addOverlay(stateBoundariesLayer, 'Admin 1 Boundaries'); layerControl.addOverlay(admin1Labels, 'Admin 1 Labels');
+      map.on('zoomend', ()=>{ admin1Casing.setStyle(admin1CasingStyle()); admin1Stroke.setStyle(admin1StrokeStyle()); rebuildLabels(); });
+    }
+
+    // ===== Origin pulses =====
+    function addOriginPulseLayer(rows){
+      map.createPane('origin-pulses');  map.getPane('origin-pulses').style.zIndex = 460;
+      const byState = new Map();
+      for (const d of rows){ if (!d.s_state_id) continue; if (!byState.has(d.s_state_id)) byState.set(d.s_state_id, { id:d.s_state_id, lat:d.s_lat, lon:d.s_lon, name:d.s_State||'Unknown', total:0 }); byState.get(d.s_state_id).total += Number(d.e_Volume)||0; }
+      originPulseLayer = L.layerGroup([], { pane:'origin-pulses' });
+      const totals = [...byState.values()].map(v => v.total); const tMin = Math.max(1, Math.min(...totals)); const tMax = Math.max(...totals); const sizeFor = (v) => Math.round(scaleRadiusLog(v, tMin, tMax, 12, 28) * 2);
+      byState.forEach((v) => { const size = sizeFor(v.total); const icon = L.divIcon({ className:'origin-pulse-icon', html:`<div class="pulse" style="--d:${size}px"></div>`, iconSize: [size, size], iconAnchor: [size/2, size/2] }); const m = L.marker([v.lat, v.lon], { icon }).bindTooltip(`Displacement Origin: ${escapeHtml(v.name)}<br>Total displaced: ${formatNumber(v.total)}`, { direction:'top', offset:[0,-4] }).on('click', () => { try { flowmapLayer?.selectFeaturesForPathDisplayById?.('s_state_id', String(v.id), true, 'SELECTION_NEW'); } catch {} }).bindPopup(`<div style="min-width:220px"><h4 style="margin:0 0 8px;color:var(--brand-primary);font-weight:600">Displacement Origin</h4><p style="margin:0 0 6px"><strong>State:</strong> ${escapeHtml(v.name)}</p><p style="margin:0"><strong>Total Displaced:</strong> ${formatNumber(v.total)}</p></div>`); originPulseLayer.addLayer(m); });
+      originPulseLayer.addTo(map); layerControl.addOverlay(originPulseLayer, 'Origin points (pulsing)');
+    }
+
+    // ===== Destination labels (Top N) =====
+    function addDestinationLabels(destAgg){
+      map.createPane('dest-labels');  map.getPane('dest-labels').style.zIndex = 470;
+      destLabelsLayer = L.layerGroup([], { pane:'dest-labels' }); // hidden by default
+      layerControl.addOverlay(destLabelsLayer, 'Top destination labels');
+      function topNForZoom(z){ if (z<5) return 3; if (z<6) return 5; if (z<7) return 8; if (z<8) return 12; return 18; }
+      function rebuild(){ if (!destLabelsLayer) return; destLabelsLayer.clearLayers(); const b = map.getBounds(); const inView = destAgg.filter(d => b.contains([d.lat,d.lon])); inView.sort((a,b)=> b.total - a.total); const N = topNForZoom(map.getZoom()); inView.slice(0, N).forEach(d => { const marker = L.marker([d.lat, d.lon], { interactive:true }).bindTooltip(`${escapeHtml(d.name)} • ${formatNumber(d.total)}`, { permanent:true, direction:'top', className:'dest-label', offset:[0,-8] }).on('click', () => { try { flowmapLayer?.selectFeaturesForPathDisplayById?.('e_locality_id', String(d.id), true, 'SELECTION_NEW'); } catch {} }); destLabelsLayer.addLayer(marker); }); }
+      map.on('moveend zoomend', rebuild); rebuild();
+    }
+
+    // ===== Flowmap =====
+    function initFlowmap(data){
+      const originKeySet = new Set(data.map(d => latlonKey(d.s_lat, d.s_lon)));
+      const fc = { type:'FeatureCollection', features: data.map(d => ({ type:'Feature', geometry:{ type:'Point', coordinates:[d.s_lon, d.s_lat] }, properties:d })) };
+      flowmapLayer = L.canvasFlowmapLayer(fc, { originAndDestinationFieldIds:{ originUniqueIdField:'s_state_id', originGeometry:{ x:'s_lon', y:'s_lat' }, destinationUniqueIdField:'e_locality_id', destinationGeometry:{ x:'e_lon', y:'e_lat' } }, pointToLayer:(feature, latlng)=>{ const isOriginSpot = originKeySet.has(latlonKey(latlng.lat, latlng.lng)); if (isOriginSpot){ return L.circleMarker(latlng, { radius:0.1, opacity:0, fillOpacity:0 }); } const vol = feature.properties?.e_totalVolume || feature.properties?.e_Volume || 0; const d = Math.round(scaleRadiusLog(vol, 20000, 1600000, 10, 22)); const icon = L.divIcon({ className:'dest-icon', html:`<div class="dot" style="--d:${d}px"></div>`, iconSize:[d, d], iconAnchor:[d/2, d/2] }); return L.marker(latlng, { icon }); }, canvasBezierStyle:{ type:'classBreaks', field:'e_Volume', classBreakInfos:[ { classMinValue:1, classMaxValue:50000,   symbol:{ strokeStyle:getCSS('--line1','#ffb81c'), lineWidth:0.7, lineCap:'round', shadowColor:'#fee8c8', shadowBlur:2 } }, { classMinValue:50000, classMaxValue:100000,  symbol:{ strokeStyle:getCSS('--line2','#ff671f'), lineWidth:1.5, lineCap:'round', shadowColor:'#fdbb84', shadowBlur:2 } }, { classMinValue:100000, classMaxValue:1600000, symbol:{ strokeStyle:getCSS('--line3','#d22630'), lineWidth:3.0, lineCap:'round', shadowColor:'#e34a33', shadowBlur:2 } } ], defaultSymbol:{ strokeStyle:'#d0d7e2', lineWidth:0.6, lineCap:'round', shadowColor:'#d0d7e2', shadowBlur:1.2 } }, pathDisplayMode:'all', animationStarted:true, animationEasingFamily:'Linear', animationEasingType:'None', animationDuration:3200, onEachFeature:(feature, layer)=>attachInteractivity(feature, layer) }).addTo(map);
+      let hoverLock = false; flowmapLayer.on('mouseover', (e) => { if (hoverLock) return; hoverLock = true; setTimeout(()=> hoverLock = false, 50); if (e.sharedDestinationFeatures?.length){ flowmapLayer.selectFeaturesForPathDisplay(e.sharedDestinationFeatures, 'SELECTION_NEW'); const l = e.layer; try{ l._icon?.classList?.add('focus'); setTimeout(()=>l._icon?.classList?.remove('focus'), 600);}catch{} } if (e.sharedOriginFeatures?.length){ flowmapLayer.selectFeaturesForPathDisplay(e.sharedOriginFeatures, 'SELECTION_NEW'); } }); flowmapLayer.on('click', (e) => { if (e.sharedDestinationFeatures?.length){ flowmapLayer.selectFeaturesForPathDisplay(e.sharedDestinationFeatures, 'SELECTION_NEW'); } else if (e.sharedOriginFeatures?.length){ flowmapLayer.selectFeaturesForPathDisplay(e.sharedOriginFeatures, 'SELECTION_NEW'); } }); updateBtnStates(); try { flowmapLayer.selectFeaturesForPathDisplayById('s_state_id', 'SD02114', true, 'SELECTION_NEW'); } catch {}
+    }
+
+    function attachInteractivity(feature, layer){ const name  = feature.properties?.e_locality || feature.properties?.s_State || 'Unknown'; const total = feature.properties?.e_totalVolume ?? feature.properties?.s_totalVolume ?? 0; layer.bindTooltip(`${escapeHtml(name)}`, { direction:'top', offset:[0,-2] }); layer.bindPopup(`<div style="min-width:220px"><h4 style="margin:0 0 8px;color:var(--brand-primary);font-weight:600">Location</h4><p style="margin:0 0 6px"><strong>Name:</strong> ${escapeHtml(name)}</p><p style="margin:0 0 6px"><strong>Total linked displaced:</strong> ${formatNumber(total)}</p>${feature.properties?.main_needs ? `<p style="margin:0 0 6px"><strong>Main Needs:</strong> ${escapeHtml(String(feature.properties.main_needs))}</p>` : ''}<p style="margin:6px 0 0"><small>Click markers/lines to focus flows</small></p></div>`); }
+
+    // ===== Scenario overlay: El Fasher → Tawila & At Tina =====
+    function addScenarioFlows(){ const EL_FASHER = { id:'SD02172', name:'El Fasher', lat:13.6279,  lon:25.3494 }; const TAWILA = { id:'SD02170', name:'Tawila', lat:13.5000,  lon:24.9000 }; const AT_TINA = { id:'SD02171', name:'At Tina', lat:13.46803, lon:24.76498 }; const edges = [ { s:EL_FASHER, e:TAWILA,  rel:2 }, { s:EL_FASHER, e:AT_TINA, rel:1 } ]; const features = edges.map(ed => ({ type:'Feature', geometry:{ type:'Point', coordinates:[ ed.s.lon, ed.s.lat ] }, properties:{ s_id:ed.s.id, s_name:ed.s.name, s_lat:ed.s.lat, s_lon:ed.s.lon, e_id:ed.e.id, e_name:ed.e.name, e_lat:ed.e.lat, e_lon:ed.e.lon, e_Volume: ed.rel * 100 } })); const fc = { type:'FeatureCollection', features };
+      scenarioGroup   = L.layerGroup().addTo(map);
+      scenarioMarkers = L.layerGroup().addTo(map);
+      const mkOrigin = L.marker([EL_FASHER.lat, EL_FASHER.lon], { icon: L.divIcon({ className:'scenario-node origin', html:`<div class="dot" style="--d:22px"></div>`, iconSize:[22,22], iconAnchor:[11,11] }) }).bindTooltip(`${EL_FASHER.name} (origin)`, {direction:'top', offset:[0,-6]}); scenarioMarkers.addLayer(mkOrigin);
+      [TAWILA, AT_TINA].forEach(pt=>{ const mk = L.marker([pt.lat, pt.lon], { icon: L.divIcon({ className:'scenario-node dest', html:`<div class="dot" style="--d:18px"></div>`, iconSize:[18,18], iconAnchor:[9,9] }) }).bindTooltip(`${pt.name} (potential destination)`, {direction:'top', offset:[0,-6]}); scenarioMarkers.addLayer(mk); });
+      scenarioFlowLayer = L.canvasFlowmapLayer(fc, { originAndDestinationFieldIds:{ originUniqueIdField:'s_id', originGeometry:{ x:'s_lon', y:'s_lat' }, destinationUniqueIdField:'e_id', destinationGeometry:{ x:'e_lon', y:'e_lat' } }, pathDisplayMode:'all', animationStarted:true, animationDuration:3200, animationEasingFamily:'Linear', animationEasingType:'None', canvasBezierStyle:{ type:'classBreaks', field:'e_Volume', classBreakInfos:[ { classMinValue:1, classMaxValue:150, symbol:{ strokeStyle:getCSS('--brand-accent','#418FDE'), lineWidth:1.6, lineCap:'round', shadowColor:'rgba(65,143,222,.35)', shadowBlur:2 } }, { classMinValue:150, classMaxValue:1000, symbol:{ strokeStyle:getCSS('--brand-accent','#418FDE'), lineWidth:2.4, lineCap:'round', shadowColor:'rgba(65,143,222,.5)', shadowBlur:3 } } ], defaultSymbol:{ strokeStyle:getCSS('--brand-accent','#418FDE'), lineWidth:2 } }, onEachFeature:(f,l)=>{ l.bindPopup(`<div style=\"min-width:220px\"><h4 style=\"margin:0 0 8px;color:var(--brand-primary);font-weight:600\">Potential movement (scenario)</h4><p style=\"margin:0 0 4px\"><strong>From:</strong> ${escapeHtml(f.properties.s_name)}</p><p style=\"margin:0 0 8px\"><strong>To:</strong> ${escapeHtml(f.properties.e_name)}</p><p style=\"margin:0\"><small>This is a visualization of <em>potential</em> routes (not observed counts).</small></p></div>`); } });
+      scenarioGroup.addLayer(scenarioFlowLayer); scenarioGroup.addLayer(scenarioMarkers); layerControl.addOverlay(scenarioGroup, 'Scenario: El Fasher → Tawila/At Tina (potential)'); if (!map.hasLayer(scenarioGroup)) scenarioGroup.addTo(map);
+    }
+
+    // ===== NEW: RSF control overlay using OpenStreetMap =====
+    function addRsfControlOverlay(){
+      // Points from public reporting; coords [lon, lat]
+      const rsfGeoJSON = { type:'FeatureCollection', features:[
+        { type:'Feature', geometry:{ type:'Point', coordinates:[25.310667, 13.4885222] }, properties:{ name:'Zamzam IDP Camp', updated:'2025-09-22', radius_m:1800, status:'Reported RSF control (since Apr 2025, ongoing)' } },
+        { type:'Feature', geometry:{ type:'Point', coordinates:[25.350139, 13.6714833] }, properties:{ name:'Abu Shouk IDP Camp', updated:'2025-09-22', radius_m:1600, status:'RSF control/presence (Aug–Sep 2025)' } }
+      ]};
+      const refPlaces = { type:'FeatureCollection', features:[ { type:'Feature', geometry:{ type:'Point', coordinates:[25.34936, 13.62793] }, properties:{ name:'Al Fasher (city center)' } } ] };
+
+      rsfLayer = L.layerGroup();
+      // Build markers + halos as grouped pairs to ensure proper toggle behavior
+      rsfGeoJSON.features.forEach(f => {
+        const ll = L.latLng(f.geometry.coordinates[1], f.geometry.coordinates[0]);
+        const d = 18;
+        const marker = L.marker(ll, { icon: L.divIcon({ className:'rsf-dot', html:`<div style="width:${d}px;height:${d}px;border-radius:50%;background:var(--rsf);box-shadow:0 0 0 2px #fff,0 0 16px rgba(239,68,68,.55);"></div>`, iconSize:[d,d], iconAnchor:[d/2,d/2] }) })
+          .bindTooltip(f.properties.name, { direction:'top', offset:[0,-4] })
+          .bindPopup(`<div style="min-width:240px"><h4 style="margin:0 0 6px;color:var(--brand-primary)">${escapeHtml(f.properties.name)}</h4><div style="font-size:13px;color:#425d7c;margin-bottom:6px">${escapeHtml(f.properties.status||'')}</div><div style="font-size:12px;color:#5a7086"><strong>Updated:</strong> ${escapeHtml(f.properties.updated||'')}</div><div style="margin-top:8px;font-size:12px;color:#5a7086">Extent circle is <em>approximate</em> for overview visualization.</div></div>`);
+        const halo = L.circle(ll, { radius:Number(f.properties.radius_m)||1200, color:getCSS('--rsf','#ef4444'), weight:1.25, opacity:0.9, fillColor:getCSS('--rsf','#ef4444'), fillOpacity:0.12, interactive:false });
+        L.layerGroup([halo, marker]).addTo(rsfLayer);
+      });
+
+      refsLayer = L.geoJSON(refPlaces, { pointToLayer: (fe, ll) => L.circleMarker(ll, { radius:5, color:getCSS('--ref','#60a5fa'), weight:2, fillColor:getCSS('--ref','#60a5fa'), fillOpacity:0.4 }).bindTooltip(fe.properties.name, {direction:'top'}) });
+
+      // Add to map + controls
+      rsfLayer.addTo(map);
+      layerControl.addOverlay(rsfLayer, 'RSF Control (approx., OSM)');
+      layerControl.addOverlay(refsLayer, 'Reference places');
+
+      // Compute bounds for Reset
+      const all = L.featureGroup([rsfLayer, refsLayer]);
+      try { rsfBounds = all.getBounds(); } catch { rsfBounds = null; }
+    }
+
+    function resetView(){ if (rsfBounds && rsfBounds.isValid()) map.fitBounds(rsfBounds, { padding:[24,24] }); else map.setView([16,30], 5.5); }
+
+    // ===== Helpers =====
+    function toGeoJSON(source){ if (!source) return null; if (source.type === 'Topology' && window.topojson?.feature){ const keys = Object.keys(source.objects || {}); const key = keys.find(k => /admin.?1/i.test(k)) || keys[0]; return key ? topojson.feature(source, source.objects[key]) : null; } return source; }
+    function getCSS(varName, fallback){ const v = getComputedStyle(document.documentElement).getPropertyValue(varName); return (v && v.trim()) ? v.trim() : fallback; }
+    function getAdmin1Name(props = {}){ return props.ADM1_EN || props.NAME_1 || props.admin1Name || props.state_name || props.State || props.NAME || props.ADM1_PCODE || null; }
+    function getAdmin1Code(props = {}){ const candidates = [props.ADM1_PCODE, props.STATE_CODE, props.code, props.STATECODE, props.state_code]; const code = (candidates.find(x => x) || '').toString().trim(); return code || null; }
+    function safeCenter(layer){ try { return layer.getBounds().getCenter(); } catch { return null; } }
+    function normalizeRow(r){ return { s_state_id:String(r.s_state_id || r.origin_state_id || r.state_code || '').trim(), s_State:r.s_State || r.origin_state || r.state || 'Unknown', s_lat:parseFloat(r.s_lat), s_lon:parseFloat(r.s_lon), e_locality_id:String(r.e_locality_id || r.dest_locality_id || r.locality_code || '').trim(), e_locality:r.e_locality || r.dest_locality || r.locality || 'Unknown', e_lat:parseFloat(r.e_lat), e_lon:parseFloat(r.e_lon), e_Volume:parseFloat(r.e_Volume || r.volume || r.total || 0) || 0, main_needs:r.main_needs || r.needs || '', ...r }; }
+    function computeTotals(data){ const destinationTotals = new Map(); const originTotals = new Map(); const destAggIndex = new Map(); for (const d of data){ destinationTotals.set(d.e_locality_id, (destinationTotals.get(d.e_locality_id) || 0) + d.e_Volume); originTotals.set(d.s_state_id, (originTotals.get(d.s_state_id) || 0) + d.e_Volume); if (!destAggIndex.has(d.e_locality_id)){ destAggIndex.set(d.e_locality_id, { id:d.e_locality_id, name:d.e_locality||'Unknown', lat:d.e_lat, lon:d.e_lon, total:0 }); } destAggIndex.get(d.e_locality_id).total += d.e_Volume; } const destAgg = [...destAggIndex.values()]; return { destinationTotals, originTotals, destAgg }; }
+    function scaleRadiusLog(value, minV, maxV, rMin, rMax){ const v = Math.max(minV||1, Math.min(maxV||value||1, value||1)); const a = Math.log(v) - Math.log(minV||1); const b = Math.log(maxV||v) - Math.log(minV||1); const t = b>0 ? a/b : 0; return rMin + (rMax - rMin) * t; }
+    function latlonKey(lat, lon){ return `${Number(lat).toFixed(4)},${Number(lon).toFixed(4)}`; }
+    function formatNumber(x){ try { return Number(x).toLocaleString(undefined); } catch { return x; } }
+    function escapeHtml(str){ return String(str).replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[s])); }
   })();
   </script>
 </body>
