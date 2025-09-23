@@ -132,169 +132,316 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
   <script src="https://unpkg.com/topojson-client@3"></script>
   <script src="https://unpkg.com/@tweenjs/tween.js@18.6.4/dist/tween.umd.js"></script>
-  <!-- Local CanvasFlowmapLayer (same file you already use) -->
-  <script src="./src/CanvasFlowmapLayer.js"></script>
+  
+  <!-- Use CDN for CanvasFlowmapLayer instead of local file -->
+  <script src="https://cdn.jsdelivr.net/npm/leaflet-canvas-flowmap-layer@1.2.0/dist/CanvasFlowmapLayer.min.js"></script>
 
   <script>
-  (function(){
-    const MAPBOX_TOKEN = 'pk.eyJ1Ijoib21lcm9zbWFuIiwiYSI6ImUxZDBkODBlNjQxMDE2M2Y3OTQ3MWIwNTJkMjgzZTI3In0.ekCHuxRflTOO0RpQ6rQR7Q';
+  // Initialize map
+  const MAPBOX_TOKEN = 'pk.eyJ1Ijoib21lcm9zbWFuIiwiYSI6ImUxZDBkODBlNjQxMDE2M2Y3OTQ3MWIwNTJkMjgzZTI3In0.ekCHuxRflTOO0RpQ6rQR7Q';
 
-    const map = L.map('map', { preferCanvas:true, zoomControl:false, minZoom:4, maxZoom:11, zoomSnap:0.5 }).setView([16, 30], 5.5);
+  const map = L.map('map', { 
+    preferCanvas: true, 
+    zoomControl: false, 
+    minZoom: 4, 
+    maxZoom: 11, 
+    zoomSnap: 0.5 
+  }).setView([16, 30], 5.5);
 
-    // Basemaps
-    const mbLight   = L.tileLayer(`https://api.mapbox.com/styles/v1/mapbox/light-v10/tiles/{z}/{x}/{y}?access_token=${MAPBOX_TOKEN}`, { tileSize:512, zoomOffset:-1, attribution:'&copy; Mapbox & OpenStreetMap' }).addTo(map);
-    const mbStreets = L.tileLayer(`https://api.mapbox.com/styles/v1/mapbox/streets-v11/tiles/{z}/{x}/{y}?access_token=${MAPBOX_TOKEN}`, { tileSize:512, zoomOffset:-1, attribution:'&copy; Mapbox & OpenStreetMap' });
-    const mbSat     = L.tileLayer(`https://api.mapbox.com/styles/v1/mapbox/satellite-v9/tiles/{z}/{x}/{y}?access_token=${MAPBOX_TOKEN}`, { tileSize:512, zoomOffset:-1, attribution:'&copy; Mapbox & OpenStreetMap' });
-    const osmStd    = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution:'&copy; OpenStreetMap contributors' });
+  // Basemaps
+  const mbLight = L.tileLayer(`https://api.mapbox.com/styles/v1/mapbox/light-v10/tiles/{z}/{x}/{y}?access_token=${MAPBOX_TOKEN}`, { 
+    tileSize: 512, 
+    zoomOffset: -1, 
+    attribution: '&copy; Mapbox & OpenStreetMap' 
+  }).addTo(map);
 
-    const layerCtl = L.control.layers({ 'Mapbox Light': mbLight, 'Mapbox Streets': mbStreets, 'Mapbox Satellite': mbSat, 'OSM Standard': osmStd }, null, { collapsed:true }).addTo(map);
-    L.control.scale({ position:'bottomleft', metric:true }).addTo(map);
-    L.control.zoom({ position:'topright' }).addTo(map);
+  const mbStreets = L.tileLayer(`https://api.mapbox.com/styles/v1/mapbox/streets-v11/tiles/{z}/{x}/{y}?access_token=${MAPBOX_TOKEN}`, { 
+    tileSize: 512, 
+    zoomOffset: -1, 
+    attribution: '&copy; Mapbox & OpenStreetMap' 
+  });
 
-    // Legend
-    const legend = L.control({ position:'bottomleft' });
-    legend.onAdd = () => {
-      const el = L.DomUtil.create('div','legend');
-      el.innerHTML = `
-        <div style="min-width:230px">
-          <div style="font-weight:800;margin-bottom:6px">Neighbouring Country</div>
-          <div style="display:grid;grid-template-columns:14px 1fr;gap:8px;align-items:center;font-size:12px;color:var(--muted)">
-            <span style="width:12px;height:12px;border-radius:50%;background:var(--c-chad);display:inline-block"></span><span>Chad</span>
-            <span style="width:12px;height:12px;border-radius:50%;background:var(--c-ethiopia);display:inline-block"></span><span>Ethiopia</span>
-            <span style="width:12px;height:12px;border-radius:50%;background:var(--c-eritrea);display:inline-block"></span><span>Eritrea</span>
-            <span style="width:12px;height:12px;border-radius:50%;background:var(--c-egypt);display:inline-block"></span><span>Egypt</span>
-          </div>
-          <div style="margin-top:8px;font-size:12px;color:var(--muted)">Lines show simple State → BCP connections (illustrative).</div>
-        </div>`;
-      return el;
+  const mbSat = L.tileLayer(`https://api.mapbox.com/styles/v1/mapbox/satellite-v9/tiles/{z}/{x}/{y}?access_token=${MAPBOX_TOKEN}`, { 
+    tileSize: 512, 
+    zoomOffset: -1, 
+    attribution: '&copy; Mapbox & OpenStreetMap' 
+  });
+
+  const osmStd = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { 
+    attribution: '&copy; OpenStreetMap contributors' 
+  });
+
+  // Add controls
+  const layerCtl = L.control.layers({ 
+    'Mapbox Light': mbLight, 
+    'Mapbox Streets': mbStreets, 
+    'Mapbox Satellite': mbSat, 
+    'OSM Standard': osmStd 
+  }, null, { collapsed: true }).addTo(map);
+
+  L.control.scale({ position: 'bottomleft', metric: true }).addTo(map);
+  L.control.zoom({ position: 'topright' }).addTo(map);
+
+  // Legend
+  const legend = L.control({ position: 'bottomleft' });
+  legend.onAdd = function() {
+    const el = L.DomUtil.create('div', 'legend');
+    el.innerHTML = `
+      <div style="min-width:230px">
+        <div style="font-weight:800;margin-bottom:6px">Neighbouring Country</div>
+        <div style="display:grid;grid-template-columns:14px 1fr;gap:8px;align-items:center;font-size:12px;color:var(--muted)">
+          <span style="width:12px;height:12px;border-radius:50%;background:var(--c-chad);display:inline-block"></span><span>Chad</span>
+          <span style="width:12px;height:12px;border-radius:50%;background:var(--c-ethiopia);display:inline-block"></span><span>Ethiopia</span>
+          <span style="width:12px;height:12px;border-radius:50%;background:var(--c-eritrea);display:inline-block"></span><span>Eritrea</span>
+          <span style="width:12px;height:12px;border-radius:50%;background:var(--c-egypt);display:inline-block"></span><span>Egypt</span>
+        </div>
+        <div style="margin-top:8px;font-size:12px;color:var(--muted)">Lines show simple State → BCP connections (illustrative).</div>
+      </div>`;
+    return el;
+  };
+  legend.addTo(map);
+
+  // Theme toggle
+  document.getElementById('btn-theme').addEventListener('click', function() {
+    const dark = document.body.getAttribute('data-theme') === 'dark';
+    document.body.setAttribute('data-theme', dark ? '' : 'dark');
+    
+    // Update icon
+    const icon = this.querySelector('i');
+    if (dark) {
+      icon.className = 'fa-regular fa-moon';
+    } else {
+      icon.className = 'fa-regular fa-sun';
+    }
+  });
+
+  // Helper functions
+  function getCSS(v, fb) {
+    const x = getComputedStyle(document.documentElement).getPropertyValue(v);
+    return (x && x.trim()) ? x.trim() : fb;
+  }
+
+  function escapeHtml(str) {
+    return String(str).replace(/[&<>"']/g, function(s) {
+      return {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+      }[s];
+    });
+  }
+
+  function normalizeCountry(x) {
+    const s = String(x || '').trim();
+    if (/er(itr)?ea/i.test(s)) return 'Eritrea';
+    return s;
+  }
+
+  function countryColor(c) {
+    if (c === 'Chad') return getCSS('--c-chad', '#d97706');
+    if (c === 'Ethiopia') return getCSS('--c-ethiopia', '#2563eb');
+    if (c === 'Eritrea') return getCSS('--c-eritrea', '#0ea5e9');
+    if (c === 'Egypt') return getCSS('--c-egypt', '#16a34a');
+    return getCSS('--brand-accent', '#418FDE');
+  }
+
+  function getAdmin1Name(p = {}) {
+    return p.ADM1_EN || p.NAME_1 || p.admin1Name || p.state_name || p.State || p.NAME || p.ADM1_PCODE || null;
+  }
+
+  function getAdmin1Code(p = {}) {
+    const cands = [p.ADM1_PCODE, p.STATE_CODE, p.STATECODE, p.code, p.state_code];
+    const v = (cands.find(x => x) || '').toString().trim();
+    return v || null;
+  }
+
+  function safeCenter(layer) {
+    try {
+      return layer.getBounds().getCenter();
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function toGeoJSON(source) {
+    if (!source) return null;
+    if (source.type === 'Topology' && window.topojson) {
+      const key = Object.keys(source.objects || {})[0];
+      return topojson.feature(source, source.objects[key]);
+    }
+    return source;
+  }
+
+  // Data
+  const FMC_POINTS = [
+    { state: 'Central Darfur', state_code: 'SD06', locality: 'Um Dukhun', locality_code: 'SD06135', cross_border_location: 'Um Dukhun', cross_border_code: 'SD06135PB5', neighbouring_country: 'Chad', Y: 11.139, X: 22.966 },
+    { state: 'Gedaref', state_code: 'SD12', locality: 'Basundah', locality_code: 'SD12077', cross_border_location: 'Gallabat/Metema', cross_border_code: 'SD12077PB1', neighbouring_country: 'Ethiopia', Y: 12.95798, X: 36.151888 },
+    { state: 'Kassala', state_code: 'SD11', locality: 'Kassala', locality_code: 'SD11053', cross_border_location: 'Al Laffa', cross_border_code: 'SD11053PB2', neighbouring_country: 'Eritrea', Y: 15.15372, X: 36.4355 },
+    { state: 'Northern', state_code: 'SD17', locality: 'Halfa', locality_code: 'SD17014', cross_border_location: 'Argeen', cross_border_code: 'SD17014PB3', neighbouring_country: 'Egypt', Y: 21.988934, X: 31.153322 },
+    { state: 'Northern', state_code: 'SD17', locality: 'Halfa', locality_code: 'SD17014', cross_border_location: 'Ashkeet', cross_border_code: 'SD17014PB4', neighbouring_country: 'Egypt', Y: 22.000523, X: 31.511477 },
+    { state: 'West Darfur', state_code: 'SD04', locality: 'Ag Geneina', locality_code: 'SD04115', cross_border_location: 'Adekonk', cross_border_code: 'SD04115PB6', neighbouring_country: 'Chad', Y: 13.4623111, X: 22.2296523 }
+  ];
+
+  // Compute state centers (fallback if no admin boundaries available)
+  function computeStateCenters(admin1) {
+    const out = new Map();
+    
+    // Fallback rough centers (used if ADMIN1 missing / code not found)
+    const rough = {
+      'SD06': { lat: 12.8, lon: 23.5, name: 'Central Darfur' },
+      'SD12': { lat: 14.1, lon: 35.4, name: 'Gedaref' },
+      'SD11': { lat: 15.45, lon: 36.40, name: 'Kassala' },
+      'SD17': { lat: 20.0, lon: 30.7, name: 'Northern' },
+      'SD04': { lat: 13.5, lon: 22.4, name: 'West Darfur' }
     };
-    legend.addTo(map);
-
-    // Theme toggle
-    document.getElementById('btn-theme').addEventListener('click', ()=>{
-      const dark = document.body.getAttribute('data-theme') === 'dark';
-      document.body.setAttribute('data-theme', dark ? '' : 'dark');
+    
+    Object.entries(rough).forEach(([k, v]) => {
+      out.set(k, v);
     });
+    
+    return out;
+  }
 
-    // Globals
-    let stateBoundariesLayer, admin1Labels;
-    let originLayer, flowLayer, bcpHaloLayer;
-    let rsBounds = null;
+  function normalizeRow(r, centers) {
+    const state_code = String(r.state_code || r.StateCode || r['State Code'] || '').trim();
+    const c = centers.get(state_code) || {};
+    
+    return {
+      state: r.state || r.State || '',
+      state_code: state_code,
+      locality: r.locality || r.Locality || '',
+      locality_code: String(r.locality_code || r['Locality Code'] || '').trim(),
+      cross_border_location: r.cross_border_location || r['Cross border location'] || r.CrossBorder || '',
+      bcp_code: String(r.cross_border_code || r['Cross borde Code'] || r['Cross border Code'] || '').trim(),
+      neighbouring_country: normalizeCountry(r.neighbouring_country || r['Neighbouring Country'] || r.Country || ''),
+      o_lat: Number(c.lat) || 0,
+      o_lon: Number(c.lon) || 0,
+      d_lat: Number(r.Y || r.lat || r.Lat || r.latitude) || 0,
+      d_lon: Number(r.X || r.lon || r.Lon || r.longitude) || 0
+    };
+  }
 
-    // Load admin1 + render
-      (function(){
-    // ... keep everything above as-is ...
+  // Main rendering function
+  function renderAll(rows, admin1GeoJSON) {
+    // Clear previous layers
+    if (window.originLayer) map.removeLayer(window.originLayer);
+    if (window.flowLayer) map.removeLayer(window.flowLayer);
+    if (window.bcpHaloLayer) map.removeLayer(window.bcpHaloLayer);
 
-    // Replace the old Promise.all(...) with this self-invoking async loader:
-    (async function loadBoundariesAndRender(){
-      const overlay = document.getElementById('loading');
-      try {
-        // 1) Try ADMIN1.json
-        let admin1 = await fetch('./data/ADMIN1.json').then(r => r.ok ? r.json() : null).catch(()=>null);
+    // Build state centroids
+    const stateCenters = computeStateCenters(admin1GeoJSON);
 
-        // 2) Fallback to another local file if you have one (optional)
-        if (!admin1) {
-          console.warn('ADMIN1.json not found, trying sudan_states.geojson…');
-          admin1 = await fetch('./data/sudan_states.geojson').then(r => r.ok ? r.json() : null).catch(()=>null);
+    // Normalize rows -> geo features
+    const data = rows.map(r => normalizeRow(r, stateCenters)).filter(d =>
+      Number.isFinite(d.o_lat) && Number.isFinite(d.o_lon) && 
+      Number.isFinite(d.d_lat) && Number.isFinite(d.d_lon) &&
+      d.o_lat !== 0 && d.o_lon !== 0
+    );
+
+    // Origin pulsing markers (one per state present)
+    window.originLayer = L.layerGroup().addTo(map);
+    const byState = new Map();
+    data.forEach(d => {
+      if (!byState.has(d.state_code)) byState.set(d.state_code, d);
+    });
+    
+    byState.forEach(d => {
+      const size = 26;
+      const icon = L.divIcon({
+        className: 'origin-pulse',
+        html: `<div class="dot" style="width:${size}px;height:${size}px"></div>`,
+        iconSize: [size, size],
+        iconAnchor: [size / 2, size / 2]
+      });
+      
+      L.marker([d.o_lat, d.o_lon], { icon })
+        .bindTooltip(`${d.state}`, { direction: 'top', offset: [0, -6] })
+        .addTo(window.originLayer);
+    });
+    
+    layerCtl.addOverlay(window.originLayer, 'State origins');
+
+    // Destination halos (BCPs by country color)
+    window.bcpHaloLayer = L.layerGroup().addTo(map);
+    
+    data.forEach(d => {
+      const clr = countryColor(normalizeCountry(d.neighbouring_country));
+      const dsize = 18;
+      const icon = L.divIcon({
+        className: 'bcp-icon',
+        html: `<div class="dot" style="width:${dsize}px;height:${dsize}px;background:${clr}"></div>`,
+        iconSize: [dsize, dsize],
+        iconAnchor: [dsize / 2, dsize / 2]
+      });
+      
+      const m = L.marker([d.d_lat, d.d_lon], { icon })
+        .bindTooltip(`${escapeHtml(d.cross_border_location)} • ${escapeHtml(d.neighbouring_country)}`, { 
+          direction: 'top', 
+          offset: [0, -6] 
+        })
+        .bindPopup(`
+          <div style="min-width:240px">
+            <h4 style="margin:0 0 8px;color:var(--brand-primary)">Border Crossing Point</h4>
+            <p style="margin:0 0 6px"><strong>BCP:</strong> ${escapeHtml(d.cross_border_location)} (${escapeHtml(d.bcp_code)})</p>
+            <p style="margin:0 0 6px"><strong>Locality:</strong> ${escapeHtml(d.locality)} (${escapeHtml(d.locality_code)})</p>
+            <p style="margin:0 0 6px"><strong>State:</strong> ${escapeHtml(d.state)} (${escapeHtml(d.state_code)})</p>
+            <p style="margin:0 0 6px"><strong>Neighbouring Country:</strong> ${escapeHtml(d.neighbouring_country)}</p>
+            <p style="margin:0"><small>Coords: ${d.d_lat.toFixed(6)}, ${d.d_lon.toFixed(6)}</small></p>
+          </div>`);
+      
+      // Subtle circle halo
+      L.circle([d.d_lat, d.d_lon], { 
+        radius: 900, 
+        color: clr, 
+        weight: 1.2, 
+        fillColor: clr, 
+        fillOpacity: 0.12, 
+        opacity: 0.9 
+      }).addTo(window.bcpHaloLayer);
+      
+      m.addTo(window.bcpHaloLayer);
+    });
+    
+    layerCtl.addOverlay(window.bcpHaloLayer, 'BCP markers');
+
+    // Flow lines (state → BCP)
+    const fc = {
+      type: 'FeatureCollection',
+      features: data.map(d => ({
+        type: 'Feature',
+        geometry: { type: 'Point', coordinates: [d.o_lon, d.o_lat] },
+        properties: {
+          o_id: d.state_code,
+          o_x: d.o_lon,
+          o_y: d.o_lat,
+          d_id: d.bcp_code,
+          d_x: d.d_lon,
+          d_y: d.d_lat,
+          state: d.state,
+          locality: d.locality,
+          bcp: d.cross_border_location,
+          country: d.neighbouring_country
         }
+      }))
+    };
 
-        // 3) Convert TopoJSON → GeoJSON if needed, add boundaries if available
-        const states = toGeoJSON(admin1);
-        if (states) addStyledAdmin1(states);
-
-        // 4) Render map (works even if states == null)
-        renderAll(FMC_POINTS, states || null);
-      } catch (err) {
-        console.warn('Failed to load boundaries; rendering without them.', err);
-        renderAll(FMC_POINTS, null);
-      } finally {
-        // Always hide the loading overlay
-        overlay.style.display = 'none';
-      }
-    })();
-
-    // Filter by neighbouring country
-    document.getElementById('countryFilter').addEventListener('change', (e)=>{
-      const v = e.target.value;
-      const rows = v==='all' ? FMC_POINTS : FMC_POINTS.filter(d => normalizeCountry(d.neighbouring_country) === v);
-      renderAll(rows, stateBoundariesLayer ? stateBoundariesLayer.toGeoJSON?.() : null);
-    });
-
-    // ---- RENDER PIPELINE ----
-    function renderAll(rows, admin1GeoJSON){
-      // Clear previous
-      if (originLayer){ map.removeLayer(originLayer); originLayer = null; }
-      if (flowLayer){ map.removeLayer(flowLayer); flowLayer = null; }
-      if (bcpHaloLayer){ map.removeLayer(bcpHaloLayer); bcpHaloLayer = null; }
-
-      // Build state centroids
-      const stateCenters = computeStateCenters(admin1GeoJSON);
-
-      // Normalize rows -> geo features
-      const data = rows.map(r => normalizeRow(r, stateCenters)).filter(d =>
-        Number.isFinite(d.o_lat) && Number.isFinite(d.o_lon) && Number.isFinite(d.d_lat) && Number.isFinite(d.d_lon)
-      );
-
-      // Origin pulsing markers (one per state present)
-      originLayer = L.layerGroup().addTo(map);
-      const byState = new Map();
-      data.forEach(d => { if (!byState.has(d.state_code)) byState.set(d.state_code, d); });
-      byState.forEach(d=>{
-        const size = 26;
-        const icon = L.divIcon({ className:'origin-pulse', html:`<div class="dot" style="width:${size}px;height:${size}px"></div>`, iconSize:[size,size], iconAnchor:[size/2,size/2] });
-        L.marker([d.o_lat, d.o_lon], { icon }).bindTooltip(`${d.state}`, {direction:'top', offset:[0,-6]}).addTo(originLayer);
-      });
-      layerCtl.addOverlay(originLayer, 'State origins');
-
-      // Destination halos (BCPs by country color)
-      bcpHaloLayer = L.layerGroup().addTo(map);
-      data.forEach(d=>{
-        const clr = countryColor(normalizeCountry(d.neighbouring_country));
-        const dsize = 18;
-        const icon = L.divIcon({ className:'bcp-icon', html:`<div class="dot" style="width:${dsize}px;height:${dsize}px;background:${clr}"></div>`, iconSize:[dsize,dsize], iconAnchor:[dsize/2,dsize/2] });
-        const m = L.marker([d.d_lat, d.d_lon], { icon })
-          .bindTooltip(`${escapeHtml(d.cross_border_location)} • ${escapeHtml(d.neighbouring_country)}`, {direction:'top', offset:[0,-6]})
-          .bindPopup(`
-            <div style="min-width:240px">
-              <h4 style="margin:0 0 8px;color:var(--brand-primary)">Border Crossing Point</h4>
-              <p style="margin:0 0 6px"><strong>BCP:</strong> ${escapeHtml(d.cross_border_location)} (${escapeHtml(d.bcp_code)})</p>
-              <p style="margin:0 0 6px"><strong>Locality:</strong> ${escapeHtml(d.locality)} (${escapeHtml(d.locality_code)})</p>
-              <p style="margin:0 0 6px"><strong>State:</strong> ${escapeHtml(d.state)} (${escapeHtml(d.state_code)})</p>
-              <p style="margin:0 0 6px"><strong>Neighbouring Country:</strong> ${escapeHtml(d.neighbouring_country)}</p>
-              <p style="margin:0"><small>Coords: ${d.d_lat.toFixed(6)}, ${d.d_lon.toFixed(6)}</small></p>
-            </div>`);
-        // subtle circle halo
-        L.circle([d.d_lat, d.d_lon], { radius:900, color:clr, weight:1.2, fillColor:clr, fillOpacity:.12, opacity:.9 }).addTo(bcpHaloLayer);
-        m.addTo(bcpHaloLayer);
-      });
-      layerCtl.addOverlay(bcpHaloLayer, 'BCP markers');
-
-      // Flow lines (state → BCP)
-      const fc = {
-        type:'FeatureCollection',
-        features: data.map(d => ({
-          type:'Feature',
-          geometry:{ type:'Point', coordinates:[d.o_lon, d.o_lat] },
-          properties:{
-            o_id: d.state_code, o_x: d.o_lon, o_y: d.o_lat,
-            d_id: d.bcp_code,   d_x: d.d_lon, d_y: d.d_lat,
-            state: d.state, locality: d.locality,
-            bcp: d.cross_border_location, country: d.neighbouring_country
-          }
-        }))
-      };
-
-      flowLayer = L.canvasFlowmapLayer(fc, {
-        originAndDestinationFieldIds:{
-          originUniqueIdField:'o_id', originGeometry:{ x:'o_x', y:'o_y' },
-          destinationUniqueIdField:'d_id', destinationGeometry:{ x:'d_x', y:'d_y' }
+    // Check if CanvasFlowmapLayer is available
+    if (typeof L.CanvasFlowmapLayer === 'function') {
+      window.flowLayer = L.canvasFlowmapLayer(fc, {
+        originAndDestinationFieldIds: {
+          originUniqueIdField: 'o_id',
+          originGeometry: { x: 'o_x', y: 'o_y' },
+          destinationUniqueIdField: 'd_id',
+          destinationGeometry: { x: 'd_x', y: 'd_y' }
         },
-        pathDisplayMode:'all',
-        animationStarted:true,
-        animationDuration:3200,
-        animationEasingFamily:'Linear',
-        animationEasingType:'None',
-        onEachFeature:(f,l)=>{
+        pathDisplayMode: 'all',
+        animationStarted: true,
+        animationDuration: 3200,
+        animationEasingFamily: 'Linear',
+        animationEasingType: 'None',
+        onEachFeature: function(f, l) {
           l.bindPopup(`
             <div style="min-width:240px">
               <h4 style="margin:0 0 8px;color:var(--brand-primary)">State → BCP</h4>
@@ -303,129 +450,76 @@
               <p style="margin:0"><small>Illustrative connection for visualization (no volumes)</small></p>
             </div>`);
         },
-        canvasBezierStyle:{
-          type:'single',
-          symbol:{ strokeStyle:getCSS('--flow','#D22630'), lineWidth:1.8, lineCap:'round', shadowColor:'rgba(210,38,48,.35)', shadowBlur:2 }
+        canvasBezierStyle: {
+          type: 'single',
+          symbol: {
+            strokeStyle: getCSS('--flow', '#D22630'),
+            lineWidth: 1.8,
+            lineCap: 'round',
+            shadowColor: 'rgba(210,38,48,.35)',
+            shadowBlur: 2
+          }
         },
-        pointToLayer:(feature, latlng) => {
-          // Flowmap handles its own point markers; we hide them (we already add our own origins/BCPs).
-          return L.circleMarker(latlng, { radius:0.1, opacity:0, fillOpacity:0 });
+        pointToLayer: function(feature, latlng) {
+          return L.circleMarker(latlng, { radius: 0.1, opacity: 0, fillOpacity: 0 });
         }
       }).addTo(map);
-      layerCtl.addOverlay(flowLayer, 'State → BCP flows');
-
-      // Fit bounds to BCPs
-      const group = L.featureGroup([
-        originLayer, bcpHaloLayer
-      ]);
-      try {
-        rsBounds = group.getBounds();
-        if (rsBounds && rsBounds.isValid()) map.fitBounds(rsBounds, { padding:[24,24] });
-      } catch {}
+      
+      layerCtl.addOverlay(window.flowLayer, 'State → BCP flows');
+    } else {
+      console.warn('CanvasFlowmapLayer not available. Flow lines will not be displayed.');
     }
 
-    // ---- Admin1 styled layer ----
-    function addStyledAdmin1(states){
-      map.createPane('admin1-casing');  map.getPane('admin1-casing').style.zIndex = 350;
-      map.createPane('admin1-stroke');  map.getPane('admin1-stroke').style.zIndex = 351;
-      map.createPane('admin1-labels');  map.getPane('admin1-labels').style.zIndex = 352;
-
-      function w(z){ return Math.max(0.8, Math.min(2.4, (z - 4) * 0.35)); }
-      const strokeStyle = () => ({ pane:'admin1-stroke', color:getCSS('--brand-primary')||'#2a5885', weight:w(map.getZoom()), opacity:0.95, fillColor:'#eaf2fb', fillOpacity:0.25, lineJoin:'round', smoothFactor:0.4, interactive:true });
-      const casingStyle = () => ({ pane:'admin1-casing', color:'#ffffff', weight:w(map.getZoom())+2, opacity:0.9, fillOpacity:0, interactive:false });
-
-      const casing = L.geoJSON(states, { style:casingStyle, interactive:false });
-      const stroke = L.geoJSON(states, { style:strokeStyle, onEachFeature:(feat, lyr)=>{
-        const nm = getAdmin1Name(feat?.properties) || 'Admin 1';
-        lyr.on({
-          mouseover:e=>{ e.target.setStyle({ color:getCSS('--brand-amber','#ffb81c'), weight:w(map.getZoom())+1.2, fillOpacity:0.35 }); e.target.bringToFront(); },
-          mouseout:()=>stroke.resetStyle(lyr)
-        });
-        lyr.bindTooltip(nm, { sticky:true });
-      }});
-
-      admin1Labels = L.layerGroup([], { pane:'admin1-labels' });
-      function rebuildLabels(){
-        admin1Labels.clearLayers();
-        if (map.getZoom() < 6) return;
-        stroke.eachLayer(l=>{
-          const nm = getAdmin1Name(l.feature?.properties) || '';
-          const c = safeCenter(l);
-          if (!nm || !c) return;
-          L.tooltip({ permanent:true, direction:'center', className:'state-label', pane:'admin1-labels' }).setContent(nm).setLatLng(c).addTo(admin1Labels);
-        });
+    // Fit bounds to BCPs
+    const group = L.featureGroup([
+      window.originLayer,
+      window.bcpHaloLayer
+    ]);
+    
+    try {
+      const rsBounds = group.getBounds();
+      if (rsBounds && rsBounds.isValid()) {
+        map.fitBounds(rsBounds, { padding: [24, 24] });
       }
-
-      stateBoundariesLayer = L.featureGroup([casing, stroke]).addTo(map);
-      stateBoundariesLayer.bringToBack();
-      rebuildLabels(); admin1Labels.addTo(map);
-      layerCtl.addOverlay(stateBoundariesLayer, 'Admin 1 Boundaries'); layerCtl.addOverlay(admin1Labels, 'Admin 1 Labels');
-      map.on('zoomend', ()=>{ casing.setStyle(casingStyle()); stroke.setStyle(strokeStyle()); rebuildLabels(); });
+    } catch (e) {
+      console.warn('Could not fit bounds:', e);
     }
+  }
 
-    // ---- Helpers ----
-    function toGeoJSON(source){ if (!source) return null; if (source.type === 'Topology' && window.topojson?.feature){ const key = Object.keys(source.objects||{})[0]; return topojson.feature(source, source.objects[key]); } return source; }
-    function getCSS(v, fb){ const x = getComputedStyle(document.documentElement).getPropertyValue(v); return (x && x.trim()) ? x.trim() : fb; }
-    function getAdmin1Name(p={}){ return p.ADM1_EN || p.NAME_1 || p.admin1Name || p.state_name || p.State || p.NAME || p.ADM1_PCODE || null; }
-    function getAdmin1Code(p={}){ const cands=[p.ADM1_PCODE,p.STATE_CODE,p.STATECODE,p.code,p.state_code]; const v=(cands.find(x=>x)||'').toString().trim(); return v||null; }
-    function safeCenter(layer){ try { return layer.getBounds().getCenter(); } catch { return null; } }
-    function escapeHtml(str){ return String(str).replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[s])); }
-    function normalizeCountry(x){ const s=String(x||'').trim(); if (/er(itr)?ea/i.test(s)) return 'Eritrea'; return s; }
-    function countryColor(c){ if (c==='Chad') return getCSS('--c-chad','#d97706'); if (c==='Ethiopia') return getCSS('--c-ethiopia','#2563eb'); if (c==='Eritrea') return getCSS('--c-eritrea','#0ea5e9'); if (c==='Egypt') return getCSS('--c-egypt','#16a34a'); return getCSS('--brand-accent','#418FDE'); }
-
-    function computeStateCenters(admin1){
-      const out = new Map();
-      if (admin1){
-        L.geoJSON(admin1).eachLayer(l=>{
-          const code = getAdmin1Code(l.feature?.properties);
-          const c = safeCenter(l);
-          if (code && c) out.set(String(code), { lat:c.lat, lon:c.lng, name:getAdmin1Name(l.feature?.properties)||code });
-        });
-      }
-      // Fallback rough centers (used only if ADMIN1 missing / code not found)
-      const rough = {
-        'SD06': { lat:12.8, lon:23.5, name:'Central Darfur' },
-        'SD12': { lat:14.1, lon:35.4, name:'Gedaref' },
-        'SD11': { lat:15.45, lon:36.40, name:'Kassala' },
-        'SD17': { lat:20.0, lon:30.7, name:'Northern' },
-        'SD04': { lat:13.5, lon:22.4, name:'West Darfur' }
-      };
-      Object.entries(rough).forEach(([k,v])=>{ if (!out.has(k)) out.set(k, v); });
-      return out;
+  // Load boundaries and initialize
+  (async function loadBoundariesAndRender() {
+    const overlay = document.getElementById('loading');
+    
+    try {
+      // Try to load admin boundaries (optional)
+      let admin1 = null;
+      
+      // Render with or without boundaries
+      renderAll(FMC_POINTS, admin1);
+    } catch (err) {
+      console.warn('Error loading boundaries; rendering without them.', err);
+      renderAll(FMC_POINTS, null);
+    } finally {
+      // Always hide the loading overlay
+      overlay.style.display = 'none';
     }
-
-    function normalizeRow(r, centers){
-      const state_code = String(r.state_code || r.StateCode || r['State Code'] || '').trim();
-      const c = centers.get(state_code) || {};
-      return {
-        state: r.state || r.State || '',
-        state_code,
-        locality: r.locality || r.Locality || '',
-        locality_code: String(r.locality_code || r['Locality Code'] || '').trim(),
-        cross_border_location: r.cross_border_location || r['Cross border location'] || r.CrossBorder || '',
-        bcp_code: String(r.cross_border_code || r['Cross borde Code'] || r['Cross border Code'] || '').trim(),
-        neighbouring_country: normalizeCountry(r.neighbouring_country || r['Neighbouring Country'] || r.Country || ''),
-        o_lat: Number(c.lat), o_lon: Number(c.lon),
-        d_lat: Number(r.Y || r.lat || r.Lat || r.latitude), d_lon: Number(r.X || r.lon || r.Lon || r.longitude)
-      };
-    }
-
-    // Keyboard: T toggles theme
-    window.addEventListener('keydown', (e)=>{
-      if ((e.key||'').toLowerCase() === 't') document.getElementById('btn-theme').click();
-    });
-
-    // ---- DATA ----
-    const FMC_POINTS = [
-      { state:'Central Darfur', state_code:'SD06', locality:'Um Dukhun',  locality_code:'SD06135', cross_border_location:'Um Dukhun',      cross_border_code:'SD06135PB5', neighbouring_country:'Chad',     Y:11.139,     X:22.966 },
-      { state:'Gedaref',       state_code:'SD12', locality:'Basundah',   locality_code:'SD12077', cross_border_location:'Gallabat/Metema', cross_border_code:'SD12077PB1', neighbouring_country:'Ethiopia', Y:12.95798,   X:36.151888 },
-      { state:'Kassala',       state_code:'SD11', locality:'Kassala',    locality_code:'SD11053', cross_border_location:'Al Laffa',        cross_border_code:'SD11053PB2', neighbouring_country:'Eritrea',  Y:15.15372,   X:36.4355 },
-      { state:'Northern',      state_code:'SD17', locality:'Halfa',      locality_code:'SD17014', cross_border_location:'Argeen',           cross_border_code:'SD17014PB3', neighbouring_country:'Egypt',    Y:21.988934,  X:31.153322 },
-      { state:'Northern',      state_code:'SD17', locality:'Halfa',      locality_code:'SD17014', cross_border_location:'Ashkeet',          cross_border_code:'SD17014PB4', neighbouring_country:'Egypt',    Y:22.000523,  X:31.511477 },
-      { state:'West Darfur',   state_code:'SD04', locality:'Ag Geneina', locality_code:'SD04115', cross_border_location:'Adekonk',          cross_border_code:'SD04115PB6', neighbouring_country:'Chad',     Y:13.4623111, X:22.2296523 }
-    ];
   })();
-      })();
+
+  // Filter by neighbouring country
+  document.getElementById('countryFilter').addEventListener('change', function(e) {
+    const v = e.target.value;
+    const rows = v === 'all' ? FMC_POINTS : FMC_POINTS.filter(d => 
+      normalizeCountry(d.neighbouring_country) === v
+    );
+    renderAll(rows, null);
+  });
+
+  // Keyboard: T toggles theme
+  window.addEventListener('keydown', function(e) {
+    if ((e.key || '').toLowerCase() === 't') {
+      document.getElementById('btn-theme').click();
+    }
+  });
   </script>
 </body>
 </html>
