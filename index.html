@@ -182,19 +182,36 @@
     let rsBounds = null;
 
     // Load admin1 + render
-    Promise.all([
-      fetch('./data/ADMIN1.json').then(r => (r.ok ? r.json() : null)).catch(()=>null)
-    ]).then(([admin1])=>{
-      const states = toGeoJSON(admin1);
-      if (states) addStyledAdmin1(states);
-      renderAll(FMC_POINTS, states);
-      document.getElementById('loading').style.display = 'none';
-    }).catch(err=>{
-      console.error(err);
-      document.getElementById('loading').innerHTML = '<div style="color:#ff6b6b">Failed to load ADMIN1.json</div>';
-      // fallback without boundaries
-      renderAll(FMC_POINTS, null);
-    });
+      (function(){
+    // ... keep everything above as-is ...
+
+    // Replace the old Promise.all(...) with this self-invoking async loader:
+    (async function loadBoundariesAndRender(){
+      const overlay = document.getElementById('loading');
+      try {
+        // 1) Try ADMIN1.json
+        let admin1 = await fetch('./data/ADMIN1.json').then(r => r.ok ? r.json() : null).catch(()=>null);
+
+        // 2) Fallback to another local file if you have one (optional)
+        if (!admin1) {
+          console.warn('ADMIN1.json not found, trying sudan_states.geojson…');
+          admin1 = await fetch('./data/sudan_states.geojson').then(r => r.ok ? r.json() : null).catch(()=>null);
+        }
+
+        // 3) Convert TopoJSON → GeoJSON if needed, add boundaries if available
+        const states = toGeoJSON(admin1);
+        if (states) addStyledAdmin1(states);
+
+        // 4) Render map (works even if states == null)
+        renderAll(FMC_POINTS, states || null);
+      } catch (err) {
+        console.warn('Failed to load boundaries; rendering without them.', err);
+        renderAll(FMC_POINTS, null);
+      } finally {
+        // Always hide the loading overlay
+        overlay.style.display = 'none';
+      }
+    })();
 
     // Filter by neighbouring country
     document.getElementById('countryFilter').addEventListener('change', (e)=>{
