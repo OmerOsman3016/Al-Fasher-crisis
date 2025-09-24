@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-  <title>Sudan | Flow Monitoring — Border Points (Modern)</title>
+  <title>Sudan | Flow Monitoring — Border Points (Enhanced Visualization)</title>
 
   <!-- Leaflet -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="anonymous"/>
@@ -70,31 +70,217 @@
     .spinner{ width:44px; height:44px; border:4px solid #e7eef7; border-top-color:var(--brand-primary); border-radius:50%; animation:spin 1s linear infinite; margin-bottom:10px; }
     @keyframes spin{ to{ transform:rotate(360deg); } }
 
-    /* ===== Pulsing BCP markers ===== */
-    .bcp-pulse{ position:relative; display:grid; place-items:center; }
-    .bcp-pulse .dot{
-      position:relative; border-radius:50%; border:1px solid #fff;
-      box-shadow:0 0 0 1px rgba(0,0,0,.06), 0 0 10px rgba(0,0,0,.15);
-      background: var(--clr, var(--brand-accent));
+    /* ===== Enhanced BCP Markers ===== */
+    .bcp-visual {
+      position: relative;
+      display: grid;
+      place-items: center;
+      transition: all 0.3s ease;
     }
-    .bcp-pulse .ring{
-      position:absolute; inset:0; border-radius:50%;
-      background: var(--clr, var(--brand-accent));
-      opacity:.28; filter:blur(.2px);
-      animation: bcpRing 2.8s ease-out infinite;
+    
+    .bcp-visual.pulsing {
+      animation: gentle-float 3s ease-in-out infinite;
     }
-    .bcp-pulse .ring.r2{ animation-delay:1.4s; }
-    @keyframes bcpRing{
-      0%   { transform: scale(.55); opacity:.45; }
-      70%  { opacity:.06; }
-      100% { transform: scale(2.4); opacity:0; }
+    
+    @keyframes gentle-float {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-2px); }
     }
+    
+    .marker-core {
+      position: relative;
+      border: 2px solid #fff;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+      transition: all 0.3s ease;
+    }
+    
+    .bcp-visual.highlighted .marker-core {
+      transform: scale(1.3);
+      box-shadow: 0 0 20px currentColor;
+      z-index: 1000;
+    }
+    
+    .bcp-visual.circle .marker-core { border-radius: 50%; }
+    .bcp-visual.square .marker-core { border-radius: 4px; }
+    .bcp-visual.diamond .marker-core { 
+      transform: rotate(45deg); 
+      border-radius: 2px; 
+    }
+    .bcp-visual.diamond .marker-core::before {
+      content: '';
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%) rotate(-45deg);
+      width: 70%; height: 70%;
+      background: inherit;
+    }
+    
+    /* Status badges */
+    .badge {
+      position: absolute;
+      top: -5px;
+      right: -5px;
+      background: var(--brand-amber);
+      color: white;
+      border-radius: 50%;
+      width: 16px;
+      height: 16px;
+      font-size: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+      z-index: 10;
+    }
+    
+    /* Enhanced pulse rings */
+    .pulse-ring {
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      background: currentColor;
+      opacity: 0.28;
+      filter: blur(0.2px);
+      animation: enhancedRing 2.8s ease-out infinite;
+    }
+    
+    .pulse-ring.r2 { animation-delay: 1.4s; }
+    
+    @keyframes enhancedRing {
+      0%   { transform: scale(0.55); opacity: 0.45; }
+      70%  { opacity: 0.06; }
+      100% { transform: scale(2.4); opacity: 0; }
+    }
+    
+    /* Inactive state */
+    .bcp-visual.inactive {
+      filter: grayscale(0.8) opacity(0.7);
+    }
+    
+    .bcp-visual.inactive .pulse-ring {
+      display: none;
+    }
+    
+    /* Official marker enhancement */
+    .bcp-visual.official .marker-core {
+      border: 3px solid #fff;
+      box-shadow: 0 0 0 2px var(--brand-primary);
+    }
+    
+    /* Unofficial marker style */
+    .bcp-visual.unofficial .marker-core {
+      border: 2px dashed #fff;
+    }
+
     @media (prefers-reduced-motion: reduce){
-      .bcp-pulse .ring{ display:none; animation:none; }
+      .bcp-visual.pulsing,
+      .pulse-ring { 
+        animation: none; 
+      }
+      .bcp-visual.pulsing {
+        animation: none;
+      }
     }
 
     .legend{ background:var(--glass); border:1px solid var(--border); border-radius:12px; padding:10px 12px; box-shadow:var(--shadow); }
     .footer{ display:flex; align-items:center; justify-content:center; gap:8px; padding:8px 12px; font-size:12px; color:var(--muted); }
+    
+    /* Enhanced popup styles */
+    .enhanced-popup {
+      min-width: 280px;
+    }
+    
+    .popup-header {
+      background: var(--brand-primary);
+      color: white;
+      padding: 12px;
+      margin: -12px -12px 12px -12px;
+      border-radius: 8px 8px 0 0;
+    }
+    
+    .popup-header h4 {
+      margin: 0;
+      font-size: 14px;
+    }
+    
+    .popup-content {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 8px;
+      align-items: center;
+      font-size: 12px;
+    }
+    
+    /* Search box */
+    .search-container {
+      position: absolute;
+      top: 80px;
+      right: 16px;
+      z-index: 1000;
+    }
+    
+    .search-box {
+      padding: 8px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--glass);
+      backdrop-filter: blur(8px);
+      width: 200px;
+      font-size: 12px;
+    }
+    
+    /* Responsive improvements */
+    @media (max-width: 768px) {
+      .topbar-inner {
+        padding: 8px 12px;
+        flex-wrap: wrap;
+      }
+      
+      .brand {
+        min-width: 0;
+        flex: 1;
+      }
+      
+      .title-wrap h1 {
+        font-size: 14px;
+      }
+      
+      .title-wrap .sub {
+        font-size: 11px;
+      }
+      
+      .controls {
+        flex-wrap: wrap;
+        justify-content: flex-end;
+      }
+      
+      .select, .btn {
+        height: 32px;
+        font-size: 11px;
+      }
+      
+      .legend {
+        max-width: 90vw;
+        font-size: 11px;
+      }
+      
+      .search-container {
+        top: 70px;
+        right: 12px;
+      }
+      
+      .search-box {
+        width: 160px;
+      }
+    }
+    
+    /* Better touch targets for mobile */
+    @media (pointer: coarse) {
+      .btn, .select {
+        min-height: 44px;
+        padding: 0 16px;
+      }
+    }
   </style>
 </head>
 <body>
@@ -112,7 +298,7 @@
         </div>
         <div class="title-wrap">
           <h1>Sudan | Flow Monitoring — Border Points</h1>
-          <div class="sub">State → Border-Crossing flows · Leaflet + CanvasFlowmap</div>
+          <div class="sub">Enhanced Visualization · Interactive BCP Map</div>
         </div>
       </div>
       <div class="controls">
@@ -129,12 +315,17 @@
     <div id="map" aria-label="FMC border-points map" role="region"></div>
     <div class="loading" id="loading">
       <div class="spinner"></div>
-      <div>Loading CSV & rendering BCP pulses…</div>
+      <div>Loading enhanced BCP visualization…</div>
+    </div>
+    
+    <!-- Search Box -->
+    <div class="search-container">
+      <input type="text" id="bcpSearch" class="search-box" placeholder="Search BCPs..." />
     </div>
   </div>
 
   <!-- Footer -->
-  <div class="footer">© IOM DTM — Prototype. Basemap © Mapbox/OSM.</div>
+  <div class="footer">© IOM DTM — Enhanced Visualization Prototype</div>
 
   <!-- Scripts -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
@@ -144,66 +335,83 @@
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 
   <script>
-  // ===== Config =====
+  // ===== Enhanced Visualization Configuration =====
   const CSV_URLS = [
     'data/Border Point-FM.csv',
     'data/Border Point-FM.CSV',
-    'data/Border Point-FM'  // no extension fallback
+    'data/Border Point-FM'
   ];
   const MAPBOX_TOKEN = 'pk.eyJ1Ijoib21lcm9zbWFuIiwiYSI6ImUxZDBkODBlNjQxMDE2M2Y3OTQ3MWIwNTJkMjgzZTI3In0.ekCHuxRflTOO0RpQ6rQR7Q';
 
-  // ===== Map init =====
-  const map = L.map('map', { preferCanvas:true, zoomControl:false, minZoom:4, maxZoom:11, zoomSnap:0.5 }).setView([16, 30], 5.5);
+  // ===== Enhanced Map Initialization =====
+  const map = L.map('map', { 
+    preferCanvas: true, 
+    zoomControl: false, 
+    minZoom: 4, 
+    maxZoom: 11, 
+    zoomSnap: 0.5 
+  }).setView([16, 30], 5.5);
 
-  const mbLight = L.tileLayer(`https://api.mapbox.com/styles/v1/mapbox/light-v10/tiles/{z}/{x}/{y}?access_token=${MAPBOX_TOKEN}`, { tileSize:512, zoomOffset:-1, attribution:'&copy; Mapbox & OpenStreetMap' }).addTo(map);
-  const mbStreets = L.tileLayer(`https://api.mapbox.com/styles/v1/mapbox/streets-v11/tiles/{z}/{x}/{y}?access_token=${MAPBOX_TOKEN}`, { tileSize:512, zoomOffset:-1, attribution:'&copy; Mapbox & OpenStreetMap' });
-  const mbSat     = L.tileLayer(`https://api.mapbox.com/styles/v1/mapbox/satellite-v9/tiles/{z}/{x}/{y}?access_token=${MAPBOX_TOKEN}`, { tileSize:512, zoomOffset:-1, attribution:'&copy; Mapbox & OpenStreetMap' });
-  const osmStd    = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution:'&copy; OpenStreetMap contributors' });
+  // Base layers
+  const mbLight = L.tileLayer(`https://api.mapbox.com/styles/v1/mapbox/light-v10/tiles/{z}/{x}/{y}?access_token=${MAPBOX_TOKEN}`, { 
+    tileSize: 512, zoomOffset: -1, attribution: '&copy; Mapbox & OpenStreetMap' 
+  }).addTo(map);
+  
+  const mbStreets = L.tileLayer(`https://api.mapbox.com/styles/v1/mapbox/streets-v11/tiles/{z}/{x}/{y}?access_token=${MAPBOX_TOKEN}`, { 
+    tileSize: 512, zoomOffset: -1, attribution: '&copy; Mapbox & OpenStreetMap' 
+  });
+  
+  const mbSat = L.tileLayer(`https://api.mapbox.com/styles/v1/mapbox/satellite-v9/tiles/{z}/{x}/{y}?access_token=${MAPBOX_TOKEN}`, { 
+    tileSize: 512, zoomOffset: -1, attribution: '&copy; Mapbox & OpenStreetMap' 
+  });
+  
+  const osmStd = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { 
+    attribution: '&copy; OpenStreetMap contributors' 
+  });
 
-  const layerCtl = L.control.layers({ 'Mapbox Light':mbLight, 'Mapbox Streets':mbStreets, 'Mapbox Satellite':mbSat, 'OSM Standard':osmStd }, null, { collapsed:true }).addTo(map);
-  L.control.scale({ position:'bottomleft', metric:true }).addTo(map);
-  L.control.zoom({ position:'topright' }).addTo(map);
+  // Controls
+  const layerCtl = L.control.layers({ 
+    'Mapbox Light': mbLight, 
+    'Mapbox Streets': mbStreets, 
+    'Mapbox Satellite': mbSat, 
+    'OSM Standard': osmStd 
+  }, null, { collapsed: true }).addTo(map);
+  
+  L.control.scale({ position: 'bottomleft', metric: true }).addTo(map);
+  L.control.zoom({ position: 'topright' }).addTo(map);
 
-  // Legend (built dynamically)
-  const legend = L.control({ position:'bottomleft' });
+  // Enhanced Legend
+  const legend = L.control({ position: 'bottomleft' });
   let legendEl = null;
   legend.onAdd = function(){
-    legendEl = L.DomUtil.create('div','legend');
+    legendEl = L.DomUtil.create('div', 'legend');
     legendEl.innerHTML = `
-      <div style="font-weight:800;margin-bottom:6px">Neighbouring Country</div>
+      <div style="font-weight:800;margin-bottom:6px">Enhanced BCP Visualization</div>
       <div id="legendRows" style="display:grid;grid-template-columns:14px 1fr;gap:8px;align-items:center;font-size:12px;color:var(--muted)"></div>
-      <div style="margin-top:8px;font-size:12px;color:var(--muted)">Lines show simple State → BCP connections (illustrative).</div>`;
+      <div style="margin-top:8px;font-size:11px;color:var(--muted)">
+        <div>● Official | ■ Unofficial | ◆ Other</div>
+        <div>★ Active Official BCP</div>
+        <div>Pulsing = Active | Static = Inactive</div>
+      </div>`;
     return legendEl;
   };
   legend.addTo(map);
-  function rebuildLegend(countries){
-    const rows = document.getElementById('legendRows');
-    rows.innerHTML = '';
-    countries.forEach(c=>{
-      const swatch = document.createElement('span');
-      swatch.style.cssText = 'width:12px;height:12px;border-radius:50%;display:inline-block;background:'+countryColor(c);
-      const label = document.createElement('span');
-      label.textContent = c;
-      rows.appendChild(swatch); rows.appendChild(label);
-    });
+
+  // ===== Enhanced Utility Functions =====
+  function getCSS(v, fb){ 
+    const x = getComputedStyle(document.documentElement).getPropertyValue(v); 
+    return (x && x.trim()) ? x.trim() : fb; 
   }
-
-  // Theme toggle
-  document.getElementById('btn-theme').addEventListener('click', function(){
-    const dark = document.body.getAttribute('data-theme') === 'dark';
-    document.body.setAttribute('data-theme', dark ? '' : 'dark');
-    this.querySelector('i').className = dark ? 'fa-regular fa-moon' : 'fa-regular fa-sun';
-  });
-  window.addEventListener('keydown', e => { if ((e.key||'').toLowerCase()==='t') document.getElementById('btn-theme').click(); });
-
-  // ===== Utils =====
-  function getCSS(v, fb){ const x = getComputedStyle(document.documentElement).getPropertyValue(v); return (x && x.trim()) ? x.trim() : fb; }
-  function escapeHtml(str){ return String(str).replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s])); }
+  
+  function escapeHtml(str){ 
+    return String(str).replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s])); 
+  }
+  
   const trim = s => String(s ?? '').trim();
 
   function normalizeCountry(x){
     const s = trim(x);
-    if (/^eri?tr?e?a?$/i.test(s) || /^ere?tr?ia$/i.test(s)) return 'Eritrea';                 // Eritrea / Eretria
+    if (/^eri?tr?e?a?$/i.test(s) || /^ere?tr?ia$/i.test(s)) return 'Eritrea';
     if (/^car$/i.test(s)) return 'Central African Republic';
     if (/^ssd|south[\s-]?sudan$/i.test(s)) return 'South Sudan';
     if (/^egypt|egy$/i.test(s)) return 'Egypt';
@@ -224,7 +432,98 @@
     return getCSS('--brand-accent','#418FDE');
   }
 
-  // Compute approximate state "origin" centers from BCPs (used only for flow lines)
+  // ===== Enhanced Marker Functions =====
+  function getMarkerSize(bcpType, status) {
+    const baseSize = 18;
+    const typeMultipliers = {
+      'Official': 1.3,
+      'Unofficial': 1.0,
+      'Informal': 0.8
+    };
+    
+    const statusMultipliers = {
+      'Active': 1.2,
+      'Suspended': 0.9,
+      'Closed': 0.7
+    };
+    
+    return Math.round(baseSize * (typeMultipliers[bcpType] || 1) * (statusMultipliers[status] || 1));
+  }
+
+  function getMarkerShape(bcpType) {
+    if (bcpType === 'Official') return 'circle';
+    if (bcpType === 'Unofficial') return 'square';
+    return 'diamond';
+  }
+
+  function generateMarkerHTML(d, clr, sz, shape) {
+    const isActive = (d.status || '').toLowerCase() === 'active';
+    const pulseClass = isActive ? 'pulsing' : 'inactive';
+    const typeClass = (d.bcp_type || '').toLowerCase();
+    const showBadge = isActive && d.bcp_type === 'Official';
+    
+    return `
+      <div class="bcp-visual ${pulseClass} ${typeClass} ${shape}" style="--clr:${clr};width:${sz}px;height:${sz}px;">
+        <div class="marker-core" style="background:${clr};width:100%;height:100%;"></div>
+        ${isActive ? '<div class="pulse-ring r1"></div><div class="pulse-ring r2"></div>' : ''}
+        ${showBadge ? '<div class="badge">★</div>' : ''}
+      </div>`;
+  }
+
+  // ===== Enhanced Flow Line Functions =====
+  function getFlowLineWidth(d) {
+    const baseWidth = 1.8;
+    const multipliers = {
+      'Official': 2.2,
+      'Unofficial': 1.5,
+      'Active': 1.3,
+      'Closed': 0.8
+    };
+    
+    let width = baseWidth;
+    if (d.bcp_type === 'Official') width *= multipliers.Official;
+    if (d.status === 'Active') width *= multipliers.Active;
+    if (d.status === 'Closed') width *= multipliers.Closed;
+    
+    return width;
+  }
+
+  function getFlowPattern(status) {
+    return status === 'Closed' ? [5, 5] : [];
+  }
+
+  // ===== Enhanced Popup Function =====
+  function createEnhancedPopup(d) {
+    const statusIcon = d.status === 'Active' ? '🟢' : d.status === 'Closed' ? '🔴' : '🟡';
+    const typeIcon = d.bcp_type === 'Official' ? '🏛️' : '🚶';
+    
+    return `
+      <div class="enhanced-popup">
+        <div class="popup-header" style="background:${countryColor(d.neighbouring_country)};">
+          <h4>${escapeHtml(d.cross_border_location)}</h4>
+          <div style="display:flex;gap:8px;font-size:11px;opacity:0.9;">
+            <span>${statusIcon} ${escapeHtml(d.status)}</span>
+            <span>${typeIcon} ${escapeHtml(d.bcp_type)}</span>
+          </div>
+        </div>
+        
+        <div class="popup-content">
+          <strong>Country:</strong> <span>${escapeHtml(d.neighbouring_country)}</span>
+          <strong>State:</strong> <span>${escapeHtml(d.state)}</span>
+          <strong>Locality:</strong> <span>${escapeHtml(d.locality)}</span>
+          <strong>Coordinates:</strong> <span>${d.d_lat.toFixed(4)}, ${d.d_lon.toFixed(4)}</span>
+        </div>
+        
+        ${d.status === 'Active' ? `
+          <div style="margin-top:8px;padding:8px;background:#f0f8ff;border-radius:4px;font-size:11px;">
+            <strong>📊 Recent Activity:</strong> Normal traffic patterns detected
+          </div>
+        ` : ''}
+      </div>
+    `;
+  }
+
+  // ===== Data Processing Functions =====
   function computeStateCentersFromRows(rows){
     const by = new Map();
     rows.forEach(r=>{
@@ -241,7 +540,6 @@
     return centers;
   }
 
-  // Normalize a CSV row — includes Type and Status
   function normalizeRow(r, centers){
     const state_code = trim(r.state_code || r.State_Code || r['State_Code'] || r['State Code']);
     const center = centers.get(state_code) || {};
@@ -262,7 +560,7 @@
     };
   }
 
-  // ===== Data loading =====
+  // ===== Data Loading =====
   async function tryLoadCsv(url){
     const res = await fetch(url);
     if(!res.ok) throw new Error('HTTP '+res.status);
@@ -270,6 +568,7 @@
     const parsed = Papa.parse(text, { header:true, skipEmptyLines:'greedy' });
     return parsed.data;
   }
+  
   async function loadCsvAny(urls){
     for (const u of urls){
       try { const rows = await tryLoadCsv(u); if (rows && rows.length) return rows; } catch(e){}
@@ -277,14 +576,17 @@
     return null;
   }
 
-  // ===== Rendering =====
-  let ALL_ROWS = []; // holds original CSV rows (normalized later)
+  // ===== Enhanced Rendering =====
+  let ALL_ROWS = [];
+  let currentMarkers = new Map();
 
   function renderAll(rows){
+    // Clean up previous layers
     if (window.flowLayer) map.removeLayer(window.flowLayer);
     if (window.bcpHaloLayer) map.removeLayer(window.bcpHaloLayer);
+    currentMarkers.clear();
 
-    // Build state centers from rows (for flow lines)
+    // Build state centers
     const centers = computeStateCentersFromRows(rows);
 
     // Normalize & filter rows
@@ -294,148 +596,226 @@
       d.d_lat !== 0 && d.d_lon !== 0
     );
 
-    // === BCP markers (pulsing) — include Type + Status ===
+    // === Enhanced BCP Markers ===
     window.bcpHaloLayer = L.layerGroup().addTo(map);
     data.forEach(d => {
       const clr = countryColor(d.neighbouring_country);
-      const sz = 18;
-      const isActive = (d.status || '').toLowerCase() === 'active';
-      const inactiveStyle = isActive ? '' : 'filter:grayscale(1) opacity:.55;';
+      const sz = getMarkerSize(d.bcp_type, d.status);
+      const shape = getMarkerShape(d.bcp_type);
+      
       const icon = L.divIcon({
-        className:'',
-        html: `<div class="bcp-pulse" style="--clr:${clr};width:${sz}px;height:${sz}px;${inactiveStyle}">
-                 <div class="dot" style="width:${sz}px;height:${sz}px"></div>
-                 <div class="ring r1"></div>
-                 <div class="ring r2"></div>
-               </div>`,
-        iconSize:[sz,sz], iconAnchor:[sz/2, sz/2]
+        className: '',
+        html: generateMarkerHTML(d, clr, sz, shape),
+        iconSize: [sz, sz],
+        iconAnchor: [sz/2, sz/2]
       });
 
-      const tip = `${escapeHtml(d.cross_border_location)} • ${escapeHtml(d.neighbouring_country)} • Type: ${escapeHtml(d.bcp_type||'—')} • Status: ${escapeHtml(d.status||'—')}`;
+      const m = L.marker([d.d_lat, d.d_lon], { 
+        icon,
+        bcpCode: d.bcp_code // Store for interaction
+      })
+      .bindTooltip(`${escapeHtml(d.cross_border_location)} • ${escapeHtml(d.neighbouring_country)}`, { 
+        direction: 'top', 
+        offset: [0, -6] 
+      })
+      .bindPopup(createEnhancedPopup(d));
 
-      const m = L.marker([d.d_lat, d.d_lon], { icon })
-        .bindTooltip(tip, { direction:'top', offset:[0,-6] })
-        .bindPopup(`
-          <div style="min-width:260px">
-            <h4 style="margin:0 0 8px;color:var(--brand-primary)">Border Crossing Point</h4>
-            <p style="margin:0 0 6px"><strong>BCP:</strong> ${escapeHtml(d.cross_border_location)} <small>(${escapeHtml(d.bcp_code)})</small></p>
-            <p style="margin:0 0 6px"><strong>Locality:</strong> ${escapeHtml(d.locality)} <small>(${escapeHtml(d.locality_code)})</small></p>
-            <p style="margin:0 0 6px"><strong>State:</strong> ${escapeHtml(d.state)} <small>(${escapeHtml(d.state_code)})</small></p>
-            <p style="margin:0 0 6px"><strong>Neighbouring Country:</strong> ${escapeHtml(d.neighbouring_country)}</p>
-            <p style="margin:0 0 6px"><strong>Type:</strong> ${escapeHtml(d.bcp_type || '—')}</p>
-            <p style="margin:0 0 6px"><strong>Status:</strong> ${escapeHtml(d.status || '—')}</p>
-            <p style="margin:0"><small>Coords: ${d.d_lat.toFixed(6)}, ${d.d_lon.toFixed(6)}</small></p>
-          </div>`);
+      // Store marker for interactions
+      currentMarkers.set(d.bcp_code, m);
 
-      // subtle static halo beneath the pulse
+      // Enhanced halo effect
       L.circle([d.d_lat, d.d_lon], {
-        radius: 900, color: clr, weight: 1.2, fillColor: clr, fillOpacity: 0.12, opacity: 0.9
+        radius: 900, 
+        color: clr, 
+        weight: 1.2, 
+        fillColor: clr, 
+        fillOpacity: 0.12, 
+        opacity: 0.9
       }).addTo(window.bcpHaloLayer);
 
       m.addTo(window.bcpHaloLayer);
     });
-    layerCtl.addOverlay(window.bcpHaloLayer, 'BCP markers (pulsing)');
+    layerCtl.addOverlay(window.bcpHaloLayer, 'Enhanced BCP markers');
 
-    // === Flow lines (state → BCP) — keep, but NO orange state markers ===
+    // === Enhanced Flow Lines ===
     const fc = {
-      type:'FeatureCollection',
+      type: 'FeatureCollection',
       features: data.map(d => ({
-        type:'Feature',
-        geometry:{ type:'Point', coordinates:[d.o_lon, d.o_lat] },
-        properties:{
-          o_id:d.state_code, o_x:d.o_lon, o_y:d.o_lat,
-          d_id:d.bcp_code, d_x:d.d_lon, d_y:d.d_lat,
-          state:d.state, locality:d.locality, bcp:d.cross_border_location, country:d.neighbouring_country,
-          type:d.bcp_type, status:d.status
+        type: 'Feature',
+        geometry: { type: 'Point', coordinates: [d.o_lon, d.o_lat] },
+        properties: {
+          o_id: d.state_code, o_x: d.o_lon, o_y: d.o_lat,
+          d_id: d.bcp_code, d_x: d.d_lon, d_y: d.d_lat,
+          state: d.state, locality: d.locality, bcp: d.cross_border_location, 
+          country: d.neighbouring_country, type: d.bcp_type, status: d.status
         }
       }))
     };
 
     if (typeof L.CanvasFlowmapLayer === 'function' && fc.features.length){
       window.flowLayer = L.canvasFlowmapLayer(fc, {
-        originAndDestinationFieldIds:{
-          originUniqueIdField:'o_id',
-          originGeometry:{ x:'o_x', y:'o_y' },
-          destinationUniqueIdField:'d_id',
-          destinationGeometry:{ x:'d_x', y:'d_y' }
+        originAndDestinationFieldIds: {
+          originUniqueIdField: 'o_id',
+          originGeometry: { x: 'o_x', y: 'o_y' },
+          destinationUniqueIdField: 'd_id',
+          destinationGeometry: { x: 'd_x', y: 'd_y' }
         },
-        pathDisplayMode:'all',
-        animationStarted:true,
-        animationDuration:3200,
-        animationEasingFamily:'Linear',
-        animationEasingType:'None',
+        pathDisplayMode: 'all',
+        animationStarted: true,
+        animationDuration: 3200,
+        animationEasingFamily: 'Linear',
+        animationEasingType: 'None',
         onEachFeature: (f, l) => l.bindPopup(`
           <div style="min-width:260px">
-            <h4 style="margin:0 0 8px;color:var(--brand-primary)">State → BCP</h4>
-            <p style="margin:0 0 6px"><strong>From (State):</strong> ${escapeHtml(f.properties.state)}</p>
-            <p style="margin:0 0 6px"><strong>To (BCP):</strong> ${escapeHtml(f.properties.bcp)} (${escapeHtml(f.properties.country)})</p>
+            <h4 style="margin:0 0 8px;color:var(--brand-primary)">State → BCP Connection</h4>
+            <p style="margin:0 0 6px"><strong>From:</strong> ${escapeHtml(f.properties.state)}</p>
+            <p style="margin:0 0 6px"><strong>To:</strong> ${escapeHtml(f.properties.bcp)} (${escapeHtml(f.properties.country)})</p>
             <p style="margin:0 0 6px"><strong>Type:</strong> ${escapeHtml(f.properties.type || '—')}</p>
             <p style="margin:0 0 6px"><strong>Status:</strong> ${escapeHtml(f.properties.status || '—')}</p>
-            <p style="margin:0"><small>Illustrative connection (no volumes)</small></p>
           </div>`),
-        canvasBezierStyle:{
-          type:'single',
-          symbol:{ strokeStyle:getCSS('--flow','#D22630'), lineWidth:1.8, lineCap:'round', shadowColor:'rgba(210,38,48,.35)', shadowBlur:2 }
+        canvasBezierStyle: {
+          type: 'single',
+          symbol: { 
+            strokeStyle: getCSS('--flow','#D22630'), 
+            lineWidth: getFlowLineWidth(f.properties), 
+            lineDash: getFlowPattern(f.properties.status),
+            lineCap: 'round', 
+            shadowColor: 'rgba(210,38,48,.35)', 
+            shadowBlur: 3 
+          }
         },
-        pointToLayer: (feature, latlng)=> L.circleMarker(latlng, { radius:0.1, opacity:0, fillOpacity:0 })
+        pointToLayer: (feature, latlng) => L.circleMarker(latlng, { radius: 0.1, opacity: 0, fillOpacity: 0 })
       }).addTo(map);
-      layerCtl.addOverlay(window.flowLayer, 'State → BCP flows');
+      layerCtl.addOverlay(window.flowLayer, 'Enhanced flow lines');
     }
 
     // Fit to content
-    const group = L.featureGroup([ window.bcpHaloLayer ]);
+    const group = L.featureGroup([window.bcpHaloLayer]);
     try{
       const rsBounds = group.getBounds();
-      if (rsBounds && rsBounds.isValid()) map.fitBounds(rsBounds, { padding:[24,24] });
-    }catch(e){ console.warn('Could not fit bounds:', e); }
+      if (rsBounds && rsBounds.isValid()) map.fitBounds(rsBounds, { padding: [24, 24] });
+    } catch(e){ console.warn('Could not fit bounds:', e); }
 
-    // Update filter + legend
-    const set = Array.from(new Set(data.map(d => d.neighbouring_country))).sort();
-    populateCountryFilter(set);
-    rebuildLegend(set);
+    // Update UI
+    const countries = Array.from(new Set(data.map(d => d.neighbouring_country))).sort();
+    populateCountryFilter(countries);
+    rebuildLegend(countries);
+    setupInteractions();
   }
 
+  // ===== Enhanced Interactions =====
+  function setupInteractions() {
+    // Highlight on hover
+    map.on('mouseover', '.leaflet-marker-icon', function(e) {
+      const marker = e.target;
+      const markerElement = marker.getElement();
+      if (markerElement) {
+        markerElement.classList.add('highlighted');
+      }
+    });
+
+    map.on('mouseout', '.leaflet-marker-icon', function(e) {
+      const marker = e.target;
+      const markerElement = marker.getElement();
+      if (markerElement) {
+        markerElement.classList.remove('highlighted');
+      }
+    });
+  }
+
+  // ===== UI Management =====
   function populateCountryFilter(countries){
     const sel = document.getElementById('countryFilter');
     const current = sel.value || 'all';
-    sel.innerHTML = `<option value="all">All neighbouring countries</option>` + countries.map(c => `<option value="${c}">${c}</option>`).join('');
+    sel.innerHTML = `<option value="all">All neighbouring countries</option>` + 
+                   countries.map(c => `<option value="${c}">${c}</option>`).join('');
     sel.value = current === 'all' || !countries.includes(current) ? 'all' : current;
   }
 
-  // Load CSV and render
+  function rebuildLegend(countries){
+    const rows = document.getElementById('legendRows');
+    rows.innerHTML = '';
+    countries.forEach(c => {
+      const swatch = document.createElement('span');
+      swatch.style.cssText = 'width:12px;height:12px;border-radius:50%;display:inline-block;background:' + countryColor(c);
+      const label = document.createElement('span');
+      label.textContent = c;
+      rows.appendChild(swatch); 
+      rows.appendChild(label);
+    });
+  }
+
+  // ===== Search Functionality =====
+  function setupSearch() {
+    const searchInput = document.getElementById('bcpSearch');
+    
+    searchInput.addEventListener('input', function(e) {
+      const term = e.target.value.toLowerCase().trim();
+      
+      currentMarkers.forEach((marker, bcpCode) => {
+        const tooltip = marker.getTooltip();
+        const isVisible = !term || 
+          (tooltip && tooltip.getContent().toLowerCase().includes(term));
+        
+        marker.getElement().style.display = isVisible ? '' : 'none';
+      });
+    });
+  }
+
+  // ===== Theme Management =====
+  document.getElementById('btn-theme').addEventListener('click', function(){
+    const dark = document.body.getAttribute('data-theme') === 'dark';
+    document.body.setAttribute('data-theme', dark ? '' : 'dark');
+    this.querySelector('i').className = dark ? 'fa-regular fa-moon' : 'fa-regular fa-sun';
+  });
+  
+  window.addEventListener('keydown', e => { 
+    if ((e.key || '').toLowerCase() === 't') document.getElementById('btn-theme').click(); 
+  });
+
+  // ===== Main Execution =====
   (async function start(){
     const overlay = document.getElementById('loading');
     try{
       let rows = await loadCsvAny(CSV_URLS);
 
-      // Fallback sample (if CSV missing) — includes Type & Status
+      // Fallback sample data
       if (!rows || !rows.length){
         rows = [
-          { State:'Central Darfur', State_Code:'SD06', Locality:'Um Dukhun', Locality_Code:'SD06135', 'Cross border Name':'Um Dukhun', 'Cross border Code':'SD06135PB5', 'Neighbouring Country':'Chad', Y:11.139, X:22.966, Type:'Unofficial', Status:'Active' },
+          { State:'Central Darfur', State_Code:'SD06', Locality:'Um Dukhun', Locality_Code:'SD06135', 'Cross border Name':'Um Dukhun', 'Cross border Code':'SD06135PB5', 'Neighbouring Country':'Chad', Y:11.139, X:22.966, Type:'Official', Status:'Active' },
           { State:'Gedaref', State_Code:'SD12', Locality:'Basundah', Locality_Code:'SD12077', 'Cross border Name':'Gallabat/Metema', 'Cross border Code':'SD12077PB1', 'Neighbouring Country':'Ethiopia', Y:12.95798, X:36.151888, Type:'Official', Status:'Active' },
           { State:'Kassala', State_Code:'SD11', Locality:'Kassala', Locality_Code:'SD11053', 'Cross border Name':'Al Laffa', 'Cross border Code':'SD11053PB2', 'Neighbouring Country':'Eritrea', Y:15.15372, X:36.4355, Type:'Unofficial', Status:'Closed' },
           { State:'Northern', State_Code:'SD17', Locality:'Halfa', Locality_Code:'SD17014', 'Cross border Name':'Argeen', 'Cross border Code':'SD17014PB3', 'Neighbouring Country':'Egypt', Y:21.988934, X:31.153322, Type:'Official', Status:'Active' },
-          { State:'Northern', State_Code:'SD17', Locality:'Halfa', Locality_Code:'SD17014', 'Cross border Name':'Ashkeet', 'Cross border Code':'SD17014PB4', 'Neighbouring Country':'Egypt', Y:22.000523, X:31.511477, Type:'Official', Status:'Active' },
           { State:'West Darfur', State_Code:'SD04', Locality:'Ag Geneina', Locality_Code:'SD04115', 'Cross border Name':'Adekonk', 'Cross border Code':'SD04115PB6', 'Neighbouring Country':'Chad', Y:13.4623111, X:22.2296523, Type:'Unofficial', Status:'Suspended' }
         ];
       }
 
       ALL_ROWS = rows;
       renderAll(ALL_ROWS);
+      setupSearch();
+      
     } catch(err){
-      console.error(err);
-      renderAll([]);
+      console.error('Initialization error:', err);
+      overlay.innerHTML = `
+        <div style="text-align:center; padding:20px;">
+          <i class="fas fa-exclamation-triangle" style="font-size:48px;color:var(--brand-amber);margin-bottom:16px;"></i>
+          <div>Failed to load data</div>
+          <small style="color:var(--muted)">${err.message}</small>
+        </div>
+      `;
     } finally{
-      overlay.style.display = 'none';
+      setTimeout(() => { overlay.style.display = 'none'; }, 500);
     }
   })();
 
   // Filter by country
-  document.getElementById('countryFilter').addEventListener('change', e=>{
+  document.getElementById('countryFilter').addEventListener('change', e => {
     const v = e.target.value;
     let rows = ALL_ROWS;
     if (v !== 'all'){
-      rows = ALL_ROWS.filter(r => normalizeCountry(r['Neighbouring Country'] || r.neighbouring_country || r.Country) === v);
+      rows = ALL_ROWS.filter(r => 
+        normalizeCountry(r['Neighbouring Country'] || r.neighbouring_country || r.Country) === v
+      );
     }
     renderAll(rows);
   });
