@@ -1,0 +1,40 @@
+﻿State,State_Code,Locality,Locality_Code,Cross border Name,Cross border Code,Neighbouring Country ,Neighbouring Country_Code,Y,X,Type,Status
+Blue Nile,SD08,Baw,SD08104,OLO,SD08104BP1,South Sudan,SSD,10.712939,33.37618,Unofficial,Active
+Blue Nile,SD08,Baw,SD08104,Butt,SD08104BP2,South Sudan,SSD,11.418596,33.17141924,Unofficial,Active
+Blue Nile,SD08,Al Kurmuk,SD08106,Al Kurmuk,SD08104BP3,Ethiopia,ETH,10.557584,34.29283,Official,Active
+Blue Nile,SD08,Geisan,SD08109,Geisan,SD08104BP4,Ethiopia,ETH,10.756401,34.78832,Official,Active
+Blue Nile,SD08,Geisan,SD08109,Menza,SD08104BP5,Ethiopia,ETH,11.535601,35.07733,Official,Active
+Blue Nile,SD08,Geisan,SD08109,Yabjar,SD08104BP6,Ethiopia,ETH,11.24404,34.92951,Official,Active
+Central Darfur,SD06,Um Dukhun,SD06135,Um Dukhun,SD06135PB5,Chad,TCD,11.139,22.966,Official,Active
+Central Darfur,SD06,Bendasi,SD06112,Gokoma Elgharbia,SD06112PB1,Chad,TCD,11.7333321,22.7471831,Official,Active
+East Darfur,SD05,Bahr Al Arab,SD05160,Alregiabat,SD05160PB1,South Sudan,SSD,11.0465022,26.5343851,Unofficial,Active
+Gedaref,SD12,Basundah,SD12077,Gallabat/Metema,SD12077PB1,Ethiopia,ETH,12.95798,36.151888,Official,Active
+Kassala,SD11,Kassala,SD11053,Al Laffa,SD11053PB2,Eretria,ERI,15.15372,36.4355,Official,Active
+North Darfur,SD02,Al Malha,SD02117,Almothalath (C) (Al Malha + Melit Towns),SD02117PB1,Libya,LBY,21.4788,25.24608,Unofficial,Active
+North Darfur,SD02,At Tina,SD02171,At Tina,SD02171PB1,Chad,TCD,15.01197,22.48992,Unofficial,Active
+Northern,SD17,Halfa,SD17014,Argeen,SD17014PB3,Egypt,EGY,21.988934,31.153322,Official,Active
+Northern,SD17,Halfa,SD17014,Ashkeet,SD17014PB4,Egypt,EGY,22.000523,31.511477,Official,Active
+Northern ,SD17,Halfa,SD17014,Almothalath (A) (Al Khanag Village),SD17014PB1,Libya,LBY,21.79878315,25.40913574,Official,Active
+Northern ,SD17,Halfa,SD17014,Almothalth (B) (Jebel Elouinat),SD17014PB2,Egypt,EGY,22.00593143,25.42898568,Unofficial,Active
+Red Sea,SD10,Agig,SD10072,Garora,SD10072BP1,Eretria,ERI,17.698974,38.363458,Official,active
+Red Sea,SD10,Haliab,SD10066,O'seif,SD10066PB1,Egypt,EGY,21.768687,36.861966,Unofficial,active
+Red Sea,SD10,Haliab,SD10066,Shalatain & Halian,SD10066PB2,Egypt,EGY,23.113006,35.537985,Official,active
+River Nile,SD16,Abu Hamad,SD16008,Abu Hamad,SD16008PB1,Egypt,EGY,19.538768,33.325052,Unofficial,active
+South Darfur,SD03,Um Dafoug,SD03146,Um Dafoug,SD03146PB1,Central African Republic,CAR,10.716825,23.516842,Unofficial,Active
+South Darfur,SD03,Al Radoum,SD03141,Al Radoum,SD03141PB1,Central African Republic,CAR,9.83147,24.8117,Unofficial,Active
+South Darfur,SD03,Al Radoum,SD03141,Kafia Kingi,SD03141PB2,Central African Republic,CAR,9.2740233,24.4130373,Unofficial,Active
+South Kordofan ,SD07,At Tadamon - SK,SD07106,Almgaines,SD07106PB1,South Sudan,SSD,11.9462168,32.09834884,Official,not active
+South Kordofan ,SD07,Abu Jubayhah,SD07088,Graid ,SD07088PB1,South Sudan,SSD,10.64846715,31.98424661,Official,Active
+South Kordofan ,SD07,Kadugli,SD07098,Trogy,SD07098PB1,South Sudan,SSD,10.28333538,30.00773681,Official,Active
+South Kordofan ,SD07,Al Leri,SD07105,Jam Jam,SD07105PB1,South Sudan,SSD,10.14796155,30.65193665,Official,not active
+South Kordofan ,SD07,Al Leri,SD07105,Al Ameri,SD07105PB2,South Sudan,SSD,9.740005238,30.80058023,Official,Active
+West Darfur,SD04,Ag Geneina,SD04115,Adekonk,SD04115PB6,Chad,TCD,13.4623111,22.2296523,Official,Active
+West Darfur,SD04,Kulbus,SD04127,Kulbus,SD04127PB1,Chad,TCD,14.304467,22.43391,Unofficial,Active
+West Darfur,SD04,Beida,SD04111,Beida,SD04111PB1,Chad,TCD,12.713,21.898,Official,Active
+West Darfur,SD04,Forbaranga,SD04121,Forbaranga,SD04121PB1,Chad,TCD,12.125117,22.5896,Official,Active
+West Kordofan ,SD18,Al Dibab,SD18103,Heglig,SD18103PB1,South Sudan,SSD,9.750715585,29.53496101,Official,not active
+West Kordofan ,SD18,Al Meiram,SD18106,Al Meiram,SD18106PB1,South Sudan,SSD,9.608987554,27.72562234,Official,Active
+West Kordofan ,SD18,Abyei PCA,SD18087,Alna'am Market (Ameit market),SD18087PB1,South Sudan,SSD,9.712271395,28.46830752,Official,Active
+White Nile,SD09,Aj Jabalain,SD09051,Juda,SD09051PB1,South Sudan,SSD,12.23658,32.761862,Official,Active
+White Nile,SD09,Dar As Salam - WN,SD09049,Al-Kuwaik North ,SD09049PB1,South Sudan,SSD,12.226496,32.691842,Official,Active
+White Nile,SD09,Dar As Salam - WN,SD09049,Al-Meghanis ,SD09049BP2,South Sudan,SSD,12.321493,32.735503,Unofficial,Active
