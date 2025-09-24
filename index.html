@@ -1,824 +1,674 @@
 <!DOCTYPE html>
-<html lang="en" data-app="fmc-modern-layout">
+<html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-  <title>Sudan | Flow Monitoring — Border Points (Enhanced Visualization)</title>
-
-  <!-- Leaflet -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="anonymous"/>
-  <!-- Icons -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer"/>
-
-  <style>
-    :root{
-      /* Brand */
-      --brand-primary:#0033A0;  /* IOM deep blue */
-      --brand-accent:#418FDE;   /* IOM accent blue */
-      --brand-amber:#FFB81C;
-
-      /* Surfaces */
-      --bg:#f5f7fa; --panel:#ffffff; --text:#142332; --muted:#5a7086; --border:#e6edf5;
-      --glass: rgba(255,255,255,.72);
-      --shadow: 0 10px 30px rgba(18, 38, 63, .10);
-
-      /* Flow color */
-      --flow:#D22630;
-
-      /* Country tints (extendable) */
-      --c-chad:#d97706;
-      --c-ethiopia:#2563eb;
-      --c-eritrea:#0ea5e9;
-      --c-egypt:#16a34a;
-      --c-southsudan:#7c3aed;
-      --c-libya:#0f766e;
-      --c-car:#db2777;
-    }
-    [data-theme="dark"]{
-      --bg:#0e1621; --panel:#121e2a; --text:#e6edf5; --muted:#9fb0c2; --border:#213345; --glass: rgba(18,30,42,.5);
-      --shadow: 0 12px 30px rgba(0,0,0,.35);
-      --flow:#FF525E;
-    }
-
-    html, body { height:100%; }
-    body{
-      margin:0; background:var(--bg); color:var(--text);
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica, Arial;
-      display:grid; grid-template-rows: auto 1fr auto; min-height:100vh;
-    }
-
-    /* Topbar */
-    .topbar{ position:sticky; top:0; z-index:1000; backdrop-filter:saturate(140%) blur(8px); background:var(--glass); border-bottom:1px solid var(--border); box-shadow:var(--shadow); }
-    .topbar-inner{ display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px 16px; max-width:1400px; margin:0 auto; }
-    .brand{ display:flex; align-items:center; gap:12px; min-width:0; }
-    .flag{ width:40px; height:26px; border-radius:6px; overflow:hidden; box-shadow:0 0 0 1px rgba(0,0,0,.08) inset; }
-    .flag svg{ width:100%; height:100%; display:block; }
-    .title-wrap h1{ font-size:16px; line-height:1.1; margin:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-    .title-wrap .sub{ font-size:12px; color:var(--muted); }
-    .controls{ display:flex; align-items:center; gap:8px; }
-    .select, .btn{ height:36px; padding:0 10px; border:1px solid var(--border); border-radius:10px; background:var(--panel); color:var(--text); font-weight:600; font-size:12px; }
-    .btn{ display:inline-flex; align-items:center; gap:8px; cursor:pointer; }
-    .kbd{ font: 11px ui-monospace; border:1px solid var(--border); border-radius:6px; padding:0 6px; background:transparent; }
-
-    /* Map */
-    .map-wrap{ position:relative; }
-    #map{ height: calc(100vh - 118px); }
-    @media (max-width:768px){ #map{ height: calc(100vh - 104px); } }
-
-    .loading{ position:absolute; inset:0; z-index:1100; display:flex; align-items:center; justify-content:center; flex-direction:column; background:linear-gradient(180deg, rgba(255,255,255,.86), rgba(255,255,255,.6)); }
-    [data-theme="dark"] .loading{ background:linear-gradient(180deg, rgba(18,30,42,.86), rgba(18,30,42,.6)); }
-    .spinner{ width:44px; height:44px; border:4px solid #e7eef7; border-top-color:var(--brand-primary); border-radius:50%; animation:spin 1s linear infinite; margin-bottom:10px; }
-    @keyframes spin{ to{ transform:rotate(360deg); } }
-
-    /* ===== Enhanced BCP Markers ===== */
-    .bcp-visual {
-      position: relative;
-      display: grid;
-      place-items: center;
-      transition: all 0.3s ease;
-    }
-    
-    .bcp-visual.pulsing {
-      animation: gentle-float 3s ease-in-out infinite;
-    }
-    
-    @keyframes gentle-float {
-      0%, 100% { transform: translateY(0px); }
-      50% { transform: translateY(-2px); }
-    }
-    
-    .marker-core {
-      position: relative;
-      border: 2px solid #fff;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-      transition: all 0.3s ease;
-    }
-    
-    .bcp-visual.highlighted .marker-core {
-      transform: scale(1.3);
-      box-shadow: 0 0 20px currentColor;
-      z-index: 1000;
-    }
-    
-    .bcp-visual.circle .marker-core { border-radius: 50%; }
-    .bcp-visual.square .marker-core { border-radius: 4px; }
-    .bcp-visual.diamond .marker-core { 
-      transform: rotate(45deg); 
-      border-radius: 2px; 
-    }
-    .bcp-visual.diamond .marker-core::before {
-      content: '';
-      position: absolute;
-      top: 50%; left: 50%;
-      transform: translate(-50%, -50%) rotate(-45deg);
-      width: 70%; height: 70%;
-      background: inherit;
-    }
-    
-    /* Status badges */
-    .badge {
-      position: absolute;
-      top: -5px;
-      right: -5px;
-      background: var(--brand-amber);
-      color: white;
-      border-radius: 50%;
-      width: 16px;
-      height: 16px;
-      font-size: 10px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-      z-index: 10;
-    }
-    
-    /* Enhanced pulse rings */
-    .pulse-ring {
-      position: absolute;
-      inset: 0;
-      border-radius: 50%;
-      background: currentColor;
-      opacity: 0.28;
-      filter: blur(0.2px);
-      animation: enhancedRing 2.8s ease-out infinite;
-    }
-    
-    .pulse-ring.r2 { animation-delay: 1.4s; }
-    
-    @keyframes enhancedRing {
-      0%   { transform: scale(0.55); opacity: 0.45; }
-      70%  { opacity: 0.06; }
-      100% { transform: scale(2.4); opacity: 0; }
-    }
-    
-    /* Inactive state */
-    .bcp-visual.inactive {
-      filter: grayscale(0.8) opacity(0.7);
-    }
-    
-    .bcp-visual.inactive .pulse-ring {
-      display: none;
-    }
-    
-    /* Official marker enhancement */
-    .bcp-visual.official .marker-core {
-      border: 3px solid #fff;
-      box-shadow: 0 0 0 2px var(--brand-primary);
-    }
-    
-    /* Unofficial marker style */
-    .bcp-visual.unofficial .marker-core {
-      border: 2px dashed #fff;
-    }
-
-    @media (prefers-reduced-motion: reduce){
-      .bcp-visual.pulsing,
-      .pulse-ring { 
-        animation: none; 
-      }
-      .bcp-visual.pulsing {
-        animation: none;
-      }
-    }
-
-    .legend{ background:var(--glass); border:1px solid var(--border); border-radius:12px; padding:10px 12px; box-shadow:var(--shadow); }
-    .footer{ display:flex; align-items:center; justify-content:center; gap:8px; padding:8px 12px; font-size:12px; color:var(--muted); }
-    
-    /* Enhanced popup styles */
-    .enhanced-popup {
-      min-width: 280px;
-    }
-    
-    .popup-header {
-      background: var(--brand-primary);
-      color: white;
-      padding: 12px;
-      margin: -12px -12px 12px -12px;
-      border-radius: 8px 8px 0 0;
-    }
-    
-    .popup-header h4 {
-      margin: 0;
-      font-size: 14px;
-    }
-    
-    .popup-content {
-      display: grid;
-      grid-template-columns: auto 1fr;
-      gap: 8px;
-      align-items: center;
-      font-size: 12px;
-    }
-    
-    /* Search box */
-    .search-container {
-      position: absolute;
-      top: 80px;
-      right: 16px;
-      z-index: 1000;
-    }
-    
-    .search-box {
-      padding: 8px 12px;
-      border-radius: 8px;
-      border: 1px solid var(--border);
-      background: var(--glass);
-      backdrop-filter: blur(8px);
-      width: 200px;
-      font-size: 12px;
-    }
-    
-    /* Responsive improvements */
-    @media (max-width: 768px) {
-      .topbar-inner {
-        padding: 8px 12px;
-        flex-wrap: wrap;
-      }
-      
-      .brand {
-        min-width: 0;
-        flex: 1;
-      }
-      
-      .title-wrap h1 {
-        font-size: 14px;
-      }
-      
-      .title-wrap .sub {
-        font-size: 11px;
-      }
-      
-      .controls {
-        flex-wrap: wrap;
-        justify-content: flex-end;
-      }
-      
-      .select, .btn {
-        height: 32px;
-        font-size: 11px;
-      }
-      
-      .legend {
-        max-width: 90vw;
-        font-size: 11px;
-      }
-      
-      .search-container {
-        top: 70px;
-        right: 12px;
-      }
-      
-      .search-box {
-        width: 160px;
-      }
-    }
-    
-    /* Better touch targets for mobile */
-    @media (pointer: coarse) {
-      .btn, .select {
-        min-height: 44px;
-        padding: 0 16px;
-      }
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flow Monitoring Dashboard</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+        }
+        
+        .dashboard-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        h1 {
+            color: #2c3e50;
+            font-size: 28px;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        select, button {
+            padding: 8px 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-color: white;
+            cursor: pointer;
+        }
+        
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            transition: background-color 0.3s;
+        }
+        
+        button:hover {
+            background-color: #2980b9;
+        }
+        
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        
+        @media (max-width: 1100px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .card {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            height: 400px;
+        }
+        
+        .card-full {
+            grid-column: 1 / -1;
+            height: auto;
+        }
+        
+        .card h2 {
+            margin-bottom: 15px;
+            color: #2c3e50;
+            font-size: 20px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+        
+        #map {
+            height: 100%;
+            width: 100%;
+            border-radius: 4px;
+        }
+        
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            font-size: 14px;
+        }
+        
+        .data-table th, .data-table td {
+            padding: 8px 12px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .data-table th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+        }
+        
+        .data-table tr:hover {
+            background-color: #f5f7fa;
+        }
+        
+        .table-container {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .chart-container {
+            height: 300px;
+            position: relative;
+        }
+        
+        .incoming {
+            color: #27ae60;
+        }
+        
+        .outgoing {
+            color: #e74c3c;
+        }
+        
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .summary-card {
+            background-color: white;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        
+        .summary-card h3 {
+            font-size: 14px;
+            color: #7f8c8d;
+            margin-bottom: 10px;
+        }
+        
+        .summary-card .value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        
+        .incoming-card {
+            border-left: 4px solid #27ae60;
+        }
+        
+        .outgoing-card {
+            border-left: 4px solid #e74c3c;
+        }
+        
+        .legend {
+            display: flex;
+            gap: 15px;
+            margin-top: 10px;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 14px;
+        }
+        
+        .legend-color {
+            width: 15px;
+            height: 15px;
+            border-radius: 3px;
+        }
+        
+        .incoming-color {
+            background-color: #27ae60;
+        }
+        
+        .outgoing-color {
+            background-color: #e74c3c;
+        }
+    </style>
 </head>
 <body>
-  <!-- Top bar -->
-  <div class="topbar">
-    <div class="topbar-inner">
-      <div class="brand">
-        <div class="flag" aria-label="Sudan flag">
-          <svg viewBox="0 0 3 2" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
-            <rect width="3" height="2" fill="#000"/>
-            <rect width="3" height="1.3333" y="0.3333" fill="#ffffff"/>
-            <rect width="3" height="0.6667" fill="#D21034"/>
-            <polygon points="0,0 0,2 1,1" fill="#007229"/>
-          </svg>
-        </div>
-        <div class="title-wrap">
-          <h1>Sudan | Flow Monitoring — Border Points</h1>
-          <div class="sub">Enhanced Visualization · Interactive BCP Map</div>
-        </div>
-      </div>
-      <div class="controls">
-        <select id="countryFilter" class="select" title="Filter by neighbouring country">
-          <option value="all">All neighbouring countries</option>
-        </select>
-        <button id="btn-theme" class="btn" title="Toggle dark mode"><i class="fa-regular fa-moon"></i> Theme</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Map -->
-  <div class="map-wrap">
-    <div id="map" aria-label="FMC border-points map" role="region"></div>
-    <div class="loading" id="loading">
-      <div class="spinner"></div>
-      <div>Loading enhanced BCP visualization…</div>
-    </div>
-    
-    <!-- Search Box -->
-    <div class="search-container">
-      <input type="text" id="bcpSearch" class="search-box" placeholder="Search BCPs..." />
-    </div>
-  </div>
-
-  <!-- Footer -->
-  <div class="footer">© IOM DTM — Enhanced Visualization Prototype</div>
-
-  <!-- Scripts -->
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-  <script src="https://unpkg.com/topojson-client@3"></script>
-  <script src="https://unpkg.com/@tweenjs/tween.js@18.6.4/dist/tween.umd.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/leaflet-canvas-flowmap-layer@1.2.0/dist/CanvasFlowmapLayer.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-
-  <script>
-  // ===== Enhanced Visualization Configuration =====
-  const CSV_URLS = [
-    'data/Border Point-FM.csv',
-    'data/Border Point-FM.CSV',
-    'data/Border Point-FM'
-  ];
-  const MAPBOX_TOKEN = 'pk.eyJ1Ijoib21lcm9zbWFuIiwiYSI6ImUxZDBkODBlNjQxMDE2M2Y3OTQ3MWIwNTJkMjgzZTI3In0.ekCHuxRflTOO0RpQ6rQR7Q';
-
-  // ===== Enhanced Map Initialization =====
-  const map = L.map('map', { 
-    preferCanvas: true, 
-    zoomControl: false, 
-    minZoom: 4, 
-    maxZoom: 11, 
-    zoomSnap: 0.5 
-  }).setView([16, 30], 5.5);
-
-  // Base layers
-  const mbLight = L.tileLayer(`https://api.mapbox.com/styles/v1/mapbox/light-v10/tiles/{z}/{x}/{y}?access_token=${MAPBOX_TOKEN}`, { 
-    tileSize: 512, zoomOffset: -1, attribution: '&copy; Mapbox & OpenStreetMap' 
-  }).addTo(map);
-  
-  const mbStreets = L.tileLayer(`https://api.mapbox.com/styles/v1/mapbox/streets-v11/tiles/{z}/{x}/{y}?access_token=${MAPBOX_TOKEN}`, { 
-    tileSize: 512, zoomOffset: -1, attribution: '&copy; Mapbox & OpenStreetMap' 
-  });
-  
-  const mbSat = L.tileLayer(`https://api.mapbox.com/styles/v1/mapbox/satellite-v9/tiles/{z}/{x}/{y}?access_token=${MAPBOX_TOKEN}`, { 
-    tileSize: 512, zoomOffset: -1, attribution: '&copy; Mapbox & OpenStreetMap' 
-  });
-  
-  const osmStd = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { 
-    attribution: '&copy; OpenStreetMap contributors' 
-  });
-
-  // Controls
-  const layerCtl = L.control.layers({ 
-    'Mapbox Light': mbLight, 
-    'Mapbox Streets': mbStreets, 
-    'Mapbox Satellite': mbSat, 
-    'OSM Standard': osmStd 
-  }, null, { collapsed: true }).addTo(map);
-  
-  L.control.scale({ position: 'bottomleft', metric: true }).addTo(map);
-  L.control.zoom({ position: 'topright' }).addTo(map);
-
-  // Enhanced Legend
-  const legend = L.control({ position: 'bottomleft' });
-  let legendEl = null;
-  legend.onAdd = function(){
-    legendEl = L.DomUtil.create('div', 'legend');
-    legendEl.innerHTML = `
-      <div style="font-weight:800;margin-bottom:6px">Enhanced BCP Visualization</div>
-      <div id="legendRows" style="display:grid;grid-template-columns:14px 1fr;gap:8px;align-items:center;font-size:12px;color:var(--muted)"></div>
-      <div style="margin-top:8px;font-size:11px;color:var(--muted)">
-        <div>● Official | ■ Unofficial | ◆ Other</div>
-        <div>★ Active Official BCP</div>
-        <div>Pulsing = Active | Static = Inactive</div>
-      </div>`;
-    return legendEl;
-  };
-  legend.addTo(map);
-
-  // ===== Enhanced Utility Functions =====
-  function getCSS(v, fb){ 
-    const x = getComputedStyle(document.documentElement).getPropertyValue(v); 
-    return (x && x.trim()) ? x.trim() : fb; 
-  }
-  
-  function escapeHtml(str){ 
-    return String(str).replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s])); 
-  }
-  
-  const trim = s => String(s ?? '').trim();
-
-  function normalizeCountry(x){
-    const s = trim(x);
-    if (/^eri?tr?e?a?$/i.test(s) || /^ere?tr?ia$/i.test(s)) return 'Eritrea';
-    if (/^car$/i.test(s)) return 'Central African Republic';
-    if (/^ssd|south[\s-]?sudan$/i.test(s)) return 'South Sudan';
-    if (/^egypt|egy$/i.test(s)) return 'Egypt';
-    if (/^ethiopia|eth$/i.test(s)) return 'Ethiopia';
-    if (/^chad|tcd$/i.test(s)) return 'Chad';
-    if (/^libya|lby$/i.test(s)) return 'Libya';
-    return s;
-  }
-
-  function countryColor(c){
-    if (c==='Chad')    return getCSS('--c-chad','#d97706');
-    if (c==='Ethiopia')return getCSS('--c-ethiopia','#2563eb');
-    if (c==='Eritrea') return getCSS('--c-eritrea','#0ea5e9');
-    if (c==='Egypt')   return getCSS('--c-egypt','#16a34a');
-    if (c==='South Sudan') return getCSS('--c-southsudan','#7c3aed');
-    if (c==='Libya')   return getCSS('--c-libya','#0f766e');
-    if (c==='Central African Republic') return getCSS('--c-car','#db2777');
-    return getCSS('--brand-accent','#418FDE');
-  }
-
-  // ===== Enhanced Marker Functions =====
-  function getMarkerSize(bcpType, status) {
-    const baseSize = 18;
-    const typeMultipliers = {
-      'Official': 1.3,
-      'Unofficial': 1.0,
-      'Informal': 0.8
-    };
-    
-    const statusMultipliers = {
-      'Active': 1.2,
-      'Suspended': 0.9,
-      'Closed': 0.7
-    };
-    
-    return Math.round(baseSize * (typeMultipliers[bcpType] || 1) * (statusMultipliers[status] || 1));
-  }
-
-  function getMarkerShape(bcpType) {
-    if (bcpType === 'Official') return 'circle';
-    if (bcpType === 'Unofficial') return 'square';
-    return 'diamond';
-  }
-
-  function generateMarkerHTML(d, clr, sz, shape) {
-    const isActive = (d.status || '').toLowerCase() === 'active';
-    const pulseClass = isActive ? 'pulsing' : 'inactive';
-    const typeClass = (d.bcp_type || '').toLowerCase();
-    const showBadge = isActive && d.bcp_type === 'Official';
-    
-    return `
-      <div class="bcp-visual ${pulseClass} ${typeClass} ${shape}" style="--clr:${clr};width:${sz}px;height:${sz}px;">
-        <div class="marker-core" style="background:${clr};width:100%;height:100%;"></div>
-        ${isActive ? '<div class="pulse-ring r1"></div><div class="pulse-ring r2"></div>' : ''}
-        ${showBadge ? '<div class="badge">★</div>' : ''}
-      </div>`;
-  }
-
-  // ===== Enhanced Flow Line Functions =====
-  function getFlowLineWidth(d) {
-    const baseWidth = 1.8;
-    const multipliers = {
-      'Official': 2.2,
-      'Unofficial': 1.5,
-      'Active': 1.3,
-      'Closed': 0.8
-    };
-    
-    let width = baseWidth;
-    if (d.bcp_type === 'Official') width *= multipliers.Official;
-    if (d.status === 'Active') width *= multipliers.Active;
-    if (d.status === 'Closed') width *= multipliers.Closed;
-    
-    return width;
-  }
-
-  function getFlowPattern(status) {
-    return status === 'Closed' ? [5, 5] : [];
-  }
-
-  // ===== Enhanced Popup Function =====
-  function createEnhancedPopup(d) {
-    const statusIcon = d.status === 'Active' ? '🟢' : d.status === 'Closed' ? '🔴' : '🟡';
-    const typeIcon = d.bcp_type === 'Official' ? '🏛️' : '🚶';
-    
-    return `
-      <div class="enhanced-popup">
-        <div class="popup-header" style="background:${countryColor(d.neighbouring_country)};">
-          <h4>${escapeHtml(d.cross_border_location)}</h4>
-          <div style="display:flex;gap:8px;font-size:11px;opacity:0.9;">
-            <span>${statusIcon} ${escapeHtml(d.status)}</span>
-            <span>${typeIcon} ${escapeHtml(d.bcp_type)}</span>
-          </div>
+    <div class="dashboard-container">
+        <header>
+            <h1>Flow Monitoring Dashboard</h1>
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="legend-color incoming-color"></div>
+                    <span>Incoming</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color outgoing-color"></div>
+                    <span>Outgoing</span>
+                </div>
+            </div>
+        </header>
+        
+        <div class="summary-cards">
+            <div class="summary-card incoming-card">
+                <h3>Total Incoming</h3>
+                <div class="value" id="total-incoming">0</div>
+            </div>
+            <div class="summary-card outgoing-card">
+                <h3>Total Outgoing</h3>
+                <div class="value" id="total-outgoing">0</div>
+            </div>
+            <div class="summary-card">
+                <h3>Monitoring Points</h3>
+                <div class="value" id="total-points">0</div>
+            </div>
+            <div class="summary-card">
+                <h3>Latest Month</h3>
+                <div class="value" id="latest-month">25-Aug</div>
+            </div>
         </div>
         
-        <div class="popup-content">
-          <strong>Country:</strong> <span>${escapeHtml(d.neighbouring_country)}</span>
-          <strong>State:</strong> <span>${escapeHtml(d.state)}</span>
-          <strong>Locality:</strong> <span>${escapeHtml(d.locality)}</span>
-          <strong>Coordinates:</strong> <span>${d.d_lat.toFixed(4)}, ${d.d_lon.toFixed(4)}</span>
+        <div class="controls">
+            <select id="direction-select">
+                <option value="all">All Directions</option>
+                <option value="Incoming">Incoming Only</option>
+                <option value="Outgoing">Outgoing Only</option>
+            </select>
+            <select id="point-select">
+                <option value="all">All Points</option>
+            </select>
+            <select id="month-select">
+                <option value="all">All Months</option>
+            </select>
+            <button id="reset-filters">Reset Filters</button>
         </div>
         
-        ${d.status === 'Active' ? `
-          <div style="margin-top:8px;padding:8px;background:#f0f8ff;border-radius:4px;font-size:11px;">
-            <strong>📊 Recent Activity:</strong> Normal traffic patterns detected
-          </div>
-        ` : ''}
-      </div>
-    `;
-  }
+        <div class="dashboard-grid">
+            <div class="card">
+                <h2>Monitoring Points Map</h2>
+                <div id="map"></div>
+            </div>
+            
+            <div class="card">
+                <h2>Monthly Flow Trends</h2>
+                <div class="chart-container">
+                    <canvas id="trend-chart"></canvas>
+                </div>
+            </div>
+            
+            <div class="card card-full">
+                <h2>Flow Data Table</h2>
+                <div class="table-container">
+                    <table class="data-table" id="data-table">
+                        <thead>
+                            <tr>
+                                <th>Direction</th>
+                                <th>Point Name</th>
+                                <th>Point Code</th>
+                                <th>Latitude</th>
+                                <th>Longitude</th>
+                                <th>24-Jan</th>
+                                <th>24-Feb</th>
+                                <th>24-Mar</th>
+                                <th>24-Apr</th>
+                                <th>24-May</th>
+                                <th>24-Jun</th>
+                                <th>24-Jul</th>
+                                <th>24-Aug</th>
+                                <th>24-Sep</th>
+                                <th>24-Oct</th>
+                                <th>24-Nov</th>
+                                <th>24-Dec</th>
+                                <th>25-Jan</th>
+                                <th>25-Feb</th>
+                                <th>25-Mar</th>
+                                <th>25-Apr</th>
+                                <th>25-May</th>
+                                <th>25-Jun</th>
+                                <th>25-Jul</th>
+                                <th>25-Aug</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-body">
+                            <!-- Data will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
 
-  // ===== Data Processing Functions =====
-  function computeStateCentersFromRows(rows){
-    const by = new Map();
-    rows.forEach(r=>{
-      const sc = trim(r.state_code || r.State_Code || r['State_Code'] || r['State Code']);
-      const st = trim(r.state || r.State);
-      const d_lat = Number(r.Y ?? r.lat ?? r.Latitude ?? r.lat_dd) || 0;
-      const d_lon = Number(r.X ?? r.lon ?? r.Longitude ?? r.lon_dd) || 0;
-      if(!sc || !Number.isFinite(d_lat) || !Number.isFinite(d_lon)) return;
-      if(!by.has(sc)) by.set(sc, { st, n:0, sumLat:0, sumLon:0 });
-      const o = by.get(sc); o.n++; o.sumLat+=d_lat; o.sumLon+=d_lon; o.st = o.st || st;
-    });
-    const centers = new Map();
-    by.forEach((o, sc)=> centers.set(sc, { lat:o.sumLat/o.n, lon:o.sumLon/o.n, name:o.st||sc }) );
-    return centers;
-  }
-
-  function normalizeRow(r, centers){
-    const state_code = trim(r.state_code || r.State_Code || r['State_Code'] || r['State Code']);
-    const center = centers.get(state_code) || {};
-    return {
-      state: trim(r.state || r.State),
-      state_code,
-      locality: trim(r.locality || r.Locality),
-      locality_code: trim(r.locality_code || r.Locality_Code || r['Locality Code']),
-      cross_border_location: trim(r.cross_border_location || r['Cross border Name'] || r['Cross border location'] || r['Cross border'] || r['Cross border Name ']),
-      bcp_code: trim(r.cross_border_code || r['Cross border Code'] || r['Cross borde Code'] || r['Cross border Code ']),
-      neighbouring_country: normalizeCountry(r.neighbouring_country || r['Neighbouring Country'] || r.Neighbour || r.Country),
-      bcp_type: trim(r.type || r.Type || r['Type'] || r['type '] || r['Type ']),
-      status:   trim(r.status || r.Status || r['Status'] || r['status '] || r['Status ']),
-      o_lat: Number(center.lat) || 0,
-      o_lon: Number(center.lon) || 0,
-      d_lat: Number(r.Y ?? r.lat ?? r.Latitude) || 0,
-      d_lon: Number(r.X ?? r.lon ?? r.Longitude) || 0
-    };
-  }
-
-  // ===== Data Loading =====
-  async function tryLoadCsv(url){
-    const res = await fetch(url);
-    if(!res.ok) throw new Error('HTTP '+res.status);
-    const text = await res.text();
-    const parsed = Papa.parse(text, { header:true, skipEmptyLines:'greedy' });
-    return parsed.data;
-  }
-  
-  async function loadCsvAny(urls){
-    for (const u of urls){
-      try { const rows = await tryLoadCsv(u); if (rows && rows.length) return rows; } catch(e){}
-    }
-    return null;
-  }
-
-  // ===== Enhanced Rendering =====
-  let ALL_ROWS = [];
-  let currentMarkers = new Map();
-
-  function renderAll(rows){
-    // Clean up previous layers
-    if (window.flowLayer) map.removeLayer(window.flowLayer);
-    if (window.bcpHaloLayer) map.removeLayer(window.bcpHaloLayer);
-    currentMarkers.clear();
-
-    // Build state centers
-    const centers = computeStateCentersFromRows(rows);
-
-    // Normalize & filter rows
-    const data = rows.map(r => normalizeRow(r, centers)).filter(d =>
-      Number.isFinite(d.o_lat) && Number.isFinite(d.o_lon) &&
-      Number.isFinite(d.d_lat) && Number.isFinite(d.d_lon) &&
-      d.d_lat !== 0 && d.d_lon !== 0
-    );
-
-    // === Enhanced BCP Markers ===
-    window.bcpHaloLayer = L.layerGroup().addTo(map);
-    data.forEach(d => {
-      const clr = countryColor(d.neighbouring_country);
-      const sz = getMarkerSize(d.bcp_type, d.status);
-      const shape = getMarkerShape(d.bcp_type);
-      
-      const icon = L.divIcon({
-        className: '',
-        html: generateMarkerHTML(d, clr, sz, shape),
-        iconSize: [sz, sz],
-        iconAnchor: [sz/2, sz/2]
-      });
-
-      const m = L.marker([d.d_lat, d.d_lon], { 
-        icon,
-        bcpCode: d.bcp_code // Store for interaction
-      })
-      .bindTooltip(`${escapeHtml(d.cross_border_location)} • ${escapeHtml(d.neighbouring_country)}`, { 
-        direction: 'top', 
-        offset: [0, -6] 
-      })
-      .bindPopup(createEnhancedPopup(d));
-
-      // Store marker for interactions
-      currentMarkers.set(d.bcp_code, m);
-
-      // Enhanced halo effect
-      L.circle([d.d_lat, d.d_lon], {
-        radius: 900, 
-        color: clr, 
-        weight: 1.2, 
-        fillColor: clr, 
-        fillOpacity: 0.12, 
-        opacity: 0.9
-      }).addTo(window.bcpHaloLayer);
-
-      m.addTo(window.bcpHaloLayer);
-    });
-    layerCtl.addOverlay(window.bcpHaloLayer, 'Enhanced BCP markers');
-
-    // === Enhanced Flow Lines ===
-    const fc = {
-      type: 'FeatureCollection',
-      features: data.map(d => ({
-        type: 'Feature',
-        geometry: { type: 'Point', coordinates: [d.o_lon, d.o_lat] },
-        properties: {
-          o_id: d.state_code, o_x: d.o_lon, o_y: d.o_lat,
-          d_id: d.bcp_code, d_x: d.d_lon, d_y: d.d_lat,
-          state: d.state, locality: d.locality, bcp: d.cross_border_location, 
-          country: d.neighbouring_country, type: d.bcp_type, status: d.status
-        }
-      }))
-    };
-
-    if (typeof L.CanvasFlowmapLayer === 'function' && fc.features.length){
-      window.flowLayer = L.canvasFlowmapLayer(fc, {
-        originAndDestinationFieldIds: {
-          originUniqueIdField: 'o_id',
-          originGeometry: { x: 'o_x', y: 'o_y' },
-          destinationUniqueIdField: 'd_id',
-          destinationGeometry: { x: 'd_x', y: 'd_y' }
-        },
-        pathDisplayMode: 'all',
-        animationStarted: true,
-        animationDuration: 3200,
-        animationEasingFamily: 'Linear',
-        animationEasingType: 'None',
-        onEachFeature: (f, l) => l.bindPopup(`
-          <div style="min-width:260px">
-            <h4 style="margin:0 0 8px;color:var(--brand-primary)">State → BCP Connection</h4>
-            <p style="margin:0 0 6px"><strong>From:</strong> ${escapeHtml(f.properties.state)}</p>
-            <p style="margin:0 0 6px"><strong>To:</strong> ${escapeHtml(f.properties.bcp)} (${escapeHtml(f.properties.country)})</p>
-            <p style="margin:0 0 6px"><strong>Type:</strong> ${escapeHtml(f.properties.type || '—')}</p>
-            <p style="margin:0 0 6px"><strong>Status:</strong> ${escapeHtml(f.properties.status || '—')}</p>
-          </div>`),
-        canvasBezierStyle: {
-          type: 'single',
-          symbol: { 
-            strokeStyle: getCSS('--flow','#D22630'), 
-            lineWidth: getFlowLineWidth(f.properties), 
-            lineDash: getFlowPattern(f.properties.status),
-            lineCap: 'round', 
-            shadowColor: 'rgba(210,38,48,.35)', 
-            shadowBlur: 3 
-          }
-        },
-        pointToLayer: (feature, latlng) => L.circleMarker(latlng, { radius: 0.1, opacity: 0, fillOpacity: 0 })
-      }).addTo(map);
-      layerCtl.addOverlay(window.flowLayer, 'Enhanced flow lines');
-    }
-
-    // Fit to content
-    const group = L.featureGroup([window.bcpHaloLayer]);
-    try{
-      const rsBounds = group.getBounds();
-      if (rsBounds && rsBounds.isValid()) map.fitBounds(rsBounds, { padding: [24, 24] });
-    } catch(e){ console.warn('Could not fit bounds:', e); }
-
-    // Update UI
-    const countries = Array.from(new Set(data.map(d => d.neighbouring_country))).sort();
-    populateCountryFilter(countries);
-    rebuildLegend(countries);
-    setupInteractions();
-  }
-
-  // ===== Enhanced Interactions =====
-  function setupInteractions() {
-    // Highlight on hover
-    map.on('mouseover', '.leaflet-marker-icon', function(e) {
-      const marker = e.target;
-      const markerElement = marker.getElement();
-      if (markerElement) {
-        markerElement.classList.add('highlighted');
-      }
-    });
-
-    map.on('mouseout', '.leaflet-marker-icon', function(e) {
-      const marker = e.target;
-      const markerElement = marker.getElement();
-      if (markerElement) {
-        markerElement.classList.remove('highlighted');
-      }
-    });
-  }
-
-  // ===== UI Management =====
-  function populateCountryFilter(countries){
-    const sel = document.getElementById('countryFilter');
-    const current = sel.value || 'all';
-    sel.innerHTML = `<option value="all">All neighbouring countries</option>` + 
-                   countries.map(c => `<option value="${c}">${c}</option>`).join('');
-    sel.value = current === 'all' || !countries.includes(current) ? 'all' : current;
-  }
-
-  function rebuildLegend(countries){
-    const rows = document.getElementById('legendRows');
-    rows.innerHTML = '';
-    countries.forEach(c => {
-      const swatch = document.createElement('span');
-      swatch.style.cssText = 'width:12px;height:12px;border-radius:50%;display:inline-block;background:' + countryColor(c);
-      const label = document.createElement('span');
-      label.textContent = c;
-      rows.appendChild(swatch); 
-      rows.appendChild(label);
-    });
-  }
-
-  // ===== Search Functionality =====
-  function setupSearch() {
-    const searchInput = document.getElementById('bcpSearch');
-    
-    searchInput.addEventListener('input', function(e) {
-      const term = e.target.value.toLowerCase().trim();
-      
-      currentMarkers.forEach((marker, bcpCode) => {
-        const tooltip = marker.getTooltip();
-        const isVisible = !term || 
-          (tooltip && tooltip.getContent().toLowerCase().includes(term));
-        
-        marker.getElement().style.display = isVisible ? '' : 'none';
-      });
-    });
-  }
-
-  // ===== Theme Management =====
-  document.getElementById('btn-theme').addEventListener('click', function(){
-    const dark = document.body.getAttribute('data-theme') === 'dark';
-    document.body.setAttribute('data-theme', dark ? '' : 'dark');
-    this.querySelector('i').className = dark ? 'fa-regular fa-moon' : 'fa-regular fa-sun';
-  });
-  
-  window.addEventListener('keydown', e => { 
-    if ((e.key || '').toLowerCase() === 't') document.getElementById('btn-theme').click(); 
-  });
-
-  // ===== Main Execution =====
-  (async function start(){
-    const overlay = document.getElementById('loading');
-    try{
-      let rows = await loadCsvAny(CSV_URLS);
-
-      // Fallback sample data
-      if (!rows || !rows.length){
-        rows = [
-          { State:'Central Darfur', State_Code:'SD06', Locality:'Um Dukhun', Locality_Code:'SD06135', 'Cross border Name':'Um Dukhun', 'Cross border Code':'SD06135PB5', 'Neighbouring Country':'Chad', Y:11.139, X:22.966, Type:'Official', Status:'Active' },
-          { State:'Gedaref', State_Code:'SD12', Locality:'Basundah', Locality_Code:'SD12077', 'Cross border Name':'Gallabat/Metema', 'Cross border Code':'SD12077PB1', 'Neighbouring Country':'Ethiopia', Y:12.95798, X:36.151888, Type:'Official', Status:'Active' },
-          { State:'Kassala', State_Code:'SD11', Locality:'Kassala', Locality_Code:'SD11053', 'Cross border Name':'Al Laffa', 'Cross border Code':'SD11053PB2', 'Neighbouring Country':'Eritrea', Y:15.15372, X:36.4355, Type:'Unofficial', Status:'Closed' },
-          { State:'Northern', State_Code:'SD17', Locality:'Halfa', Locality_Code:'SD17014', 'Cross border Name':'Argeen', 'Cross border Code':'SD17014PB3', 'Neighbouring Country':'Egypt', Y:21.988934, X:31.153322, Type:'Official', Status:'Active' },
-          { State:'West Darfur', State_Code:'SD04', Locality:'Ag Geneina', Locality_Code:'SD04115', 'Cross border Name':'Adekonk', 'Cross border Code':'SD04115PB6', 'Neighbouring Country':'Chad', Y:13.4623111, X:22.2296523, Type:'Unofficial', Status:'Suspended' }
+    <script>
+        // Sample data (would normally come from an API or database)
+        const flowData = [
+            {
+                direction: "Incoming",
+                pointName: "Argin",
+                pointCode: "SD17014PB3",
+                latitude: 21.988934,
+                longitude: 31.153322,
+                months: {
+                    "24-Jan": 496, "24-Feb": 628, "24-Mar": 4413, "24-Apr": 712, "24-May": 1555,
+                    "24-Jun": 1672, "24-Jul": 353, "24-Aug": 411, "24-Sep": 502, "24-Oct": 796,
+                    "24-Nov": 606, "24-Dec": 807, "25-Jan": 561, "25-Feb": 454, "25-Mar": 425,
+                    "25-Apr": 19950, "25-May": 21492, "25-Jun": 11329, "25-Jul": 16875, "25-Aug": 22604
+                }
+            },
+            {
+                direction: "Incoming",
+                pointName: "Ashkeet",
+                pointCode: "SD17014PB4",
+                latitude: 22.000523,
+                longitude: 31.511477,
+                months: {
+                    "24-Jan": 0, "24-Feb": 482, "24-Mar": 5114, "24-Apr": 135, "24-May": 747,
+                    "24-Jun": 1481, "24-Jul": 167, "24-Aug": 152, "24-Sep": 513, "24-Oct": 728,
+                    "24-Nov": 5043, "24-Dec": 14905, "25-Jan": 22809, "25-Feb": 29072, "25-Mar": 19791,
+                    "25-Apr": 35074, "25-May": 14482, "25-Jun": 15636, "25-Jul": 21993, "25-Aug": 26116
+                }
+            },
+            {
+                direction: "Incoming",
+                pointName: "Adekonk",
+                pointCode: "SD04115PB6",
+                latitude: 13.4623111,
+                longitude: 22.2296523,
+                months: {
+                    "24-Jan": 0, "24-Feb": 0, "24-Mar": 0, "24-Apr": 0, "24-May": 0,
+                    "24-Jun": 0, "24-Jul": 0, "24-Aug": 0, "24-Sep": 0, "24-Oct": 0,
+                    "24-Nov": 0, "24-Dec": 0, "25-Jan": 0, "25-Feb": 0, "25-Mar": 0,
+                    "25-Apr": 0, "25-May": 0, "25-Jun": 0, "25-Jul": 0, "25-Aug": 5771
+                }
+            },
+            {
+                direction: "Incoming",
+                pointName: "Um Dukhun",
+                pointCode: "SD06135PB5",
+                latitude: 11.139,
+                longitude: 22.966,
+                months: {
+                    "24-Jan": 0, "24-Feb": 0, "24-Mar": 0, "24-Apr": 0, "24-May": 0,
+                    "24-Jun": 0, "24-Jul": 0, "24-Aug": 0, "24-Sep": 0, "24-Oct": 0,
+                    "24-Nov": 0, "24-Dec": 0, "25-Jan": 0, "25-Feb": 0, "25-Mar": 0,
+                    "25-Apr": 0, "25-May": 0, "25-Jun": 0, "25-Jul": 0, "25-Aug": 2835
+                }
+            },
+            {
+                direction: "Incoming",
+                pointName: "Gallabat",
+                pointCode: "SD12077PB1",
+                latitude: 12.95798,
+                longitude: 36.151888,
+                months: {
+                    "24-Jan": 0, "24-Feb": 0, "24-Mar": 0, "24-Apr": 0, "24-May": 0,
+                    "24-Jun": 0, "24-Jul": 0, "24-Aug": 0, "24-Sep": 0, "24-Oct": 0,
+                    "24-Nov": 0, "24-Dec": 0, "25-Jan": 0, "25-Feb": 0, "25-Mar": 0,
+                    "25-Apr": 0, "25-May": 0, "25-Jun": 0, "25-Jul": 0, "25-Aug": 348
+                }
+            },
+            {
+                direction: "Outgoing",
+                pointName: "Argin",
+                pointCode: "SD17014PB3",
+                latitude: 21.988934,
+                longitude: 31.153322,
+                months: {
+                    "24-Jan": 0, "24-Feb": 0, "24-Mar": 0, "24-Apr": 0, "24-May": 0,
+                    "24-Jun": 0, "24-Jul": 0, "24-Aug": 0, "24-Sep": 0, "24-Oct": 0,
+                    "24-Nov": 0, "24-Dec": 0, "25-Jan": 0, "25-Feb": 0, "25-Mar": 0,
+                    "25-Apr": 0, "25-May": 0, "25-Jun": 0, "25-Jul": 0, "25-Aug": 927
+                }
+            },
+            {
+                direction: "Outgoing",
+                pointName: "Ashkeet",
+                pointCode: "SD17014PB4",
+                latitude: 22.000523,
+                longitude: 31.511477,
+                months: {
+                    "24-Jan": 0, "24-Feb": 0, "24-Mar": 0, "24-Apr": 0, "24-May": 0,
+                    "24-Jun": 0, "24-Jul": 0, "24-Aug": 0, "24-Sep": 0, "24-Oct": 0,
+                    "24-Nov": 0, "24-Dec": 0, "25-Jan": 0, "25-Feb": 0, "25-Mar": 0,
+                    "25-Apr": 0, "25-May": 0, "25-Jun": 0, "25-Jul": 0, "25-Aug": 519
+                }
+            },
+            {
+                direction: "Outgoing",
+                pointName: "Adekonk",
+                pointCode: "SD04115PB6",
+                latitude: 13.4623111,
+                longitude: 22.2296523,
+                months: {
+                    "24-Jan": 0, "24-Feb": 0, "24-Mar": 0, "24-Apr": 0, "24-May": 0,
+                    "24-Jun": 0, "24-Jul": 0, "24-Aug": 0, "24-Sep": 0, "24-Oct": 0,
+                    "24-Nov": 0, "24-Dec": 0, "25-Jan": 0, "25-Feb": 0, "25-Mar": 0,
+                    "25-Apr": 0, "25-May": 0, "25-Jun": 0, "25-Jul": 0, "25-Aug": 5493
+                }
+            },
+            {
+                direction: "Outgoing",
+                pointName: "Um Dukhun",
+                pointCode: "SD06135PB5",
+                latitude: 11.139,
+                longitude: 22.966,
+                months: {
+                    "24-Jan": 0, "24-Feb": 0, "24-Mar": 0, "24-Apr": 0, "24-May": 0,
+                    "24-Jun": 0, "24-Jul": 0, "24-Aug": 0, "24-Sep": 0, "24-Oct": 0,
+                    "24-Nov": 0, "24-Dec": 0, "25-Jan": 0, "25-Feb": 0, "25-Mar": 0,
+                    "25-Apr": 0, "25-May": 0, "25-Jun": 0, "25-Jul": 0, "25-Aug": 2127
+                }
+            },
+            {
+                direction: "Outgoing",
+                pointName: "Gallabat",
+                pointCode: "SD12077PB1",
+                latitude: 12.95798,
+                longitude: 36.151888,
+                months: {
+                    "24-Jan": 0, "24-Feb": 0, "24-Mar": 0, "24-Apr": 0, "24-May": 0,
+                    "24-Jun": 0, "24-Jul": 0, "24-Aug": 0, "24-Sep": 0, "24-Oct": 0,
+                    "24-Nov": 0, "24-Dec": 0, "25-Jan": 0, "25-Feb": 0, "25-Mar": 0,
+                    "25-Apr": 0, "25-May": 0, "25-Jun": 0, "25-Jul": 0, "25-Aug": 2667
+                }
+            }
         ];
-      }
 
-      ALL_ROWS = rows;
-      renderAll(ALL_ROWS);
-      setupSearch();
-      
-    } catch(err){
-      console.error('Initialization error:', err);
-      overlay.innerHTML = `
-        <div style="text-align:center; padding:20px;">
-          <i class="fas fa-exclamation-triangle" style="font-size:48px;color:var(--brand-amber);margin-bottom:16px;"></i>
-          <div>Failed to load data</div>
-          <small style="color:var(--muted)">${err.message}</small>
-        </div>
-      `;
-    } finally{
-      setTimeout(() => { overlay.style.display = 'none'; }, 500);
-    }
-  })();
+        // Initialize the dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeMap();
+            populateFilters();
+            renderTable();
+            updateSummary();
+            createTrendChart();
+            
+            // Add event listeners for filters
+            document.getElementById('direction-select').addEventListener('change', applyFilters);
+            document.getElementById('point-select').addEventListener('change', applyFilters);
+            document.getElementById('month-select').addEventListener('change', applyFilters);
+            document.getElementById('reset-filters').addEventListener('click', resetFilters);
+        });
 
-  // Filter by country
-  document.getElementById('countryFilter').addEventListener('change', e => {
-    const v = e.target.value;
-    let rows = ALL_ROWS;
-    if (v !== 'all'){
-      rows = ALL_ROWS.filter(r => 
-        normalizeCountry(r['Neighbouring Country'] || r.neighbouring_country || r.Country) === v
-      );
-    }
-    renderAll(rows);
-  });
-  </script>
+        // Initialize the map with Leaflet
+        function initializeMap() {
+            // Create map centered on the average coordinates of the points
+            const map = L.map('map').setView([15, 30], 4);
+            
+            // Add tile layer
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
+            
+            // Add markers for each monitoring point
+            flowData.forEach(point => {
+                const color = point.direction === 'Incoming' ? 'green' : 'red';
+                const marker = L.circleMarker([point.latitude, point.longitude], {
+                    color: color,
+                    fillColor: color,
+                    fillOpacity: 0.7,
+                    radius: 8
+                }).addTo(map);
+                
+                // Add popup with point information
+                marker.bindPopup(`
+                    <b>${point.pointName}</b><br>
+                    Direction: ${point.direction}<br>
+                    Code: ${point.pointCode}<br>
+                    Latest Flow: ${point.months['25-Aug']}
+                `);
+            });
+        }
+
+        // Populate filter dropdowns
+        function populateFilters() {
+            const pointSelect = document.getElementById('point-select');
+            const monthSelect = document.getElementById('month-select');
+            
+            // Get unique point names
+            const pointNames = [...new Set(flowData.map(item => item.pointName))];
+            pointNames.forEach(name => {
+                const option = document.createElement('option');
+                option.value = name;
+                option.textContent = name;
+                pointSelect.appendChild(option);
+            });
+            
+            // Get all months from the data
+            const months = Object.keys(flowData[0].months);
+            months.forEach(month => {
+                const option = document.createElement('option');
+                option.value = month;
+                option.textContent = month;
+                monthSelect.appendChild(option);
+            });
+        }
+
+        // Render the data table
+        function renderTable(filteredData = flowData) {
+            const tableBody = document.getElementById('table-body');
+            tableBody.innerHTML = '';
+            
+            filteredData.forEach(point => {
+                const row = document.createElement('tr');
+                
+                // Add direction with color coding
+                const directionCell = document.createElement('td');
+                directionCell.textContent = point.direction;
+                directionCell.className = point.direction.toLowerCase();
+                row.appendChild(directionCell);
+                
+                // Add other basic info
+                row.appendChild(createCell(point.pointName));
+                row.appendChild(createCell(point.pointCode));
+                row.appendChild(createCell(point.latitude.toFixed(6)));
+                row.appendChild(createCell(point.longitude.toFixed(6)));
+                
+                // Add monthly data
+                Object.values(point.months).forEach(value => {
+                    row.appendChild(createCell(value));
+                });
+                
+                tableBody.appendChild(row);
+            });
+        }
+
+        // Helper function to create table cells
+        function createCell(content) {
+            const cell = document.createElement('td');
+            cell.textContent = content;
+            return cell;
+        }
+
+        // Update summary cards
+        function updateSummary() {
+            // Calculate totals
+            const totalIncoming = flowData
+                .filter(point => point.direction === 'Incoming')
+                .reduce((sum, point) => sum + Object.values(point.months).reduce((a, b) => a + b, 0), 0);
+                
+            const totalOutgoing = flowData
+                .filter(point => point.direction === 'Outgoing')
+                .reduce((sum, point) => sum + Object.values(point.months).reduce((a, b) => a + b, 0), 0);
+                
+            // Update DOM
+            document.getElementById('total-incoming').textContent = totalIncoming.toLocaleString();
+            document.getElementById('total-outgoing').textContent = totalOutgoing.toLocaleString();
+            document.getElementById('total-points').textContent = flowData.length;
+        }
+
+        // Create trend chart
+        function createTrendChart() {
+            const ctx = document.getElementById('trend-chart').getContext('2d');
+            
+            // Get all months
+            const months = Object.keys(flowData[0].months);
+            
+            // Calculate totals by month and direction
+            const incomingTotals = months.map(month => 
+                flowData
+                    .filter(point => point.direction === 'Incoming')
+                    .reduce((sum, point) => sum + point.months[month], 0)
+            );
+            
+            const outgoingTotals = months.map(month => 
+                flowData
+                    .filter(point => point.direction === 'Outgoing')
+                    .reduce((sum, point) => sum + point.months[month], 0)
+            );
+            
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: months,
+                    datasets: [
+                        {
+                            label: 'Incoming',
+                            data: incomingTotals,
+                            borderColor: '#27ae60',
+                            backgroundColor: 'rgba(39, 174, 96, 0.1)',
+                            tension: 0.3,
+                            fill: true
+                        },
+                        {
+                            label: 'Outgoing',
+                            data: outgoingTotals,
+                            borderColor: '#e74c3c',
+                            backgroundColor: 'rgba(231, 76, 60, 0.1)',
+                            tension: 0.3,
+                            fill: true
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Flow Count'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Month'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Apply filters to the table
+        function applyFilters() {
+            const directionFilter = document.getElementById('direction-select').value;
+            const pointFilter = document.getElementById('point-select').value;
+            const monthFilter = document.getElementById('month-select').value;
+            
+            let filteredData = flowData;
+            
+            // Apply direction filter
+            if (directionFilter !== 'all') {
+                filteredData = filteredData.filter(point => point.direction === directionFilter);
+            }
+            
+            // Apply point filter
+            if (pointFilter !== 'all') {
+                filteredData = filteredData.filter(point => point.pointName === pointFilter);
+            }
+            
+            // Apply month filter (show only rows where the selected month has non-zero values)
+            if (monthFilter !== 'all') {
+                filteredData = filteredData.filter(point => point.months[monthFilter] > 0);
+            }
+            
+            renderTable(filteredData);
+        }
+
+        // Reset all filters
+        function resetFilters() {
+            document.getElementById('direction-select').value = 'all';
+            document.getElementById('point-select').value = 'all';
+            document.getElementById('month-select').value = 'all';
+            renderTable();
+        }
+    </script>
 </body>
 </html>
