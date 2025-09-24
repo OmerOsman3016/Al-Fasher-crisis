@@ -7,14 +7,15 @@
 
   <!-- Leaflet -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="anonymous"/>
+
   <!-- Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer"/>
 
   <style>
     :root{
       /* Brand */
-      --brand-primary:#0033A0;  /* IOM deep blue */
-      --brand-accent:#418FDE;   /* IOM accent blue */
+      --brand-primary:#0033A0;         /* IOM deep blue */
+      --brand-accent:#418FDE;          /* IOM accent blue */
       --brand-amber:#FFB81C;
 
       /* Surfaces */
@@ -22,10 +23,10 @@
       --glass: rgba(255,255,255,.72);
       --shadow: 0 10px 30px rgba(18, 38, 63, .10);
 
-      /* Flow color */
+      /* Flow color (used if needed) */
       --flow:#D22630;
 
-      /* Country tints (extendable) */
+      /* Country tints (destination/Neighbouring Country) */
       --c-chad:#d97706;
       --c-ethiopia:#2563eb;
       --c-eritrea:#0ea5e9;
@@ -33,6 +34,10 @@
       --c-southsudan:#7c3aed;
       --c-libya:#0f766e;
       --c-car:#db2777;
+
+      /* BCP Type colors (dot core) */
+      --type-official:#10b981;   /* teal/green */
+      --type-unofficial:#f97316; /* orange */
     }
     [data-theme="dark"]{
       --bg:#0e1621; --panel:#121e2a; --text:#e6edf5; --muted:#9fb0c2; --border:#213345; --glass: rgba(18,30,42,.5);
@@ -55,10 +60,10 @@
     .flag svg{ width:100%; height:100%; display:block; }
     .title-wrap h1{ font-size:16px; line-height:1.1; margin:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
     .title-wrap .sub{ font-size:12px; color:var(--muted); }
-    .controls{ display:flex; align-items:center; gap:8px; }
+    .controls{ display:flex; flex-wrap:wrap; align-items:center; gap:8px; }
     .select, .btn{ height:36px; padding:0 10px; border:1px solid var(--border); border-radius:10px; background:var(--panel); color:var(--text); font-weight:600; font-size:12px; }
     .btn{ display:inline-flex; align-items:center; gap:8px; cursor:pointer; }
-    .kbd{ font: 11px ui-monospace; border:1px solid var(--border); border-radius:6px; padding:0 6px; background:transparent; }
+    .badge{ display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border-radius:999px; background:var(--panel); border:1px solid var(--border); font-size:12px; font-weight:700; color:var(--muted); }
 
     /* Map */
     .map-wrap{ position:relative; }
@@ -70,16 +75,19 @@
     .spinner{ width:44px; height:44px; border:4px solid #e7eef7; border-top-color:var(--brand-primary); border-radius:50%; animation:spin 1s linear infinite; margin-bottom:10px; }
     @keyframes spin{ to{ transform:rotate(360deg); } }
 
-    /* ===== Pulsing BCP markers ===== */
+    /* ===== Pulsing BCP markers =====
+       - Ring color encodes Neighbouring Country
+       - Core dot color encodes BCP Type (Official vs Unofficial)
+    */
     .bcp-pulse{ position:relative; display:grid; place-items:center; }
     .bcp-pulse .dot{
       position:relative; border-radius:50%; border:1px solid #fff;
       box-shadow:0 0 0 1px rgba(0,0,0,.06), 0 0 10px rgba(0,0,0,.15);
-      background: var(--clr, var(--brand-accent));
+      background: var(--dot, var(--brand-accent)); /* TYPE color */
     }
     .bcp-pulse .ring{
       position:absolute; inset:0; border-radius:50%;
-      background: var(--clr, var(--brand-accent));
+      background: var(--clr, var(--brand-accent)); /* COUNTRY color */
       opacity:.28; filter:blur(.2px);
       animation: bcpRing 2.8s ease-out infinite;
     }
@@ -93,7 +101,21 @@
       .bcp-pulse .ring{ display:none; animation:none; }
     }
 
+    /* Legends and Insights */
     .legend{ background:var(--glass); border:1px solid var(--border); border-radius:12px; padding:10px 12px; box-shadow:var(--shadow); }
+    .legend h4{ margin:0 0 6px; font-size:13px; }
+    .legend .row{ display:grid; grid-template-columns:14px 1fr auto; gap:8px; align-items:center; font-size:12px; color:var(--muted); }
+    .legend .dot{ width:12px; height:12px; border-radius:50%; display:inline-block; }
+
+    .insight{ position:absolute; right:12px; bottom:12px; z-index:900; width:min(320px, calc(100% - 24px)); background:var(--glass); border:1px solid var(--border); border-radius:12px; box-shadow:var(--shadow); padding:10px 12px; }
+    .insight h4{ margin:0 0 8px; font-size:13px; }
+    .bar{ height:10px; border-radius:6px; background:rgba(0,0,0,.06); position:relative; overflow:hidden; }
+    .bar > span{ position:absolute; left:0; top:0; bottom:0; border-radius:6px; }
+    .insight .item{ display:grid; grid-template-columns:1fr 34px; gap:8px; align-items:center; font-size:12px; margin:6px 0; }
+    .insight .item .label{ display:flex; align-items:center; gap:6px; }
+    .chip{ display:inline-flex; align-items:center; gap:6px; padding:2px 8px; border-radius:999px; border:1px solid var(--border); font-size:11px; color:var(--muted); cursor:pointer; user-select:none; }
+    .chip.active{ border-color:currentColor; font-weight:700; }
+
     .footer{ display:flex; align-items:center; justify-content:center; gap:8px; padding:8px 12px; font-size:12px; color:var(--muted); }
   </style>
 </head>
@@ -104,21 +126,29 @@
       <div class="brand">
         <div class="flag" aria-label="Sudan flag">
           <svg viewBox="0 0 3 2" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
-            <rect width="3" height="2" fill="#000"/>
-            <rect width="3" height="1.3333" y="0.3333" fill="#ffffff"/>
-            <rect width="3" height="0.6667" fill="#D21034"/>
-            <polygon points="0,0 0,2 1,1" fill="#007229"/>
+            <rect width="3" height="2" fill="#000"/><rect width="3" height="1.3333" y="0.3333" fill="#ffffff"/>
+            <rect width="3" height="0.6667" fill="#D21034"/><polygon points="0,0 0,2 1,1" fill="#007229"/>
           </svg>
         </div>
         <div class="title-wrap">
           <h1>Sudan | Flow Monitoring — Border Points</h1>
-          <div class="sub">State → Border-Crossing flows · Leaflet + CanvasFlowmap</div>
+          <div class="sub">State → Border-Crossing flows · Type, Status & Country visuals</div>
         </div>
       </div>
       <div class="controls">
+        <span class="badge"><i class="fa-solid fa-filter"></i> Filters</span>
         <select id="countryFilter" class="select" title="Filter by neighbouring country">
           <option value="all">All neighbouring countries</option>
         </select>
+        <select id="typeFilter" class="select" title="Filter by BCP type">
+          <option value="all">All types</option>
+          <option value="Official">Official</option>
+          <option value="Unofficial">Unofficial</option>
+        </select>
+        <select id="statusFilter" class="select" title="Filter by BCP status">
+          <option value="all">All status</option>
+        </select>
+        <button id="btn-reset" class="btn" title="Reset filters"><i class="fa-solid fa-rotate"></i> Reset</button>
         <button id="btn-theme" class="btn" title="Toggle dark mode"><i class="fa-regular fa-moon"></i> Theme</button>
       </div>
     </div>
@@ -131,6 +161,17 @@
       <div class="spinner"></div>
       <div>Loading CSV & rendering BCP pulses…</div>
     </div>
+
+    <!-- Country insight (mini bar viz) -->
+    <div class="insight" id="insight" hidden>
+      <h4>Neighbouring Country — BCP Count</h4>
+      <div id="insightRows"></div>
+      <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
+        <span class="chip" id="chipActive"><i class="fa-solid fa-circle" style="font-size:6px"></i> Active</span>
+        <span class="chip" id="chipClosed"><i class="fa-solid fa-circle" style="font-size:6px"></i> Closed</span>
+        <span class="chip" id="chipSuspended"><i class="fa-solid fa-circle" style="font-size:6px"></i> Suspended</span>
+      </div>
+    </div>
   </div>
 
   <!-- Footer -->
@@ -138,7 +179,6 @@
 
   <!-- Scripts -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-  <script src="https://unpkg.com/topojson-client@3"></script>
   <script src="https://unpkg.com/@tweenjs/tween.js@18.6.4/dist/tween.umd.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/leaflet-canvas-flowmap-layer@1.2.0/dist/CanvasFlowmapLayer.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
@@ -160,35 +200,43 @@
   const mbSat     = L.tileLayer(`https://api.mapbox.com/styles/v1/mapbox/satellite-v9/tiles/{z}/{x}/{y}?access_token=${MAPBOX_TOKEN}`, { tileSize:512, zoomOffset:-1, attribution:'&copy; Mapbox & OpenStreetMap' });
   const osmStd    = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution:'&copy; OpenStreetMap contributors' });
 
-  const layerCtl = L.control.layers({ 'Mapbox Light':mbLight, 'Mapbox Streets':mbStreets, 'Mapbox Satellite':mbSat, 'OSM Standard':osmStd }, null, { collapsed:true }).addTo(map);
+  const baseLayers = { 'Mapbox Light':mbLight, 'Mapbox Streets':mbStreets, 'Mapbox Satellite':mbSat, 'OSM Standard':osmStd };
+  const overlayLayers = {};
+  const layerCtl = L.control.layers(baseLayers, overlayLayers, { collapsed:true }).addTo(map);
   L.control.scale({ position:'bottomleft', metric:true }).addTo(map);
   L.control.zoom({ position:'topright' }).addTo(map);
 
-  // Legend (built dynamically)
+  // ===== Legends =====
   const legend = L.control({ position:'bottomleft' });
   let legendEl = null;
   legend.onAdd = function(){
     legendEl = L.DomUtil.create('div','legend');
     legendEl.innerHTML = `
-      <div style="font-weight:800;margin-bottom:6px">Neighbouring Country</div>
-      <div id="legendRows" style="display:grid;grid-template-columns:14px 1fr;gap:8px;align-items:center;font-size:12px;color:var(--muted)"></div>
-      <div style="margin-top:8px;font-size:12px;color:var(--muted)">Lines show simple State → BCP connections (illustrative).</div>`;
+      <h4>Neighbouring Country (ring color)</h4>
+      <div id="legendCountry"></div>
+      <h4 style="margin-top:8px">BCP Type (dot color)</h4>
+      <div class="row"><span class="dot" style="background:var(--type-official)"></span><span>Official</span><span></span></div>
+      <div class="row"><span class="dot" style="background:var(--type-unofficial)"></span><span>Unofficial</span><span></span></div>
+      <div style="margin-top:8px;font-size:12px;color:var(--muted)">Flows are colored by destination country.</div>`;
     return legendEl;
   };
   legend.addTo(map);
-  function rebuildLegend(countries){
-    const rows = document.getElementById('legendRows');
-    rows.innerHTML = '';
+
+  function rebuildCountryLegend(countries, counts){
+    const box = document.getElementById('legendCountry');
+    box.innerHTML = '';
     countries.forEach(c=>{
-      const swatch = document.createElement('span');
-      swatch.style.cssText = 'width:12px;height:12px;border-radius:50%;display:inline-block;background:'+countryColor(c);
-      const label = document.createElement('span');
-      label.textContent = c;
-      rows.appendChild(swatch); rows.appendChild(label);
+      const row = document.createElement('div');
+      row.className = 'row';
+      const sw = document.createElement('span'); sw.className = 'dot'; sw.style.background = countryColor(c);
+      const label = document.createElement('span'); label.textContent = c;
+      const right = document.createElement('span'); right.textContent = counts[c] ?? '';
+      row.appendChild(sw); row.appendChild(label); row.appendChild(right);
+      box.appendChild(row);
     });
   }
 
-  // Theme toggle
+  // ===== Theme toggle =====
   document.getElementById('btn-theme').addEventListener('click', function(){
     const dark = document.body.getAttribute('data-theme') === 'dark';
     document.body.setAttribute('data-theme', dark ? '' : 'dark');
@@ -203,7 +251,7 @@
 
   function normalizeCountry(x){
     const s = trim(x);
-    if (/^eri?tr?e?a?$/i.test(s) || /^ere?tr?ia$/i.test(s)) return 'Eritrea';                 // Eritrea / Eretria
+    if (/^eri?tr?e?a?$/i.test(s) || /^ere?tr?ia$/i.test(s)) return 'Eritrea';
     if (/^car$/i.test(s)) return 'Central African Republic';
     if (/^ssd|south[\s-]?sudan$/i.test(s)) return 'South Sudan';
     if (/^egypt|egy$/i.test(s)) return 'Egypt';
@@ -211,6 +259,25 @@
     if (/^chad|tcd$/i.test(s)) return 'Chad';
     if (/^libya|lby$/i.test(s)) return 'Libya';
     return s;
+  }
+
+  function normalizeType(x){
+    const s = trim(x).toLowerCase();
+    if (!s) return '';
+    if (/^off/i.test(s)) return 'Official';
+    if (/^un[-\s]?off/i.test(s) || /^unoff/i.test(s)) return 'Unofficial';
+    return s.charAt(0).toUpperCase() + s.slice(1);
+  }
+
+  function normalizeStatus(x){
+    const s = trim(x);
+    if (!s) return '';
+    const t = s.toLowerCase();
+    if (/active/.test(t)) return 'Active';
+    if (/closed|shut/.test(t)) return 'Closed';
+    if (/suspend/.test(t)) return 'Suspended';
+    if (/temp/.test(t)) return 'Temporarily Closed';
+    return s.charAt(0).toUpperCase() + s.slice(1);
   }
 
   function countryColor(c){
@@ -224,7 +291,11 @@
     return getCSS('--brand-accent','#418FDE');
   }
 
-  // Compute approximate state "origin" centers from BCPs (used only for flow lines)
+  function typeColor(t){
+    return (t === 'Official') ? getCSS('--type-official','#10b981') : getCSS('--type-unofficial','#f97316');
+  }
+
+  // Estimate state centers from BCP cloud (for flows)
   function computeStateCentersFromRows(rows){
     const by = new Map();
     rows.forEach(r=>{
@@ -245,6 +316,8 @@
   function normalizeRow(r, centers){
     const state_code = trim(r.state_code || r.State_Code || r['State_Code'] || r['State Code']);
     const center = centers.get(state_code) || {};
+    const t = normalizeType(r.type || r.Type || r['Type'] || r['type '] || r['Type '] || '');
+    const st = normalizeStatus(r.status || r.Status || r['Status'] || r['status '] || r['Status '] || '');
     return {
       state: trim(r.state || r.State),
       state_code,
@@ -253,8 +326,8 @@
       cross_border_location: trim(r.cross_border_location || r['Cross border Name'] || r['Cross border location'] || r['Cross border'] || r['Cross border Name ']),
       bcp_code: trim(r.cross_border_code || r['Cross border Code'] || r['Cross borde Code'] || r['Cross border Code ']),
       neighbouring_country: normalizeCountry(r.neighbouring_country || r['Neighbouring Country'] || r.Neighbour || r.Country),
-      bcp_type: trim(r.type || r.Type || r['Type'] || r['type '] || r['Type ']),
-      status:   trim(r.status || r.Status || r['Status'] || r['status '] || r['Status ']),
+      bcp_type: t,
+      status:   st,
       o_lat: Number(center.lat) || 0,
       o_lon: Number(center.lon) || 0,
       d_lat: Number(r.Y ?? r.lat ?? r.Latitude) || 0,
@@ -277,33 +350,107 @@
     return null;
   }
 
-  // ===== Rendering =====
-  let ALL_ROWS = []; // holds original CSV rows (normalized later)
+  // ===== Rendering & Filtering =====
+  let ALL_ROWS = []; // raw csv rows
+  let ALL_DATA = []; // normalized rows
+  let currentFilters = { country:'all', type:'all', status:'all' };
 
-  function renderAll(rows){
-    if (window.flowLayer) map.removeLayer(window.flowLayer);
-    if (window.bcpHaloLayer) map.removeLayer(window.bcpHaloLayer);
+  let flowLayer, bcpLayer;
 
-    // Build state centers from rows (for flow lines)
-    const centers = computeStateCentersFromRows(rows);
+  function applyFilters(data){
+    return data.filter(d => {
+      if (currentFilters.country !== 'all' && d.neighbouring_country !== currentFilters.country) return false;
+      if (currentFilters.type !== 'all' && d.bcp_type !== currentFilters.type) return false;
+      if (currentFilters.status !== 'all' && d.status !== currentFilters.status) return false;
+      return true;
+    });
+  }
 
-    // Normalize & filter rows
-    const data = rows.map(r => normalizeRow(r, centers)).filter(d =>
-      Number.isFinite(d.o_lat) && Number.isFinite(d.o_lon) &&
-      Number.isFinite(d.d_lat) && Number.isFinite(d.d_lon) &&
-      d.d_lat !== 0 && d.d_lon !== 0
+  function updateInsight(data){
+    const box = document.getElementById('insight');
+    const rowsEl = document.getElementById('insightRows');
+    if (!data.length){ box.hidden = true; rowsEl.innerHTML=''; return; }
+    box.hidden = false;
+
+    // counts per country
+    const counts = {};
+    data.forEach(d => counts[d.neighbouring_country] = (counts[d.neighbouring_country]||0)+1);
+
+    const max = Math.max(...Object.values(counts));
+    rowsEl.innerHTML = '';
+    Object.keys(counts).sort().forEach(c=>{
+      const wrap = document.createElement('div'); wrap.className='item';
+      const lab = document.createElement('div'); lab.className='label';
+      const dot = document.createElement('span'); dot.className='dot'; dot.style.cssText = `width:10px;height:10px;border-radius:50%;background:${countryColor(c)}`;
+      const sp = document.createElement('span'); sp.textContent = c;
+      lab.appendChild(dot); lab.appendChild(sp);
+
+      const bar = document.createElement('div'); bar.className='bar';
+      const fill = document.createElement('span'); fill.style.background = countryColor(c); fill.style.width = (counts[c]/max*100)+'%';
+      bar.appendChild(fill);
+
+      wrap.appendChild(lab);
+      wrap.appendChild(bar);
+      wrap.title = `Filter to ${c}`;
+      wrap.style.cursor = 'pointer';
+      wrap.onclick = () => { document.getElementById('countryFilter').value = c; currentFilters.country = c; render(); };
+      rowsEl.appendChild(wrap);
+    });
+
+    return counts;
+  }
+
+  function rebuildFiltersFromAll(){
+    // countries
+    const countries = Array.from(new Set(ALL_DATA.map(d => d.neighbouring_country))).sort();
+    const countrySel = document.getElementById('countryFilter');
+    const keepCountry = currentFilters.country;
+    countrySel.innerHTML = `<option value="all">All neighbouring countries</option>` + countries.map(c => `<option value="${c}">${c}</option>`).join('');
+    countrySel.value = countries.includes(keepCountry) ? keepCountry : 'all';
+    currentFilters.country = countrySel.value;
+
+    // statuses
+    const statuses = Array.from(new Set(ALL_DATA.map(d => d.status).filter(Boolean))).sort();
+    const statusSel = document.getElementById('statusFilter');
+    const keepStatus = currentFilters.status;
+    statusSel.innerHTML = `<option value="all">All status</option>` + statuses.map(s => `<option value="${s}">${s}</option>`).join('');
+    statusSel.value = statuses.includes(keepStatus) ? keepStatus : 'all';
+    currentFilters.status = statusSel.value;
+
+    // types: fixed two options already present; just maintain selection
+    document.getElementById('typeFilter').value = currentFilters.type;
+  }
+
+  function render(){
+    // clear layers
+    if (flowLayer) { map.removeLayer(flowLayer); flowLayer = null; }
+    if (bcpLayer)  { map.removeLayer(bcpLayer);  bcpLayer  = null; }
+
+    // compute centers for flows (from ALL_ROWS, not filtered, to keep origins stable)
+    const centers = computeStateCentersFromRows(ALL_ROWS);
+    const data = ALL_ROWS.map(r => normalizeRow(r, centers)).filter(d =>
+      Number.isFinite(d.d_lat) && Number.isFinite(d.d_lon) && d.d_lat !== 0 && d.d_lon !== 0
     );
+    ALL_DATA = data; // store normalized full set for legends/filters
 
-    // === BCP markers (pulsing) — include Type + Status ===
-    window.bcpHaloLayer = L.layerGroup().addTo(map);
-    data.forEach(d => {
+    // Rebuild legends & filters based on ALL_DATA (then we filter for view)
+    rebuildFiltersFromAll();
+    const filtered = applyFilters(ALL_DATA);
+    const countryCounts = updateInsight(ALL_DATA); // insight always based on full set
+    rebuildCountryLegend(Object.keys(countryCounts||{}).sort(), countryCounts||{});
+
+    // ---- BCP markers (Type color in DOT, Country color in RING) ----
+    bcpLayer = L.layerGroup().addTo(map);
+    filtered.forEach(d => {
       const clr = countryColor(d.neighbouring_country);
+      const dotClr = typeColor(d.bcp_type);
       const sz = 18;
-      const isActive = (d.status || '').toLowerCase() === 'active';
+      const isActive = (d.status === 'Active');
       const inactiveStyle = isActive ? '' : 'filter:grayscale(1) opacity:.55;';
+
       const icon = L.divIcon({
         className:'',
-        html: `<div class="bcp-pulse" style="--clr:${clr};width:${sz}px;height:${sz}px;${inactiveStyle}">
+        html: `<div class="bcp-pulse" style="--clr:${clr};--dot:${dotClr};width:${sz}px;height:${sz}px;${inactiveStyle}">
                  <div class="dot" style="width:${sz}px;height:${sz}px"></div>
                  <div class="ring r1"></div>
                  <div class="ring r2"></div>
@@ -311,7 +458,7 @@
         iconSize:[sz,sz], iconAnchor:[sz/2, sz/2]
       });
 
-      const tip = `${escapeHtml(d.cross_border_location)} • ${escapeHtml(d.neighbouring_country)} • Type: ${escapeHtml(d.bcp_type||'—')} • Status: ${escapeHtml(d.status||'—')}`;
+      const tip = `${escapeHtml(d.cross_border_location)} • ${escapeHtml(d.neighbouring_country)} • ${escapeHtml(d.bcp_type||'—')} • ${escapeHtml(d.status||'—')}`;
 
       const m = L.marker([d.d_lat, d.d_lon], { icon })
         .bindTooltip(tip, { direction:'top', offset:[0,-6] })
@@ -327,32 +474,33 @@
             <p style="margin:0"><small>Coords: ${d.d_lat.toFixed(6)}, ${d.d_lon.toFixed(6)}</small></p>
           </div>`);
 
-      // subtle static halo beneath the pulse
+      // subtle static halo beneath the pulse (country color)
       L.circle([d.d_lat, d.d_lon], {
         radius: 900, color: clr, weight: 1.2, fillColor: clr, fillOpacity: 0.12, opacity: 0.9
-      }).addTo(window.bcpHaloLayer);
+      }).addTo(bcpLayer);
 
-      m.addTo(window.bcpHaloLayer);
+      m.addTo(bcpLayer);
     });
-    layerCtl.addOverlay(window.bcpHaloLayer, 'BCP markers (pulsing)');
+    layerCtl.addOverlay(bcpLayer, 'BCP markers (Type & Country)');
 
-    // === Flow lines (state → BCP) — keep, but NO orange state markers ===
+    // ---- Flows (State → BCP) colored by Neighbouring Country ----
     const fc = {
       type:'FeatureCollection',
-      features: data.map(d => ({
+      features: filtered.map(d => ({
         type:'Feature',
         geometry:{ type:'Point', coordinates:[d.o_lon, d.o_lat] },
         properties:{
           o_id:d.state_code, o_x:d.o_lon, o_y:d.o_lat,
           d_id:d.bcp_code, d_x:d.d_lon, d_y:d.d_lat,
-          state:d.state, locality:d.locality, bcp:d.cross_border_location, country:d.neighbouring_country,
-          type:d.bcp_type, status:d.status
+          state:d.state, locality:d.locality, bcp:d.cross_border_location,
+          country:d.neighbouring_country, type:d.bcp_type, status:d.status,
+          stroke: countryColor(d.neighbouring_country)
         }
       }))
     };
 
     if (typeof L.CanvasFlowmapLayer === 'function' && fc.features.length){
-      window.flowLayer = L.canvasFlowmapLayer(fc, {
+      flowLayer = L.canvasFlowmapLayer(fc, {
         originAndDestinationFieldIds:{
           originUniqueIdField:'o_id',
           originGeometry:{ x:'o_x', y:'o_y' },
@@ -374,35 +522,42 @@
             <p style="margin:0"><small>Illustrative connection (no volumes)</small></p>
           </div>`),
         canvasBezierStyle:{
-          type:'single',
-          symbol:{ strokeStyle:getCSS('--flow','#D22630'), lineWidth:1.8, lineCap:'round', shadowColor:'rgba(210,38,48,.35)', shadowBlur:2 }
+          type:'classBreaks',
+          field:'stroke',
+          classBreakInfos: [], // we override via getCanvasBezierStyle
+          getCanvasBezierStyle: (feature) => ({
+            strokeStyle: feature.properties.stroke,
+            lineWidth: 1.8,
+            lineCap: 'round',
+            shadowColor:'rgba(0,0,0,.25)',
+            shadowBlur:2
+          })
         },
         pointToLayer: (feature, latlng)=> L.circleMarker(latlng, { radius:0.1, opacity:0, fillOpacity:0 })
       }).addTo(map);
-      layerCtl.addOverlay(window.flowLayer, 'State → BCP flows');
+      layerCtl.addOverlay(flowLayer, 'State → BCP flows (by country)');
     }
 
     // Fit to content
-    const group = L.featureGroup([ window.bcpHaloLayer ]);
-    try{
-      const rsBounds = group.getBounds();
-      if (rsBounds && rsBounds.isValid()) map.fitBounds(rsBounds, { padding:[24,24] });
-    }catch(e){ console.warn('Could not fit bounds:', e); }
-
-    // Update filter + legend
-    const set = Array.from(new Set(data.map(d => d.neighbouring_country))).sort();
-    populateCountryFilter(set);
-    rebuildLegend(set);
+    if (bcpLayer){
+      const b = bcpLayer.getBounds();
+      if (b && b.isValid()) map.fitBounds(b, { padding:[24,24] });
+    }
   }
 
-  function populateCountryFilter(countries){
-    const sel = document.getElementById('countryFilter');
-    const current = sel.value || 'all';
-    sel.innerHTML = `<option value="all">All neighbouring countries</option>` + countries.map(c => `<option value="${c}">${c}</option>`).join('');
-    sel.value = current === 'all' || !countries.includes(current) ? 'all' : current;
-  }
+  // ===== Filter handlers =====
+  document.getElementById('countryFilter').addEventListener('change', e => { currentFilters.country = e.target.value; render(); });
+  document.getElementById('typeFilter').addEventListener('change', e => { currentFilters.type = e.target.value; render(); });
+  document.getElementById('statusFilter').addEventListener('change', e => { currentFilters.status = e.target.value; render(); });
+  document.getElementById('btn-reset').addEventListener('click', ()=>{
+    currentFilters = { country:'all', type:'all', status:'all' };
+    document.getElementById('countryFilter').value = 'all';
+    document.getElementById('typeFilter').value = 'all';
+    document.getElementById('statusFilter').value = 'all';
+    render();
+  });
 
-  // Load CSV and render
+  // ===== Load + start =====
   (async function start(){
     const overlay = document.getElementById('loading');
     try{
@@ -412,33 +567,24 @@
       if (!rows || !rows.length){
         rows = [
           { State:'Central Darfur', State_Code:'SD06', Locality:'Um Dukhun', Locality_Code:'SD06135', 'Cross border Name':'Um Dukhun', 'Cross border Code':'SD06135PB5', 'Neighbouring Country':'Chad', Y:11.139, X:22.966, Type:'Unofficial', Status:'Active' },
-          { State:'Gedaref', State_Code:'SD12', Locality:'Basundah', Locality_Code:'SD12077', 'Cross border Name':'Gallabat/Metema', 'Cross border Code':'SD12077PB1', 'Neighbouring Country':'Ethiopia', Y:12.95798, X:36.151888, Type:'Official', Status:'Active' },
-          { State:'Kassala', State_Code:'SD11', Locality:'Kassala', Locality_Code:'SD11053', 'Cross border Name':'Al Laffa', 'Cross border Code':'SD11053PB2', 'Neighbouring Country':'Eritrea', Y:15.15372, X:36.4355, Type:'Unofficial', Status:'Closed' },
-          { State:'Northern', State_Code:'SD17', Locality:'Halfa', Locality_Code:'SD17014', 'Cross border Name':'Argeen', 'Cross border Code':'SD17014PB3', 'Neighbouring Country':'Egypt', Y:21.988934, X:31.153322, Type:'Official', Status:'Active' },
-          { State:'Northern', State_Code:'SD17', Locality:'Halfa', Locality_Code:'SD17014', 'Cross border Name':'Ashkeet', 'Cross border Code':'SD17014PB4', 'Neighbouring Country':'Egypt', Y:22.000523, X:31.511477, Type:'Official', Status:'Active' },
-          { State:'West Darfur', State_Code:'SD04', Locality:'Ag Geneina', Locality_Code:'SD04115', 'Cross border Name':'Adekonk', 'Cross border Code':'SD04115PB6', 'Neighbouring Country':'Chad', Y:13.4623111, X:22.2296523, Type:'Unofficial', Status:'Suspended' }
+          { State:'Gedaref',       State_Code:'SD12', Locality:'Basundah', Locality_Code:'SD12077', 'Cross border Name':'Gallabat/Metema', 'Cross border Code':'SD12077PB1', 'Neighbouring Country':'Ethiopia', Y:12.95798, X:36.151888, Type:'Official', Status:'Active' },
+          { State:'Kassala',       State_Code:'SD11', Locality:'Kassala',  Locality_Code:'SD11053', 'Cross border Name':'Al Laffa',        'Cross border Code':'SD11053PB2', 'Neighbouring Country':'Eritrea',  Y:15.15372, X:36.4355, Type:'Unofficial', Status:'Closed' },
+          { State:'Northern',      State_Code:'SD17', Locality:'Halfa',    Locality_Code:'SD17014', 'Cross border Name':'Argeen',           'Cross border Code':'SD17014PB3', 'Neighbouring Country':'Egypt',    Y:21.988934, X:31.153322, Type:'Official', Status:'Active' },
+          { State:'Northern',      State_Code:'SD17', Locality:'Halfa',    Locality_Code:'SD17014', 'Cross border Name':'Ashkeet',          'Cross border Code':'SD17014PB4', 'Neighbouring Country':'Egypt',    Y:22.000523, X:31.511477, Type:'Official', Status:'Active' },
+          { State:'West Darfur',   State_Code:'SD04', Locality:'Ag Geneina',Locality_Code:'SD04115','Cross border Name':'Adekonk',          'Cross border Code':'SD04115PB6', 'Neighbouring Country':'Chad',     Y:13.4623111, X:22.2296523, Type:'Unofficial', Status:'Suspended' }
         ];
       }
 
       ALL_ROWS = rows;
-      renderAll(ALL_ROWS);
+      render();
     } catch(err){
       console.error(err);
-      renderAll([]);
+      ALL_ROWS = [];
+      render();
     } finally{
       overlay.style.display = 'none';
     }
   })();
-
-  // Filter by country
-  document.getElementById('countryFilter').addEventListener('change', e=>{
-    const v = e.target.value;
-    let rows = ALL_ROWS;
-    if (v !== 'all'){
-      rows = ALL_ROWS.filter(r => normalizeCountry(r['Neighbouring Country'] || r.neighbouring_country || r.Country) === v);
-    }
-    renderAll(rows);
-  });
   </script>
 </body>
 </html>
