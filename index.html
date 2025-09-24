@@ -1,27 +1,20 @@
 <!DOCTYPE html>
-<html lang="en" data-app="fmc-dashboard">
+<html lang="en" data-app="fmc-modern-layout">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-  <title>Sudan | Flow Monitoring — BCP Dashboard</title>
+  <title>Sudan | Flow Monitoring — Border Points (Modern)</title>
 
-  <!-- Leaflet (map) -->
+  <!-- Leaflet -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="anonymous"/>
-
   <!-- Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer"/>
-
-  <!-- Charts -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-
-  <!-- CSV parser -->
-  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 
   <style>
     :root{
       /* Brand */
-      --brand-primary:#0033A0;         /* IOM deep blue */
-      --brand-accent:#418FDE;          /* IOM accent blue */
+      --brand-primary:#0033A0;  /* IOM deep blue */
+      --brand-accent:#418FDE;   /* IOM accent blue */
       --brand-amber:#FFB81C;
 
       /* Surfaces */
@@ -29,7 +22,10 @@
       --glass: rgba(255,255,255,.72);
       --shadow: 0 10px 30px rgba(18, 38, 63, .10);
 
-      /* Country tints (ring colors) */
+      /* Flow color */
+      --flow:#D22630;
+
+      /* Country tints (extendable) */
       --c-chad:#d97706;
       --c-ethiopia:#2563eb;
       --c-eritrea:#0ea5e9;
@@ -37,84 +33,49 @@
       --c-southsudan:#7c3aed;
       --c-libya:#0f766e;
       --c-car:#db2777;
-
-      /* BCP Type (dot colors) */
-      --type-official:#10b981;   /* teal/green */
-      --type-unofficial:#f97316; /* orange */
     }
     [data-theme="dark"]{
       --bg:#0e1621; --panel:#121e2a; --text:#e6edf5; --muted:#9fb0c2; --border:#213345; --glass: rgba(18,30,42,.5);
       --shadow: 0 12px 30px rgba(0,0,0,.35);
+      --flow:#FF525E;
     }
 
     html, body { height:100%; }
     body{
       margin:0; background:var(--bg); color:var(--text);
       font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica, Arial;
-      display:grid; grid-template-rows: auto 1fr; min-height:100vh;
+      display:grid; grid-template-rows: auto 1fr auto; min-height:100vh;
     }
 
     /* Topbar */
     .topbar{ position:sticky; top:0; z-index:1000; backdrop-filter:saturate(140%) blur(8px); background:var(--glass); border-bottom:1px solid var(--border); box-shadow:var(--shadow); }
-    .topbar-inner{ display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px 16px; max-width:1600px; margin:0 auto; }
+    .topbar-inner{ display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px 16px; max-width:1400px; margin:0 auto; }
     .brand{ display:flex; align-items:center; gap:12px; min-width:0; }
     .flag{ width:40px; height:26px; border-radius:6px; overflow:hidden; box-shadow:0 0 0 1px rgba(0,0,0,.08) inset; }
     .flag svg{ width:100%; height:100%; display:block; }
     .title-wrap h1{ font-size:16px; line-height:1.1; margin:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
     .title-wrap .sub{ font-size:12px; color:var(--muted); }
-    .actions{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
-    .btn, .select, .input {
-      height:36px; padding:0 10px; border:1px solid var(--border); border-radius:10px; background:var(--panel);
-      color:var(--text); font-weight:600; font-size:12px;
-    }
+    .controls{ display:flex; align-items:center; gap:8px; }
+    .select, .btn{ height:36px; padding:0 10px; border:1px solid var(--border); border-radius:10px; background:var(--panel); color:var(--text); font-weight:600; font-size:12px; }
     .btn{ display:inline-flex; align-items:center; gap:8px; cursor:pointer; }
-    .input{ font-weight:500; }
-
-    /* Layout */
-    .layout{
-      max-width:1600px; margin:12px auto; padding:0 12px;
-      display:grid; grid-template-columns: 300px 1fr 360px; gap:12px;
-    }
-    @media (max-width:1200px){
-      .layout{ grid-template-columns: 280px 1fr; }
-      .right{ grid-column: 1 / -1; }
-    }
-    @media (max-width:840px){
-      .layout{ grid-template-columns: 1fr; }
-      .right{ grid-column: 1; }
-    }
-
-    .panel{ background:var(--panel); border:1px solid var(--border); border-radius:14px; box-shadow:var(--shadow); }
-    .panel h3{ margin:0; padding:10px 12px; border-bottom:1px solid var(--border); font-size:14px; }
-    .panel .body{ padding:12px; }
-
-    /* Sidebar filters */
-    .filters .row{ display:grid; gap:6px; margin-bottom:10px; }
-    .filters label{ font-size:12px; color:var(--muted); font-weight:700; }
-    .switch{ display:flex; align-items:center; gap:8px; font-size:12px; color:var(--muted); margin-top:8px; }
-    .switch input{ scale:1.2; }
-
-    /* KPIs */
-    .kpis{ display:grid; grid-template-columns:repeat(2,1fr); gap:10px; }
-    .kpi{ border:1px solid var(--border); border-radius:12px; padding:10px; }
-    .kpi .big{ font-size:22px; font-weight:800; }
-    .kpi .muted{ color:var(--muted); font-size:12px; }
+    .kbd{ font: 11px ui-monospace; border:1px solid var(--border); border-radius:6px; padding:0 6px; background:transparent; }
 
     /* Map */
-    #map{ height: 64vh; border-radius:14px; }
-    @media (max-width:840px){ #map{ height: 56vh; } }
+    .map-wrap{ position:relative; }
+    #map{ height: calc(100vh - 118px); }
+    @media (max-width:768px){ #map{ height: calc(100vh - 104px); } }
 
-    .loading{ position:absolute; inset:0; z-index:1100; display:none; align-items:center; justify-content:center; flex-direction:column; background:linear-gradient(180deg, rgba(255,255,255,.86), rgba(255,255,255,.6)); }
+    .loading{ position:absolute; inset:0; z-index:1100; display:flex; align-items:center; justify-content:center; flex-direction:column; background:linear-gradient(180deg, rgba(255,255,255,.86), rgba(255,255,255,.6)); }
     [data-theme="dark"] .loading{ background:linear-gradient(180deg, rgba(18,30,42,.86), rgba(18,30,42,.6)); }
     .spinner{ width:44px; height:44px; border:4px solid #e7eef7; border-top-color:var(--brand-primary); border-radius:50%; animation:spin 1s linear infinite; margin-bottom:10px; }
     @keyframes spin{ to{ transform:rotate(360deg); } }
 
-    /* BCP markers: ring = Country, dot = Type */
+    /* ===== Pulsing BCP markers ===== */
     .bcp-pulse{ position:relative; display:grid; place-items:center; }
     .bcp-pulse .dot{
       position:relative; border-radius:50%; border:1px solid #fff;
       box-shadow:0 0 0 1px rgba(0,0,0,.06), 0 0 10px rgba(0,0,0,.15);
-      background: var(--dot, var(--brand-accent));
+      background: var(--clr, var(--brand-accent));
     }
     .bcp-pulse .ring{
       position:absolute; inset:0; border-radius:50%;
@@ -132,27 +93,12 @@
       .bcp-pulse .ring{ display:none; animation:none; }
     }
 
-    /* Legend */
-    .legend{ margin-top:12px; display:grid; gap:8px; }
-    .legend .row{ display:grid; grid-template-columns:14px 1fr auto; gap:8px; align-items:center; font-size:12px; color:var(--muted); }
-    .legend .dot{ width:12px; height:12px; border-radius:50%; display:inline-block; }
-
-    /* Right charts */
-    .chart-wrap{ padding:8px 12px 12px; }
-    .chart-wrap canvas{ width:100%; height:240px; }
-
-    /* Table */
-    table{ width:100%; border-collapse:collapse; font-size:12px; }
-    th, td{ padding:8px; border-top:1px solid var(--border); text-align:left; }
-    thead th{ position:sticky; top:0; background:var(--panel); z-index:2; }
-    .table-wrap{ max-height: 42vh; overflow:auto; border:1px solid var(--border); border-radius:12px; }
-
-    /* Footer small text */
-    .small{ font-size:11px; color:var(--muted); }
+    .legend{ background:var(--glass); border:1px solid var(--border); border-radius:12px; padding:10px 12px; box-shadow:var(--shadow); }
+    .footer{ display:flex; align-items:center; justify-content:center; gap:8px; padding:8px 12px; font-size:12px; color:var(--muted); }
   </style>
 </head>
 <body>
-  <!-- Topbar -->
+  <!-- Top bar -->
   <div class="topbar">
     <div class="topbar-inner">
       <div class="brand">
@@ -165,166 +111,99 @@
           </svg>
         </div>
         <div class="title-wrap">
-          <h1>Sudan | Flow Monitoring — BCP Dashboard</h1>
-          <div class="sub">Type & Status by Neighbouring Country · Map + Charts + Table</div>
+          <h1>Sudan | Flow Monitoring — Border Points</h1>
+          <div class="sub">State → Border-Crossing flows · Leaflet + CanvasFlowmap</div>
         </div>
       </div>
-
-      <div class="actions">
-        <input id="searchBox" class="input" placeholder="Search BCP / Locality…" />
-        <label class="btn" title="Upload CSV">
-          <i class="fa-solid fa-file-arrow-up"></i> Upload CSV
-          <input id="fileInput" type="file" accept=".csv" hidden />
-        </label>
-        <button id="btn-reset" class="btn" title="Reset filters"><i class="fa-solid fa-rotate"></i> Reset</button>
+      <div class="controls">
+        <select id="countryFilter" class="select" title="Filter by neighbouring country">
+          <option value="all">All neighbouring countries</option>
+        </select>
         <button id="btn-theme" class="btn" title="Toggle dark mode"><i class="fa-regular fa-moon"></i> Theme</button>
       </div>
     </div>
   </div>
 
-  <!-- Main layout -->
-  <div class="layout">
-    <!-- Sidebar -->
-    <div class="panel filters">
-      <h3><i class="fa-solid fa-filter"></i> Filters</h3>
-      <div class="body">
-        <div class="row">
-          <label for="countryFilter">Neighbouring Country</label>
-          <select id="countryFilter" class="select">
-            <option value="all">All countries</option>
-          </select>
-        </div>
-        <div class="row">
-          <label for="typeFilter">BCP Type</label>
-          <select id="typeFilter" class="select">
-            <option value="all">All types</option>
-            <option value="Official">Official</option>
-            <option value="Unofficial">Unofficial</option>
-          </select>
-        </div>
-        <div class="row">
-          <label for="statusFilter">BCP Status</label>
-          <select id="statusFilter" class="select">
-            <option value="all">All status</option>
-          </select>
-        </div>
-
-        <div class="switch">
-          <input type="checkbox" id="chkFlows" checked />
-          <label for="chkFlows">Show state → BCP flows</label>
-        </div>
-        <div class="switch">
-          <input type="checkbox" id="chkHalos" checked />
-          <label for="chkHalos">Show BCP halos</label>
-        </div>
-
-        <div class="legend">
-          <div class="row"><strong style="grid-column:1/-1">Legend</strong></div>
-          <div class="row"><span class="dot" style="background:var(--type-official)"></span><span>Dot = Official</span><span></span></div>
-          <div class="row"><span class="dot" style="background:var(--type-unofficial)"></span><span>Dot = Unofficial</span><span></span></div>
-          <div id="legendCountry"></div>
-          <div class="small">Ring & flow color = Neighbouring Country</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Center: Map + KPIs -->
-    <div class="center">
-      <div class="panel">
-        <h3><i class="fa-solid fa-map"></i> Map</h3>
-        <div class="body" style="position:relative">
-          <div id="map"></div>
-          <div id="loading" class="loading">
-            <div class="spinner"></div>
-            <div>Loading CSV…</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="panel" style="margin-top:12px">
-        <h3><i class="fa-solid fa-gauge"></i> KPIs</h3>
-        <div class="body">
-          <div class="kpis">
-            <div class="kpi">
-              <div class="muted">Total BCPs</div>
-              <div id="k_total" class="big">—</div>
-            </div>
-            <div class="kpi">
-              <div class="muted">Active</div>
-              <div id="k_active" class="big">—</div>
-            </div>
-            <div class="kpi">
-              <div class="muted">Official</div>
-              <div id="k_official" class="big">—</div>
-            </div>
-            <div class="kpi">
-              <div class="muted">Unofficial</div>
-              <div id="k_unofficial" class="big">—</div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Right: Charts + Table -->
-    <div class="right">
-      <div class="panel">
-        <h3><i class="fa-solid fa-chart-column"></i> Neighbouring Country (count)</h3>
-        <div class="chart-wrap"><canvas id="barCountry"></canvas></div>
-      </div>
-
-      <div class="panel" style="margin-top:12px">
-        <h3><i class="fa-solid fa-circle-half-stroke"></i> Type Split</h3>
-        <div class="chart-wrap"><canvas id="pieType"></canvas></div>
-      </div>
-
-      <div class="panel" style="margin-top:12px">
-        <h3><i class="fa-solid fa-table"></i> Border Points</h3>
-        <div class="body table-wrap">
-          <table id="tbl">
-            <thead>
-              <tr>
-                <th>BCP</th><th>Code</th><th>Locality</th><th>State</th><th>Country</th><th>Type</th><th>Status</th>
-              </tr>
-            </thead>
-            <tbody></tbody>
-          </table>
-        </div>
-        <div class="body small">Tip: Use the search box to filter by name/locality.</div>
-      </div>
+  <!-- Map -->
+  <div class="map-wrap">
+    <div id="map" aria-label="FMC border-points map" role="region"></div>
+    <div class="loading" id="loading">
+      <div class="spinner"></div>
+      <div>Loading CSV & rendering BCP pulses…</div>
     </div>
   </div>
 
+  <!-- Footer -->
+  <div class="footer">© IOM DTM — Prototype. Basemap © Mapbox/OSM.</div>
+
   <!-- Scripts -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <script src="https://unpkg.com/topojson-client@3"></script>
+  <script src="https://unpkg.com/@tweenjs/tween.js@18.6.4/dist/tween.umd.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/leaflet-canvas-flowmap-layer@1.2.0/dist/CanvasFlowmapLayer.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 
   <script>
-  // ====== Config & helpers ======
+  // ===== Config =====
   const CSV_URLS = [
     'data/Border Point-FM.csv',
     'data/Border Point-FM.CSV',
-    'data/Border Point-FM',
-    'data/border_points.csv'
+    'data/Border Point-FM'  // no extension fallback
   ];
+  const MAPBOX_TOKEN = 'pk.eyJ1Ijoib21lcm9zbWFuIiwiYSI6ImUxZDBkODBlNjQxMDE2M2Y3OTQ3MWIwNTJkMjgzZTI3In0.ekCHuxRflTOO0RpQ6rQR7Q';
 
-  const map = L.map('map', { preferCanvas:true, zoomControl:true, minZoom:4, maxZoom:11, zoomSnap:0.5 }).setView([16, 30], 5.5);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution:'© OpenStreetMap' }).addTo(map);
+  // ===== Map init =====
+  const map = L.map('map', { preferCanvas:true, zoomControl:false, minZoom:4, maxZoom:11, zoomSnap:0.5 }).setView([16, 30], 5.5);
 
-  const layerFlows = L.layerGroup().addTo(map);
-  const layerBCP   = L.layerGroup().addTo(map);
-  const layerHalos = L.layerGroup().addTo(map);
+  const mbLight = L.tileLayer(`https://api.mapbox.com/styles/v1/mapbox/light-v10/tiles/{z}/{x}/{y}?access_token=${MAPBOX_TOKEN}`, { tileSize:512, zoomOffset:-1, attribution:'&copy; Mapbox & OpenStreetMap' }).addTo(map);
+  const mbStreets = L.tileLayer(`https://api.mapbox.com/styles/v1/mapbox/streets-v11/tiles/{z}/{x}/{y}?access_token=${MAPBOX_TOKEN}`, { tileSize:512, zoomOffset:-1, attribution:'&copy; Mapbox & OpenStreetMap' });
+  const mbSat     = L.tileLayer(`https://api.mapbox.com/styles/v1/mapbox/satellite-v9/tiles/{z}/{x}/{y}?access_token=${MAPBOX_TOKEN}`, { tileSize:512, zoomOffset:-1, attribution:'&copy; Mapbox & OpenStreetMap' });
+  const osmStd    = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution:'&copy; OpenStreetMap contributors' });
 
-  const $ = sel => document.querySelector(sel);
-  const getCSS = (v, fb) => {
-    const x = getComputedStyle(document.documentElement).getPropertyValue(v);
-    return (x && x.trim()) ? x.trim() : fb;
+  const layerCtl = L.control.layers({ 'Mapbox Light':mbLight, 'Mapbox Streets':mbStreets, 'Mapbox Satellite':mbSat, 'OSM Standard':osmStd }, null, { collapsed:true }).addTo(map);
+  L.control.scale({ position:'bottomleft', metric:true }).addTo(map);
+  L.control.zoom({ position:'topright' }).addTo(map);
+
+  // Legend (built dynamically)
+  const legend = L.control({ position:'bottomleft' });
+  let legendEl = null;
+  legend.onAdd = function(){
+    legendEl = L.DomUtil.create('div','legend');
+    legendEl.innerHTML = `
+      <div style="font-weight:800;margin-bottom:6px">Neighbouring Country</div>
+      <div id="legendRows" style="display:grid;grid-template-columns:14px 1fr;gap:8px;align-items:center;font-size:12px;color:var(--muted)"></div>
+      <div style="margin-top:8px;font-size:12px;color:var(--muted)">Lines show simple State → BCP connections (illustrative).</div>`;
+    return legendEl;
   };
-  const escapeHtml = str => String(str).replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s]));
+  legend.addTo(map);
+  function rebuildLegend(countries){
+    const rows = document.getElementById('legendRows');
+    rows.innerHTML = '';
+    countries.forEach(c=>{
+      const swatch = document.createElement('span');
+      swatch.style.cssText = 'width:12px;height:12px;border-radius:50%;display:inline-block;background:'+countryColor(c);
+      const label = document.createElement('span');
+      label.textContent = c;
+      rows.appendChild(swatch); rows.appendChild(label);
+    });
+  }
+
+  // Theme toggle
+  document.getElementById('btn-theme').addEventListener('click', function(){
+    const dark = document.body.getAttribute('data-theme') === 'dark';
+    document.body.setAttribute('data-theme', dark ? '' : 'dark');
+    this.querySelector('i').className = dark ? 'fa-regular fa-moon' : 'fa-regular fa-sun';
+  });
+  window.addEventListener('keydown', e => { if ((e.key||'').toLowerCase()==='t') document.getElementById('btn-theme').click(); });
+
+  // ===== Utils =====
+  function getCSS(v, fb){ const x = getComputedStyle(document.documentElement).getPropertyValue(v); return (x && x.trim()) ? x.trim() : fb; }
+  function escapeHtml(str){ return String(str).replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s])); }
   const trim = s => String(s ?? '').trim();
 
   function normalizeCountry(x){
     const s = trim(x);
-    if (/^eri?tr?e?a?$/i.test(s) || /^ere?tr?ia$/i.test(s)) return 'Eritrea';
+    if (/^eri?tr?e?a?$/i.test(s) || /^ere?tr?ia$/i.test(s)) return 'Eritrea';                 // Eritrea / Eretria
     if (/^car$/i.test(s)) return 'Central African Republic';
     if (/^ssd|south[\s-]?sudan$/i.test(s)) return 'South Sudan';
     if (/^egypt|egy$/i.test(s)) return 'Egypt';
@@ -333,6 +212,7 @@
     if (/^libya|lby$/i.test(s)) return 'Libya';
     return s;
   }
+
   function countryColor(c){
     if (c==='Chad')    return getCSS('--c-chad','#d97706');
     if (c==='Ethiopia')return getCSS('--c-ethiopia','#2563eb');
@@ -343,25 +223,8 @@
     if (c==='Central African Republic') return getCSS('--c-car','#db2777');
     return getCSS('--brand-accent','#418FDE');
   }
-  function normalizeType(x){
-    const s = trim(x).toLowerCase();
-    if (!s) return '';
-    if (/^off/i.test(s)) return 'Official';
-    if (/^un[-\s]?off/i.test(s) || /^unoff/i.test(s)) return 'Unofficial';
-    return s.charAt(0).toUpperCase() + s.slice(1);
-  }
-  function normalizeStatus(x){
-    const s = trim(x);
-    if (!s) return '';
-    const t = s.toLowerCase();
-    if (t.includes('active')) return 'Active';
-    if (t.includes('closed') || t.includes('shut')) return 'Closed';
-    if (t.includes('suspend')) return 'Suspended';
-    if (t.includes('temp')) return 'Temporarily Closed';
-    return s.charAt(0).toUpperCase() + s.slice(1);
-  }
 
-  // Estimate state centroid from BCP cloud (for flows)
+  // Compute approximate state "origin" centers from BCPs (used only for flow lines)
   function computeStateCentersFromRows(rows){
     const by = new Map();
     rows.forEach(r=>{
@@ -378,7 +241,7 @@
     return centers;
   }
 
-  // Normalize CSV row → dashboard fields
+  // Normalize a CSV row — includes Type and Status
   function normalizeRow(r, centers){
     const state_code = trim(r.state_code || r.State_Code || r['State_Code'] || r['State Code']);
     const center = centers.get(state_code) || {};
@@ -387,11 +250,11 @@
       state_code,
       locality: trim(r.locality || r.Locality),
       locality_code: trim(r.locality_code || r.Locality_Code || r['Locality Code']),
-      bcp: trim(r.cross_border_location || r['Cross border Name'] || r['Cross border location'] || r['Cross border'] || r['Cross border Name ']),
+      cross_border_location: trim(r.cross_border_location || r['Cross border Name'] || r['Cross border location'] || r['Cross border'] || r['Cross border Name ']),
       bcp_code: trim(r.cross_border_code || r['Cross border Code'] || r['Cross borde Code'] || r['Cross border Code ']),
-      country: normalizeCountry(r.neighbouring_country || r['Neighbouring Country'] || r.Neighbour || r.Country),
-      type: normalizeType(r.type || r.Type || r['Type'] || r['type '] || r['Type ']),
-      status: normalizeStatus(r.status || r.Status || r['Status'] || r['status '] || r['Status ']),
+      neighbouring_country: normalizeCountry(r.neighbouring_country || r['Neighbouring Country'] || r.Neighbour || r.Country),
+      bcp_type: trim(r.type || r.Type || r['Type'] || r['type '] || r['Type ']),
+      status:   trim(r.status || r.Status || r['Status'] || r['status '] || r['Status ']),
       o_lat: Number(center.lat) || 0,
       o_lon: Number(center.lon) || 0,
       d_lat: Number(r.Y ?? r.lat ?? r.Latitude) || 0,
@@ -399,6 +262,7 @@
     };
   }
 
+  // ===== Data loading =====
   async function tryLoadCsv(url){
     const res = await fetch(url);
     if(!res.ok) throw new Error('HTTP '+res.status);
@@ -413,291 +277,168 @@
     return null;
   }
 
-  // ====== State ======
-  let RAW_ROWS = [];
-  let DATA = [];      // normalized, full set
-  let FILTER = { country:'all', type:'all', status:'all', q:'' };
+  // ===== Rendering =====
+  let ALL_ROWS = []; // holds original CSV rows (normalized later)
 
-  // ====== UI refs ======
-  const dom = {
-    country: $('#countryFilter'),
-    type:    $('#typeFilter'),
-    status:  $('#statusFilter'),
-    search:  $('#searchBox'),
-    flows:   $('#chkFlows'),
-    halos:   $('#chkHalos'),
-    legendCountry: $('#legendCountry'),
-    k_total: $('#k_total'),
-    k_active: $('#k_active'),
-    k_official: $('#k_official'),
-    k_unofficial: $('#k_unofficial'),
-    tblBody: $('#tbl tbody'),
-    loading: $('#loading')
-  };
+  function renderAll(rows){
+    if (window.flowLayer) map.removeLayer(window.flowLayer);
+    if (window.bcpHaloLayer) map.removeLayer(window.bcpHaloLayer);
 
-  // ====== Charts ======
-  let barCountry, pieType;
+    // Build state centers from rows (for flow lines)
+    const centers = computeStateCentersFromRows(rows);
 
-  function makeBarCountry(labels, values, colors){
-    const ctx = document.getElementById('barCountry');
-    if (barCountry) barCountry.destroy();
-    barCountry = new Chart(ctx, {
-      type:'bar',
-      data: { labels, datasets: [{ label:'BCPs', data:values, backgroundColor:colors }] },
-      options: {
-        plugins:{ legend:{ display:false }, tooltip:{ enabled:true } },
-        responsive:true,
-        scales:{ x:{ ticks:{ color:getComputedStyle(document.body).getPropertyValue('--muted') } },
-                 y:{ beginAtZero:true, ticks:{ stepSize:1 } } }
-      }
-    });
-  }
-  function makePieType(vals){
-    const ctx = document.getElementById('pieType');
-    if (pieType) pieType.destroy();
-    pieType = new Chart(ctx, {
-      type:'doughnut',
-      data: {
-        labels:['Official','Unofficial'],
-        datasets:[{ data:[vals.Official||0, vals.Unofficial||0],
-                    backgroundColor:[getCSS('--type-official','#10b981'), getCSS('--type-unofficial','#f97316')] }]
-      },
-      options:{ plugins:{ legend:{ position:'bottom' } } }
-    });
-  }
+    // Normalize & filter rows
+    const data = rows.map(r => normalizeRow(r, centers)).filter(d =>
+      Number.isFinite(d.o_lat) && Number.isFinite(d.o_lon) &&
+      Number.isFinite(d.d_lat) && Number.isFinite(d.d_lon) &&
+      d.d_lat !== 0 && d.d_lon !== 0
+    );
 
-  function rebuildCountryLegend(counts){
-    dom.legendCountry.innerHTML = '';
-    const countries = Object.keys(counts).sort();
-    countries.forEach(c=>{
-      const row = document.createElement('div');
-      row.className = 'row';
-      const sw = document.createElement('span'); sw.className = 'dot'; sw.style.background = countryColor(c);
-      const label = document.createElement('span'); label.textContent = c;
-      const right = document.createElement('span'); right.textContent = counts[c];
-      row.appendChild(sw); row.appendChild(label); row.appendChild(right);
-      dom.legendCountry.appendChild(row);
-    });
-  }
-
-  // ====== Filtering ======
-  function applyFilter(rows){
-    const q = FILTER.q.toLowerCase();
-    return rows.filter(d=>{
-      if (FILTER.country !== 'all' && d.country !== FILTER.country) return false;
-      if (FILTER.type    !== 'all' && d.type    !== FILTER.type)    return false;
-      if (FILTER.status  !== 'all' && d.status  !== FILTER.status)  return false;
-      if (q){
-        const blob = `${d.bcp} ${d.locality} ${d.state} ${d.country} ${d.bcp_code}`.toLowerCase();
-        if (!blob.includes(q)) return false;
-      }
-      return true;
-    });
-  }
-
-  // ====== Render ======
-  function render(){
-    // clear layers
-    layerFlows.clearLayers();
-    layerBCP.clearLayers();
-    layerHalos.clearLayers();
-
-    // apply filter
-    const rows = applyFilter(DATA);
-
-    // KPIs
-    dom.k_total.textContent = rows.length;
-    dom.k_active.textContent = rows.filter(d=>d.status==='Active').length;
-    dom.k_official.textContent = rows.filter(d=>d.type==='Official').length;
-    dom.k_unofficial.textContent = rows.filter(d=>d.type==='Unofficial').length;
-
-    // Legend + Charts (based on filtered)
-    const countryCounts = {};
-    const typeCounts = { Official:0, Unofficial:0 };
-    rows.forEach(d=>{
-      countryCounts[d.country] = (countryCounts[d.country]||0)+1;
-      if (d.type==='Official') typeCounts.Official++;
-      else typeCounts.Unofficial++;
-    });
-    rebuildCountryLegend(countryCounts);
-    const barLabels = Object.keys(countryCounts).sort();
-    const barValues = barLabels.map(k=>countryCounts[k]);
-    const barColors = barLabels.map(k=>countryColor(k));
-    makeBarCountry(barLabels, barValues, barColors);
-    makePieType(typeCounts);
-
-    // Map markers
-    rows.forEach(d=>{
-      const clr = countryColor(d.country);
-      const dotClr = (d.type==='Official') ? getCSS('--type-official','#10b981') : getCSS('--type-unofficial','#f97316');
+    // === BCP markers (pulsing) — include Type + Status ===
+    window.bcpHaloLayer = L.layerGroup().addTo(map);
+    data.forEach(d => {
+      const clr = countryColor(d.neighbouring_country);
       const sz = 18;
-      const isActive = (d.status === 'Active');
+      const isActive = (d.status || '').toLowerCase() === 'active';
       const inactiveStyle = isActive ? '' : 'filter:grayscale(1) opacity:.55;';
       const icon = L.divIcon({
         className:'',
-        html: `<div class="bcp-pulse" style="--clr:${clr};--dot:${dotClr};width:${sz}px;height:${sz}px;${inactiveStyle}">
-                 <div class="dot" style="width:${sz}px;height:${sz}px;background:var(--dot)"></div>
+        html: `<div class="bcp-pulse" style="--clr:${clr};width:${sz}px;height:${sz}px;${inactiveStyle}">
+                 <div class="dot" style="width:${sz}px;height:${sz}px"></div>
                  <div class="ring r1"></div>
                  <div class="ring r2"></div>
                </div>`,
         iconSize:[sz,sz], iconAnchor:[sz/2, sz/2]
       });
 
-      const tip = `${escapeHtml(d.bcp)} • ${escapeHtml(d.country)} • ${escapeHtml(d.type||'—')} • ${escapeHtml(d.status||'—')}`;
-      const popupHtml = `
-        <div style="min-width:260px">
-          <h4 style="margin:0 0 8px;color:var(--brand-primary)">Border Crossing Point</h4>
-          <p style="margin:0 0 6px"><strong>BCP:</strong> ${escapeHtml(d.bcp)} <small>(${escapeHtml(d.bcp_code)})</small></p>
-          <p style="margin:0 0 6px"><strong>Locality:</strong> ${escapeHtml(d.locality)} <small>(${escapeHtml(d.locality_code)})</small></p>
-          <p style="margin:0 0 6px"><strong>State:</strong> ${escapeHtml(d.state)} <small>(${escapeHtml(d.state_code)})</small></p>
-          <p style="margin:0 0 6px"><strong>Neighbouring Country:</strong> ${escapeHtml(d.country)}</p>
-          <p style="margin:0 0 6px"><strong>Type:</strong> ${escapeHtml(d.type || '—')}</p>
-          <p style="margin:0 0 6px"><strong>Status:</strong> ${escapeHtml(d.status || '—')}</p>
-          <p style="margin:0"><small>Coords: ${d.d_lat.toFixed(6)}, ${d.d_lon.toFixed(6)}</small></p>
-        </div>`;
+      const tip = `${escapeHtml(d.cross_border_location)} • ${escapeHtml(d.neighbouring_country)} • Type: ${escapeHtml(d.bcp_type||'—')} • Status: ${escapeHtml(d.status||'—')}`;
 
-      L.marker([d.d_lat, d.d_lon], { icon }).bindTooltip(tip, { direction:'top', offset:[0,-6] }).bindPopup(popupHtml).addTo(layerBCP);
+      const m = L.marker([d.d_lat, d.d_lon], { icon })
+        .bindTooltip(tip, { direction:'top', offset:[0,-6] })
+        .bindPopup(`
+          <div style="min-width:260px">
+            <h4 style="margin:0 0 8px;color:var(--brand-primary)">Border Crossing Point</h4>
+            <p style="margin:0 0 6px"><strong>BCP:</strong> ${escapeHtml(d.cross_border_location)} <small>(${escapeHtml(d.bcp_code)})</small></p>
+            <p style="margin:0 0 6px"><strong>Locality:</strong> ${escapeHtml(d.locality)} <small>(${escapeHtml(d.locality_code)})</small></p>
+            <p style="margin:0 0 6px"><strong>State:</strong> ${escapeHtml(d.state)} <small>(${escapeHtml(d.state_code)})</small></p>
+            <p style="margin:0 0 6px"><strong>Neighbouring Country:</strong> ${escapeHtml(d.neighbouring_country)}</p>
+            <p style="margin:0 0 6px"><strong>Type:</strong> ${escapeHtml(d.bcp_type || '—')}</p>
+            <p style="margin:0 0 6px"><strong>Status:</strong> ${escapeHtml(d.status || '—')}</p>
+            <p style="margin:0"><small>Coords: ${d.d_lat.toFixed(6)}, ${d.d_lon.toFixed(6)}</small></p>
+          </div>`);
 
-      if (dom.halos.checked){
-        L.circle([d.d_lat, d.d_lon], { radius: 900, color: clr, weight: 1.2, fillColor: clr, fillOpacity: 0.12, opacity: 0.9 }).addTo(layerHalos);
-      }
+      // subtle static halo beneath the pulse
+      L.circle([d.d_lat, d.d_lon], {
+        radius: 900, color: clr, weight: 1.2, fillColor: clr, fillOpacity: 0.12, opacity: 0.9
+      }).addTo(window.bcpHaloLayer);
+
+      m.addTo(window.bcpHaloLayer);
     });
+    layerCtl.addOverlay(window.bcpHaloLayer, 'BCP markers (pulsing)');
 
-    // Flows (simple straight lines) colored by country
-    if (dom.flows.checked){
-      rows.forEach(d=>{
-        if (d.o_lat && d.o_lon && d.d_lat && d.d_lon){
-          L.polyline([[d.o_lat, d.o_lon],[d.d_lat, d.d_lon]], { color:countryColor(d.country), weight:1.8, opacity:.9 }).addTo(layerFlows);
+    // === Flow lines (state → BCP) — keep, but NO orange state markers ===
+    const fc = {
+      type:'FeatureCollection',
+      features: data.map(d => ({
+        type:'Feature',
+        geometry:{ type:'Point', coordinates:[d.o_lon, d.o_lat] },
+        properties:{
+          o_id:d.state_code, o_x:d.o_lon, o_y:d.o_lat,
+          d_id:d.bcp_code, d_x:d.d_lon, d_y:d.d_lat,
+          state:d.state, locality:d.locality, bcp:d.cross_border_location, country:d.neighbouring_country,
+          type:d.bcp_type, status:d.status
         }
-      });
+      }))
+    };
+
+    if (typeof L.CanvasFlowmapLayer === 'function' && fc.features.length){
+      window.flowLayer = L.canvasFlowmapLayer(fc, {
+        originAndDestinationFieldIds:{
+          originUniqueIdField:'o_id',
+          originGeometry:{ x:'o_x', y:'o_y' },
+          destinationUniqueIdField:'d_id',
+          destinationGeometry:{ x:'d_x', y:'d_y' }
+        },
+        pathDisplayMode:'all',
+        animationStarted:true,
+        animationDuration:3200,
+        animationEasingFamily:'Linear',
+        animationEasingType:'None',
+        onEachFeature: (f, l) => l.bindPopup(`
+          <div style="min-width:260px">
+            <h4 style="margin:0 0 8px;color:var(--brand-primary)">State → BCP</h4>
+            <p style="margin:0 0 6px"><strong>From (State):</strong> ${escapeHtml(f.properties.state)}</p>
+            <p style="margin:0 0 6px"><strong>To (BCP):</strong> ${escapeHtml(f.properties.bcp)} (${escapeHtml(f.properties.country)})</p>
+            <p style="margin:0 0 6px"><strong>Type:</strong> ${escapeHtml(f.properties.type || '—')}</p>
+            <p style="margin:0 0 6px"><strong>Status:</strong> ${escapeHtml(f.properties.status || '—')}</p>
+            <p style="margin:0"><small>Illustrative connection (no volumes)</small></p>
+          </div>`),
+        canvasBezierStyle:{
+          type:'single',
+          symbol:{ strokeStyle:getCSS('--flow','#D22630'), lineWidth:1.8, lineCap:'round', shadowColor:'rgba(210,38,48,.35)', shadowBlur:2 }
+        },
+        pointToLayer: (feature, latlng)=> L.circleMarker(latlng, { radius:0.1, opacity:0, fillOpacity:0 })
+      }).addTo(map);
+      layerCtl.addOverlay(window.flowLayer, 'State → BCP flows');
     }
 
-    // Fit to markers
-    if (rows.length){
-      const group = L.featureGroup([layerBCP]);
-      const b = group.getBounds();
-      if (b && b.isValid()) map.fitBounds(b, { padding:[24,24] });
-    }
+    // Fit to content
+    const group = L.featureGroup([ window.bcpHaloLayer ]);
+    try{
+      const rsBounds = group.getBounds();
+      if (rsBounds && rsBounds.isValid()) map.fitBounds(rsBounds, { padding:[24,24] });
+    }catch(e){ console.warn('Could not fit bounds:', e); }
 
-    // Table
-    dom.tblBody.innerHTML = rows.map(d=>`
-      <tr>
-        <td>${escapeHtml(d.bcp)}</td>
-        <td>${escapeHtml(d.bcp_code)}</td>
-        <td>${escapeHtml(d.locality)}</td>
-        <td>${escapeHtml(d.state)}</td>
-        <td>${escapeHtml(d.country)}</td>
-        <td>${escapeHtml(d.type)}</td>
-        <td>${escapeHtml(d.status)}</td>
-      </tr>
-    `).join('');
+    // Update filter + legend
+    const set = Array.from(new Set(data.map(d => d.neighbouring_country))).sort();
+    populateCountryFilter(set);
+    rebuildLegend(set);
   }
 
-  // ====== Populate filter options ======
-  function rebuildFilters(){
-    // countries
-    const countries = Array.from(new Set(DATA.map(d=>d.country))).sort();
-    const keepC = dom.country.value || 'all';
-    dom.country.innerHTML = `<option value="all">All countries</option>` + countries.map(c=>`<option value="${c}">${c}</option>`).join('');
-    dom.country.value = countries.includes(keepC) ? keepC : 'all';
-    FILTER.country = dom.country.value;
-
-    // statuses
-    const statuses = Array.from(new Set(DATA.map(d=>d.status).filter(Boolean))).sort();
-    const keepS = dom.status.value || 'all';
-    dom.status.innerHTML = `<option value="all">All status</option>` + statuses.map(s=>`<option value="${s}">${s}</option>`).join('');
-    dom.status.value = statuses.includes(keepS) ? keepS : 'all';
-    FILTER.status = dom.status.value;
+  function populateCountryFilter(countries){
+    const sel = document.getElementById('countryFilter');
+    const current = sel.value || 'all';
+    sel.innerHTML = `<option value="all">All neighbouring countries</option>` + countries.map(c => `<option value="${c}">${c}</option>`).join('');
+    sel.value = current === 'all' || !countries.includes(current) ? 'all' : current;
   }
 
-  // ====== Events ======
-  $('#btn-theme').addEventListener('click', ()=>{
-    const dark = document.body.getAttribute('data-theme') === 'dark';
-    document.body.setAttribute('data-theme', dark ? '' : 'dark');
-    $('#btn-theme i').className = dark ? 'fa-regular fa-moon' : 'fa-regular fa-sun';
-    // re-render charts to match theme (labels)
-    render();
-  });
-  dom.country.addEventListener('change', ()=>{ FILTER.country = dom.country.value; render(); });
-  dom.type.addEventListener('change', ()=>{ FILTER.type = dom.type.value; render(); });
-  dom.status.addEventListener('change', ()=>{ FILTER.status = dom.status.value; render(); });
-  dom.search.addEventListener('input', ()=>{ FILTER.q = dom.search.value.trim(); render(); });
-  dom.flows.addEventListener('change', render);
-  dom.halos.addEventListener('change', render);
-
-  $('#btn-reset').addEventListener('click', ()=>{
-    FILTER = { country:'all', type:'all', status:'all', q:'' };
-    dom.country.value = 'all';
-    dom.type.value = 'all';
-    dom.status.value = 'all';
-    dom.search.value = '';
-    dom.flows.checked = true;
-    dom.halos.checked = true;
-    render();
-  });
-
-  // Upload CSV
-  $('#fileInput').addEventListener('change', (e)=>{
-    const file = e.target.files?.[0];
-    if (!file) return;
-    dom.loading.style.display = 'flex';
-    Papa.parse(file, {
-      header:true, skipEmptyLines:'greedy',
-      complete: (res)=>{
-        RAW_ROWS = res.data || [];
-        const centers = computeStateCentersFromRows(RAW_ROWS);
-        DATA = RAW_ROWS.map(r=>normalizeRow(r, centers)).filter(d => Number.isFinite(d.d_lat) && Number.isFinite(d.d_lon) && d.d_lat !== 0 && d.d_lon !== 0);
-        rebuildFilters();
-        dom.loading.style.display = 'none';
-        render();
-      },
-      error: ()=>{
-        dom.loading.style.display = 'none';
-        alert('Could not parse the uploaded CSV.');
-      }
-    });
-  });
-
-  // ====== Start ======
+  // Load CSV and render
   (async function start(){
-    dom.loading.style.display = 'flex';
+    const overlay = document.getElementById('loading');
     try{
       let rows = await loadCsvAny(CSV_URLS);
 
-      // Fallback sample (if CSV missing)
+      // Fallback sample (if CSV missing) — includes Type & Status
       if (!rows || !rows.length){
         rows = [
-          { State:'Central Darfur', State_Code:'SD06', Locality:'Um Dukhun', Locality_Code:'SD06135', 'Cross border Name':'Um Dukhun', 'Cross border Code':'SD06135PB5', 'Neighbouring Country':'Chad',     Y:11.139,    X:22.966,     Type:'Unofficial', Status:'Active' },
-          { State:'Gedaref',       State_Code:'SD12', Locality:'Basundah',  Locality_Code:'SD12077', 'Cross border Name':'Gallabat/Metema','Cross border Code':'SD12077PB1','Neighbouring Country':'Ethiopia', Y:12.95798,  X:36.151888,  Type:'Official',   Status:'Active' },
-          { State:'Kassala',       State_Code:'SD11', Locality:'Kassala',   Locality_Code:'SD11053', 'Cross border Name':'Al Laffa',        'Cross border Code':'SD11053PB2','Neighbouring Country':'Eritrea',  Y:15.15372,  X:36.4355,    Type:'Unofficial', Status:'Closed' },
-          { State:'Northern',      State_Code:'SD17', Locality:'Halfa',     Locality_Code:'SD17014', 'Cross border Name':'Argeen',           'Cross border Code':'SD17014PB3','Neighbouring Country':'Egypt',    Y:21.988934, X:31.153322,  Type:'Official',   Status:'Active' },
-          { State:'Northern',      State_Code:'SD17', Locality:'Halfa',     Locality_Code:'SD17014', 'Cross border Name':'Ashkeet',          'Cross border Code':'SD17014PB4','Neighbouring Country':'Egypt',    Y:22.000523, X:31.511477,  Type:'Official',   Status:'Active' },
-          { State:'West Darfur',   State_Code:'SD04', Locality:'Ag Geneina',Locality_Code:'SD04115', 'Cross border Name':'Adekonk',          'Cross border Code':'SD04115PB6','Neighbouring Country':'Chad',     Y:13.4623111,X:22.2296523, Type:'Unofficial', Status:'Suspended' }
+          { State:'Central Darfur', State_Code:'SD06', Locality:'Um Dukhun', Locality_Code:'SD06135', 'Cross border Name':'Um Dukhun', 'Cross border Code':'SD06135PB5', 'Neighbouring Country':'Chad', Y:11.139, X:22.966, Type:'Unofficial', Status:'Active' },
+          { State:'Gedaref', State_Code:'SD12', Locality:'Basundah', Locality_Code:'SD12077', 'Cross border Name':'Gallabat/Metema', 'Cross border Code':'SD12077PB1', 'Neighbouring Country':'Ethiopia', Y:12.95798, X:36.151888, Type:'Official', Status:'Active' },
+          { State:'Kassala', State_Code:'SD11', Locality:'Kassala', Locality_Code:'SD11053', 'Cross border Name':'Al Laffa', 'Cross border Code':'SD11053PB2', 'Neighbouring Country':'Eritrea', Y:15.15372, X:36.4355, Type:'Unofficial', Status:'Closed' },
+          { State:'Northern', State_Code:'SD17', Locality:'Halfa', Locality_Code:'SD17014', 'Cross border Name':'Argeen', 'Cross border Code':'SD17014PB3', 'Neighbouring Country':'Egypt', Y:21.988934, X:31.153322, Type:'Official', Status:'Active' },
+          { State:'Northern', State_Code:'SD17', Locality:'Halfa', Locality_Code:'SD17014', 'Cross border Name':'Ashkeet', 'Cross border Code':'SD17014PB4', 'Neighbouring Country':'Egypt', Y:22.000523, X:31.511477, Type:'Official', Status:'Active' },
+          { State:'West Darfur', State_Code:'SD04', Locality:'Ag Geneina', Locality_Code:'SD04115', 'Cross border Name':'Adekonk', 'Cross border Code':'SD04115PB6', 'Neighbouring Country':'Chad', Y:13.4623111, X:22.2296523, Type:'Unofficial', Status:'Suspended' }
         ];
       }
 
-      RAW_ROWS = rows;
-      const centers = computeStateCentersFromRows(RAW_ROWS);
-      DATA = RAW_ROWS.map(r=>normalizeRow(r, centers)).filter(d => Number.isFinite(d.d_lat) && Number.isFinite(d.d_lon) && d.d_lat !== 0 && d.d_lon !== 0);
-
-      // Fill filter selects
-      rebuildFilters();
-
-      // Country legend seed (full set)
-      const countsFull = {};
-      DATA.forEach(d => countsFull[d.country] = (countsFull[d.country]||0)+1);
-      rebuildCountryLegend(countsFull);
-
-      render();
+      ALL_ROWS = rows;
+      renderAll(ALL_ROWS);
     } catch(err){
       console.error(err);
-      alert('Could not load CSV. You can use the "Upload CSV" button to load your file.');
-      DATA = [];
-      render();
+      renderAll([]);
     } finally{
-      dom.loading.style.display = 'none';
+      overlay.style.display = 'none';
     }
   })();
+
+  // Filter by country
+  document.getElementById('countryFilter').addEventListener('change', e=>{
+    const v = e.target.value;
+    let rows = ALL_ROWS;
+    if (v !== 'all'){
+      rows = ALL_ROWS.filter(r => normalizeCountry(r['Neighbouring Country'] || r.neighbouring_country || r.Country) === v);
+    }
+    renderAll(rows);
+  });
   </script>
 </body>
 </html>
