@@ -32,8 +32,8 @@
     header .subtitle{opacity:.9;font-weight:600;font-size:12px}
     .chip{padding:6px 10px;border-radius:999px;background:var(--chip);font-size:12px;font-weight:600;color:#4537ff}
     .container{padding:16px;max-width:1400px;margin:0 auto;display:grid;grid-template-columns:1fr;gap:16px}
-    .controls{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:12px;display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px}
-    @media(max-width:1100px){.controls{grid-template-columns:1fr 1fr}}
+    .controls{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:12px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+    @media(max-width:900px){.controls{grid-template-columns:1fr 1fr}}
     @media(max-width:640px){.controls{grid-template-columns:1fr}}
     .control{display:flex;gap:8px;align-items:center;background:#fff;border:1px solid var(--border);border-radius:12px;padding:10px 12px}
     .control label{font-size:12px;color:var(--muted);min-width:88px}
@@ -56,11 +56,6 @@
     .legend{position:absolute;bottom:12px;left:12px;background:#fff;border:1px solid var(--border);border-radius:10px;padding:8px 10px;font-size:12px;box-shadow:0 6px 18px rgba(0,0,0,.06)}
     .legend .row{display:flex;align-items:center;gap:8px;margin:4px 0}
     .dot{width:12px;height:12px;border-radius:999px;display:inline-block}
-    .table-wrap{overflow:auto}
-    table{width:100%;border-collapse:separate;border-spacing:0;font-size:13px}
-    thead th{position:sticky;top:0;background:#fff;z-index:1;text-align:left;padding:10px;border-bottom:1px solid var(--border);white-space:nowrap;font-weight:800;color:var(--muted)}
-    tbody td{padding:8px 10px;border-bottom:1px solid var(--border);white-space:nowrap}
-    tbody tr:hover{background:#fafbff}
     .btn{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:12px;border:1px solid var(--border);background:#fff;font-weight:700;font-size:12px;cursor:pointer}
     .btn:active{transform:translateY(1px)}
     .footer-note{color:var(--muted);font-size:12px;text-align:center;padding:16px 0}
@@ -70,12 +65,13 @@
   <header>
     <div>
       <div class="title">Sudan — Flow Monitoring Dashboard (Border Points)</div>
-      <div class="subtitle" id="hdrSub">Interactive map, KPIs, time-series & table • Loading data…</div>
+      <div class="subtitle" id="hdrSub">Interactive map, KPIs, time-series & bar chart • Loading data…</div>
     </div>
     <div class="chip" id="chipSelection">Loading…</div>
   </header>
 
   <div class="container">
+    <!-- Controls -->
     <section class="controls">
       <div class="control">
         <label for="direction">Direction</label>
@@ -93,12 +89,14 @@
         <label for="month">Month</label>
         <input id="month" type="range" min="0" max="0" step="1" value="0"/>
       </div>
+      <!-- keeping search input is optional; it no longer filters a table -->
       <div class="control">
         <label for="search">Search</label>
-        <input id="search" type="text" placeholder="Type to filter table…"/>
+        <input id="search" type="text" placeholder="(no table)"/>
       </div>
     </section>
 
+    <!-- KPIs -->
     <section class="kpis">
       <div class="kpi ok"><div class="label">Incoming (selected)</div><div class="value" id="kpiIncoming">0</div><div class="delta" id="kpiIncomingDelta">vs prev. month: —</div></div>
       <div class="kpi warn"><div class="label">Outgoing (selected)</div><div class="value" id="kpiOutgoing">0</div><div class="delta" id="kpiOutgoingDelta">vs prev. month: —</div></div>
@@ -106,6 +104,7 @@
       <div class="kpi"><div class="label">Net flow (Incoming − Outgoing)</div><div class="value" id="kpiNet">0</div><div class="delta" id="kpiNetDelta">vs prev. month: —</div></div>
     </section>
 
+    <!-- Main panels -->
     <section class="main">
       <div class="panel">
         <header><div class="title">Map — Circle size by selected month & direction</div><div class="subtitle">Click a marker for details</div></header>
@@ -135,13 +134,6 @@
       <div style="padding:10px"><canvas id="barChart" height="240"></canvas></div>
     </section>
 
-    <section class="panel">
-      <header><div class="title">Data Table</div><div class="subtitle">Filter with the controls or type in the search box</div></header>
-      <div class="table-wrap">
-        <table id="dataTable"><thead id="tableHead"></thead><tbody id="tableBody"></tbody></table>
-      </div>
-    </section>
-
     <div class="footer-note">Source: data/FM - Data.cleaned.csv (fallback: data/FM - Data.csv). Built with Leaflet & Chart.js.</div>
   </div>
 
@@ -155,13 +147,9 @@ const directionSel = $('#direction'), pointSel = $('#point'), monthRange = $('#m
 const chipSelection = $('#chipSelection'), hdrSub = $('#hdrSub'), tsSubtitle = $('#tsSubtitle'), barSubtitle = $('#barSubtitle');
 const kpiIncoming = $('#kpiIncoming'), kpiOutgoing = $('#kpiOutgoing'), kpiTotal = $('#kpiTotal'), kpiNet = $('#kpiNet');
 const kpiIncomingDelta = $('#kpiIncomingDelta'), kpiOutgoingDelta = $('#kpiOutgoingDelta'), kpiTotalDelta = $('#kpiTotalDelta'), kpiNetDelta = $('#kpiNetDelta');
-const tableHead = $('#tableHead'), tableBody = $('#tableBody');
 
 /* ===== STATE ===== */
-let rows = [];       // normalized rows (one per CSV row)
-let points = [];     // unique points
-let monthCols = [];  // raw month keys from CSV (e.g., "24-Jan")
-let monthLabels = []; // pretty labels (e.g., "2024-Jan")
+let rows = [], points = [], monthCols = [], monthLabels = [];
 let map, markers = [], tsChart, barChart;
 
 /* ===== HELPERS ===== */
@@ -171,7 +159,7 @@ function fmt(n){ return Number(n||0).toLocaleString('en-US'); }
 function getCss(v){ return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
 function selectedMonthLabel(){ return monthLabels[+monthRange.value] || monthLabels[0]; }
 
-/* Normalize header keys: collapse spaces & fancy dashes */
+/* Normalize header keys */
 function sanitizeKeys(obj){
   const out = {};
   for (const k of Object.keys(obj)){
@@ -180,7 +168,6 @@ function sanitizeKeys(obj){
   }
   return out;
 }
-/* Robust numeric */
 function num(v){
   if (v==null) return 0;
   const n = Number(String(v).replace(/[, \t\r\n]+/g,'').trim());
@@ -203,7 +190,7 @@ function detectMonths(keys){
   return {found: candidates.map(c=>c.raw), pretty: candidates.map(c=>c.pretty)};
 }
 
-/* ===== LOAD CSV (try cleaned then original) ===== */
+/* ===== LOAD CSV ===== */
 function parseCsv(path){
   return new Promise((resolve,reject)=>{
     Papa.parse(path,{download:true,header:true,skipEmptyLines:true,
@@ -229,7 +216,6 @@ function normalizeData(csvRows){
   if (!csvRows.length) throw new Error("CSV is empty.");
   const first = csvRows[0];
 
-  // Standard headers (cleaned file) with fallbacks
   const COL = {
     dir: ["Direction of Movement","Direction"],
     name: ["Flow Monitoring Point Name","Flow Monitoring  Point Name"],
@@ -245,23 +231,17 @@ function normalizeData(csvRows){
   const kLon  = pick(COL.lon);
   if (!kDir || !kName || !kCode || !kLat || !kLon){
     console.error("Headers present:", Object.keys(first));
-    throw new Error("Required columns missing: Direction of Movement, Flow Monitoring Point Name/Code, latitude, longitude.");
+    throw new Error("Missing columns: Direction of Movement, Flow Monitoring Point Name/Code, latitude, longitude.");
   }
 
-  // Months
   const allKeys = Object.keys(first);
   const {found, pretty} = detectMonths(allKeys);
-  if (!found.length){
-    console.error("No month headers detected. Headers:", allKeys);
-    throw new Error("No month columns detected (e.g., 24-Jan … 25-Aug).");
-  }
+  if (!found.length){ console.error("Headers:", allKeys); throw new Error("No month columns detected."); }
   monthCols = found; monthLabels = pretty;
-  console.log("Detected months:", monthCols, "→", monthLabels);
 
-  // Normalize rows
   rows = csvRows.map(r=>{
     const row = {
-      direction: String(r[kDir]||"").trim(),  // "Incoming"/"Outgoing"
+      direction: String(r[kDir]||"").trim(),
       point: String(r[kName]||"").trim(),
       code: String(r[kCode]||"").trim(),
       lat: Number(r[kLat]),
@@ -271,15 +251,12 @@ function normalizeData(csvRows){
     return row;
   });
 
-  // Unique points
   const seen = new Map();
-  for (const r of rows){
-    if (!seen.has(r.point)) seen.set(r.point, {point:r.point, code:r.code, lat:r.lat, lon:r.lon});
-  }
+  for (const r of rows){ if (!seen.has(r.point)) seen.set(r.point,{point:r.point,code:r.code,lat:r.lat,lon:r.lon}); }
   points = [...seen.values()];
 }
 
-/* ===== AGGREGATES ===== */
+/* ===== AGGREGATES & KPIs ===== */
 function aggregateTimeSeries(dir, selPoint){
   const incoming = Array(monthLabels.length).fill(0);
   const outgoing = Array(monthLabels.length).fill(0);
@@ -295,26 +272,21 @@ function aggregateTimeSeries(dir, selPoint){
   if (dir==='Outgoing') return {labels:monthLabels, series:outgoing, alt:incoming};
   return {labels:monthLabels, series: incoming.map((v,i)=>v+outgoing[i]), incoming, outgoing};
 }
-
 function computeKPIs(){
   const idx = +monthRange.value;
   const month = monthLabels[idx];
   const prevIdx = Math.max(0, idx-1), prevMonth = monthLabels[prevIdx];
   const selPoint = pointSel.value;
-
   const sum = (dir, m) => rows
     .filter(r => (selPoint==='__ALL__'||r.point===selPoint) && r.direction.toLowerCase()===dir)
     .reduce((s,r)=> s + (r[m]||0), 0);
-
   const inc = sum('incoming', month), out = sum('outgoing', month);
   const incP = sum('incoming', prevMonth), outP = sum('outgoing', prevMonth);
   const total = inc+out, totalP = incP+outP, net = inc-out, netP = incP-outP;
-
   kpiIncoming.textContent = fmt(inc);
   kpiOutgoing.textContent = fmt(out);
   kpiTotal.textContent = fmt(total);
   kpiNet.textContent = fmt(net);
-
   const delta = (c,p)=> (p?`vs prev. month: ${(c-p)>0?'▲':(c-p)<0?'▼':'•'} ${(((c-p)/p)*100).toFixed(1)}%`:'vs prev. month: —');
   kpiIncomingDelta.textContent = delta(inc,incP);
   kpiOutgoingDelta.textContent = delta(out,outP);
@@ -414,30 +386,8 @@ function renderCharts(){
   barSubtitle.textContent = `${month} • ${dir} direction${dir==='Both'?'s':''}`;
 }
 
-/* ===== TABLE ===== */
-function buildTableHead(){
-  const cols = ["Direction","Point","Code","Lat","Lon",...monthLabels];
-  const tr = document.createElement('tr'); cols.forEach(c=>{const th=document.createElement('th'); th.textContent=c; tr.appendChild(th);});
-  tableHead.innerHTML=''; tableHead.appendChild(tr);
-}
-function renderTable(){
-  const dir = directionSel.value, selPoint = pointSel.value, q = (searchInput.value||'').toLowerCase();
-  let arr = rows.slice();
-  if (dir!=='Both') arr = arr.filter(r=>r.direction.toLowerCase()===dir.toLowerCase());
-  if (selPoint!=='__ALL__') arr = arr.filter(r=>r.point===selPoint);
-  if (q) arr = arr.filter(r => (r.point+' '+r.code+' '+r.direction).toLowerCase().includes(q));
-  tableBody.innerHTML='';
-  for (const r of arr){
-    const tr = document.createElement('tr');
-    [r.direction,r.point,r.code,r.lat,r.lon].forEach(v=>{const td=document.createElement('td'); td.textContent=v; tr.appendChild(td);});
-    monthLabels.forEach(m=>{const td=document.createElement('td'); td.textContent=fmt(r[m]||0); tr.appendChild(td);});
-    tableBody.appendChild(tr);
-  }
-}
-
 /* ===== DOWNLOAD ===== */
 async function downloadCsv(){
-  // download the active source (cleaned or original)
   const active = window.__csvPath || CSV_PATHS[0];
   const res = await fetch(active); const blob = await res.blob();
   const url = URL.createObjectURL(blob); const a=document.createElement('a');
@@ -451,7 +401,7 @@ function populatePointDropdown(){
 }
 function refreshAll(){
   chipSelection.textContent = `${pointSel.value==='__ALL__'?'All Points':pointSel.value} • ${directionSel.value} • ${selectedMonthLabel()}`;
-  computeKPIs(); renderMarkers(); renderCharts(); renderTable();
+  computeKPIs(); renderMarkers(); renderCharts();
 }
 function initChartsAndMap(){ initMap(); initCharts(); refreshAll(); }
 
@@ -459,27 +409,25 @@ function initChartsAndMap(){ initMap(); initCharts(); refreshAll(); }
 async function init(){
   try{
     const {rows:csv, path} = await loadCsv();
-    window.__csvPath = path; // remember which path succeeded
+    window.__csvPath = path;
     normalizeData(csv);
 
-    // month slider + headers
     monthRange.max = Math.max(0, monthLabels.length-1);
-    monthRange.value = monthRange.max; // latest month by default
-    buildTableHead(); populatePointDropdown();
+    monthRange.value = monthRange.max;
+    populatePointDropdown();
 
-    hdrSub.textContent = `Interactive map, KPIs, time-series & table • Months: ${monthLabels[0]} → ${monthLabels[monthLabels.length-1]} (source: ${path.split('/').pop()})`;
+    hdrSub.textContent = `Interactive map, KPIs & charts • Months: ${monthLabels[0]} → ${monthLabels[monthLabels.length-1]} (source: ${path.split('/').pop()})`;
 
-    // events
     directionSel.addEventListener('change', refreshAll);
     pointSel.addEventListener('change', refreshAll);
     monthRange.addEventListener('input', refreshAll);
-    searchInput.addEventListener('input', renderTable);
+    // searchInput kept but not wired
     document.getElementById('downloadCsvBtn').addEventListener('click', downloadCsv);
 
     initChartsAndMap();
   }catch(err){
     console.error(err);
-    hdrSub.textContent = 'Failed to load/parse CSV. Open console for details. Check data/FM - Data.cleaned.csv (or FM - Data.csv).';
+    hdrSub.textContent = 'Failed to load/parse CSV. Check data/FM - Data.cleaned.csv (or FM - Data.csv).';
     chipSelection.textContent = 'Error loading data';
   }
 }
