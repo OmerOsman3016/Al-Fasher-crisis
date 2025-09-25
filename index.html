@@ -1,744 +1,687 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-app="fmc-dashboard">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Flow Monitoring Dashboard</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        
-        body {
-            background-color: #f5f7fa;
-            color: #333;
-        }
-        
-        .dashboard-container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        
-        header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 1px solid #ddd;
-        }
-        
-        h1 {
-            color: #2c3e50;
-            font-size: 28px;
-        }
-        
-        .controls {
-            display: flex;
-            gap: 15px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-        }
-        
-        select, button {
-            padding: 8px 15px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            background-color: white;
-            cursor: pointer;
-        }
-        
-        button {
-            background-color: #3498db;
-            color: white;
-            border: none;
-            transition: background-color 0.3s;
-        }
-        
-        button:hover {
-            background-color: #2980b9;
-        }
-        
-        .dashboard-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            margin-bottom: 20px;
-        }
-        
-        @media (max-width: 1100px) {
-            .dashboard-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-        
-        .card {
-            background-color: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            padding: 20px;
-            height: 400px;
-        }
-        
-        .card-full {
-            grid-column: 1 / -1;
-            height: auto;
-        }
-        
-        .card h2 {
-            margin-bottom: 15px;
-            color: #2c3e50;
-            font-size: 20px;
-            border-bottom: 1px solid #eee;
-            padding-bottom: 10px;
-        }
-        
-        #map {
-            height: 100%;
-            width: 100%;
-            border-radius: 4px;
-        }
-        
-        .chart-container {
-            height: 300px;
-            position: relative;
-        }
-        
-        .incoming {
-            color: #27ae60;
-        }
-        
-        .outgoing {
-            color: #e74c3c;
-        }
-        
-        .summary-cards {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-        
-        .summary-card {
-            background-color: white;
-            border-radius: 8px;
-            padding: 15px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-            text-align: center;
-        }
-        
-        .summary-card h3 {
-            font-size: 14px;
-            color: #7f8c8d;
-            margin-bottom: 10px;
-        }
-        
-        .summary-card .value {
-            font-size: 24px;
-            font-weight: bold;
-            color: #2c3e50;
-        }
-        
-        .incoming-card {
-            border-left: 4px solid #27ae60;
-        }
-        
-        .outgoing-card {
-            border-left: 4px solid #e74c3c;
-        }
-        
-        .legend {
-            display: flex;
-            gap: 15px;
-            margin-top: 10px;
-        }
-        
-        .legend-item {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            font-size: 14px;
-        }
-        
-        .legend-color {
-            width: 15px;
-            height: 15px;
-            border-radius: 3px;
-        }
-        
-        .incoming-color {
-            background-color: #27ae60;
-        }
-        
-        .outgoing-color {
-            background-color: #e74c3c;
-        }
-        
-        .point-details {
-            background-color: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            padding: 20px;
-            margin-top: 20px;
-        }
-        
-        .point-details h2 {
-            margin-bottom: 15px;
-            color: #2c3e50;
-            font-size: 20px;
-            border-bottom: 1px solid #eee;
-            padding-bottom: 10px;
-        }
-        
-        .point-info {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-        
-        .point-info-item {
-            padding: 10px;
-            background-color: #f8f9fa;
-            border-radius: 4px;
-        }
-        
-        .point-info-item label {
-            font-weight: bold;
-            color: #7f8c8d;
-            display: block;
-            margin-bottom: 5px;
-        }
-        
-        .monthly-breakdown {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-            gap: 10px;
-            max-height: 200px;
-            overflow-y: auto;
-            padding: 10px;
-            background-color: #f8f9fa;
-            border-radius: 4px;
-        }
-        
-        .month-item {
-            text-align: center;
-            padding: 8px;
-            background-color: white;
-            border-radius: 4px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        }
-        
-        .month-value {
-            font-weight: bold;
-            font-size: 16px;
-        }
-        
-        .month-label {
-            font-size: 12px;
-            color: #7f8c8d;
-        }
-        
-        .no-data {
-            text-align: center;
-            color: #7f8c8d;
-            font-style: italic;
-            padding: 20px;
-        }
-    </style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"/>
+  <title>Flow Monitoring Dashboard — Border Points</title>
+
+  <!-- Leaflet (map) -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="anonymous"/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin="anonymous"></script>
+
+  <!-- Chart.js (charts) -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      /* Brand palette (IOM-inspired) */
+      --brand-primary:#0033A0; /* deep blue */
+      --brand-accent:#418FDE;  /* accent blue */
+      --brand-amber:#FFB81C;
+      --brand-orange:#FF671F;
+      --brand-red:#D22630;
+
+      --ok:#2BB673;     /* incoming */
+      --warn:#FF8C42;   /* outgoing */
+      --both:#7A5CFA;   /* combined */
+
+      --surface:#f5f7fa;
+      --panel:#ffffff;
+      --ink:#1f2937;
+      --muted:#6b7280;
+      --border:#e5e7eb;
+      --chip:#eef2ff;
+    }
+
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family:"Open Sans", system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Liberation Sans", sans-serif;
+      color:var(--ink);
+      background:var(--surface);
+    }
+
+    header{
+      background:linear-gradient(90deg, var(--brand-primary), var(--brand-accent));
+      color:#fff;
+      padding:16px 20px;
+      display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;
+      position:sticky; top:0; z-index:10;
+    }
+    header .title{
+      font-weight:800; letter-spacing:.2px; font-size:20px;
+    }
+    header .subtitle{opacity:.9; font-weight:600; font-size:12px}
+
+    .container{
+      padding:16px;
+      max-width:1400px;
+      margin:0 auto;
+      display:grid;
+      grid-template-columns: 1fr;
+      gap:16px;
+    }
+
+    /* Controls row */
+    .controls{
+      background:var(--panel);
+      border:1px solid var(--border);
+      border-radius:14px;
+      padding:12px;
+      display:grid;
+      grid-template-columns: 1fr 1fr 1fr 1fr;
+      gap:12px;
+    }
+    @media (max-width: 1100px){ .controls{ grid-template-columns:1fr 1fr } }
+    @media (max-width: 640px){ .controls{ grid-template-columns:1fr } }
+
+    .control{
+      display:flex; gap:8px; align-items:center; background:#fff; border:1px solid var(--border); border-radius:12px; padding:10px 12px;
+    }
+    .control label{ font-size:12px; color:var(--muted); min-width:88px }
+    .control select, .control input[type="range"]{
+      width:100%; border:none; outline:none; background:transparent; font:inherit; color:var(--ink);
+    }
+    .chip{
+      padding:6px 10px; border-radius:999px; background:var(--chip); font-size:12px; font-weight:600; color:#4537ff;
+    }
+
+    /* KPIs */
+    .kpis{
+      display:grid; grid-template-columns:repeat(4,1fr); gap:12px;
+    }
+    @media (max-width: 900px){ .kpis{ grid-template-columns:repeat(2,1fr) } }
+    @media (max-width: 520px){ .kpis{ grid-template-columns:1fr } }
+
+    .kpi{
+      background:var(--panel);
+      border:1px solid var(--border);
+      border-radius:14px;
+      padding:14px;
+    }
+    .kpi .label{ font-size:12px; color:var(--muted) }
+    .kpi .value{ font-size:22px; font-weight:800; margin-top:4px }
+    .kpi .delta{ font-size:12px; margin-top:6px }
+    .kpi.ok .value{ color:var(--ok) }
+    .kpi.warn .value{ color:var(--warn) }
+    .kpi.both .value{ color:var(--both) }
+
+    /* Main grid */
+    .main{
+      display:grid; grid-template-columns: 1.4fr 1fr; gap:16px;
+    }
+    @media (max-width: 1100px){ .main{ grid-template-columns:1fr } }
+
+    .panel{
+      background:var(--panel);
+      border:1px solid var(--border);
+      border-radius:14px;
+      overflow:hidden;
+      display:flex; flex-direction:column;
+      min-height:360px;
+    }
+    .panel header{
+      background:#fff;
+      border-bottom:1px solid var(--border);
+      color:var(--ink);
+      padding:12px 14px;
+      position:unset;
+    }
+    .panel header .title{ font-size:14px; font-weight:800 }
+    .panel header .subtitle{ font-size:12px; color:var(--muted); font-weight:600 }
+
+    #map{ height:520px; }
+    .legend{
+      position:absolute; bottom:12px; left:12px; background:#fff; border:1px solid var(--border); border-radius:10px; padding:8px 10px; font-size:12px; box-shadow:0 6px 18px rgba(0,0,0,.06);
+    }
+    .legend .row{ display:flex; align-items:center; gap:8px; margin:4px 0 }
+    .dot{ width:12px; height:12px; border-radius:999px; display:inline-block }
+
+    /* Table */
+    .table-wrap{ overflow:auto; }
+    table{
+      width:100%; border-collapse:separate; border-spacing:0; font-size:13px;
+    }
+    thead th{
+      position:sticky; top:0; background:#fff; z-index:1;
+      text-align:left; padding:10px; border-bottom:1px solid var(--border); white-space:nowrap; font-weight:800; color:var(--muted);
+    }
+    tbody td{ padding:8px 10px; border-bottom:1px solid var(--border); white-space:nowrap; }
+    tbody tr:hover{ background:#fafbff; }
+
+    .footer-note{
+      color:var(--muted); font-size:12px; text-align:center; padding:16px 0;
+    }
+
+    /* Buttons / toggles */
+    .btn{
+      display:inline-flex; align-items:center; gap:8px; padding:8px 12px; border-radius:12px; border:1px solid var(--border); background:#fff;
+      font-weight:700; font-size:12px; cursor:pointer;
+    }
+    .btn:active{ transform:translateY(1px) }
+  </style>
 </head>
 <body>
-    <div class="dashboard-container">
-        <header>
-            <h1>Flow Monitoring Dashboard</h1>
-            <div class="legend">
-                <div class="legend-item">
-                    <div class="legend-color incoming-color"></div>
-                    <span>Incoming</span>
-                </div>
-                <div class="legend-item">
-                    <div class="legend-color outgoing-color"></div>
-                    <span>Outgoing</span>
-                </div>
-            </div>
-        </header>
-        
-        <div class="summary-cards">
-            <div class="summary-card incoming-card">
-                <h3>Total Incoming</h3>
-                <div class="value" id="total-incoming">0</div>
-            </div>
-            <div class="summary-card outgoing-card">
-                <h3>Total Outgoing</h3>
-                <div class="value" id="total-outgoing">0</div>
-            </div>
-            <div class="summary-card">
-                <h3>Monitoring Points</h3>
-                <div class="value" id="total-points">0</div>
-            </div>
-            <div class="summary-card">
-                <h3>Latest Month</h3>
-                <div class="value" id="latest-month">25-Aug</div>
-            </div>
-        </div>
-        
-        <div class="controls">
-            <select id="direction-select">
-                <option value="all">All Directions</option>
-                <option value="Incoming">Incoming Only</option>
-                <option value="Outgoing">Outgoing Only</option>
-            </select>
-            <select id="point-select">
-                <option value="all">All Points</option>
-            </select>
-            <select id="month-select">
-                <option value="all">All Months</option>
-            </select>
-            <button id="reset-filters">Reset Filters</button>
-        </div>
-        
-        <div class="dashboard-grid">
-            <div class="card">
-                <h2>Monitoring Points Map</h2>
-                <div id="map"></div>
-            </div>
-            
-            <div class="card">
-                <h2>Monthly Flow Trends</h2>
-                <div class="chart-container">
-                    <canvas id="trend-chart"></canvas>
-                </div>
-            </div>
-        </div>
-        
-        <div class="point-details">
-            <h2>Point Details</h2>
-            <div id="point-details-content">
-                <div class="no-data">Select a point on the map to view details</div>
-            </div>
-        </div>
+  <header>
+    <div>
+      <div class="title">Sudan — Flow Monitoring Dashboard (Border Points)</div>
+      <div class="subtitle">Interactive map, KPIs, time-series & table • Months: Jan 2024 → Aug 2025</div>
     </div>
+    <div class="chip" id="chipSelection">All Points • Both Directions • 2025-Aug</div>
+  </header>
 
-    <script>
-        // Sample data (would normally come from an API or database)
-        const flowData = [
-            {
-                direction: "Incoming",
-                pointName: "Argin",
-                pointCode: "SD17014PB3",
-                latitude: 21.988934,
-                longitude: 31.153322,
-                months: {
-                    "24-Jan": 496, "24-Feb": 628, "24-Mar": 4413, "24-Apr": 712, "24-May": 1555,
-                    "24-Jun": 1672, "24-Jul": 353, "24-Aug": 411, "24-Sep": 502, "24-Oct": 796,
-                    "24-Nov": 606, "24-Dec": 807, "25-Jan": 561, "25-Feb": 454, "25-Mar": 425,
-                    "25-Apr": 19950, "25-May": 21492, "25-Jun": 11329, "25-Jul": 16875, "25-Aug": 22604
-                }
-            },
-            {
-                direction: "Incoming",
-                pointName: "Ashkeet",
-                pointCode: "SD17014PB4",
-                latitude: 22.000523,
-                longitude: 31.511477,
-                months: {
-                    "24-Jan": 0, "24-Feb": 482, "24-Mar": 5114, "24-Apr": 135, "24-May": 747,
-                    "24-Jun": 1481, "24-Jul": 167, "24-Aug": 152, "24-Sep": 513, "24-Oct": 728,
-                    "24-Nov": 5043, "24-Dec": 14905, "25-Jan": 22809, "25-Feb": 29072, "25-Mar": 19791,
-                    "25-Apr": 35074, "25-May": 14482, "25-Jun": 15636, "25-Jul": 21993, "25-Aug": 26116
-                }
-            },
-            {
-                direction: "Incoming",
-                pointName: "Adekonk",
-                pointCode: "SD04115PB6",
-                latitude: 13.4623111,
-                longitude: 22.2296523,
-                months: {
-                    "24-Jan": 0, "24-Feb": 0, "24-Mar": 0, "24-Apr": 0, "24-May": 0,
-                    "24-Jun": 0, "24-Jul": 0, "24-Aug": 0, "24-Sep": 0, "24-Oct": 0,
-                    "24-Nov": 0, "24-Dec": 0, "25-Jan": 0, "25-Feb": 0, "25-Mar": 0,
-                    "25-Apr": 0, "25-May": 0, "25-Jun": 0, "25-Jul": 0, "25-Aug": 5771
-                }
-            },
-            {
-                direction: "Incoming",
-                pointName: "Um Dukhun",
-                pointCode: "SD06135PB5",
-                latitude: 11.139,
-                longitude: 22.966,
-                months: {
-                    "24-Jan": 0, "24-Feb": 0, "24-Mar": 0, "24-Apr": 0, "24-May": 0,
-                    "24-Jun": 0, "24-Jul": 0, "24-Aug": 0, "24-Sep": 0, "24-Oct": 0,
-                    "24-Nov": 0, "24-Dec": 0, "25-Jan": 0, "25-Feb": 0, "25-Mar": 0,
-                    "25-Apr": 0, "25-May": 0, "25-Jun": 0, "25-Jul": 0, "25-Aug": 2835
-                }
-            },
-            {
-                direction: "Incoming",
-                pointName: "Gallabat",
-                pointCode: "SD12077PB1",
-                latitude: 12.95798,
-                longitude: 36.151888,
-                months: {
-                    "24-Jan": 0, "24-Feb": 0, "24-Mar": 0, "24-Apr": 0, "24-May": 0,
-                    "24-Jun": 0, "24-Jul": 0, "24-Aug": 0, "24-Sep": 0, "24-Oct": 0,
-                    "24-Nov": 0, "24-Dec": 0, "25-Jan": 0, "25-Feb": 0, "25-Mar": 0,
-                    "25-Apr": 0, "25-May": 0, "25-Jun": 0, "25-Jul": 0, "25-Aug": 348
-                }
-            },
-            {
-                direction: "Outgoing",
-                pointName: "Argin",
-                pointCode: "SD17014PB3",
-                latitude: 21.988934,
-                longitude: 31.153322,
-                months: {
-                    "24-Jan": 0, "24-Feb": 0, "24-Mar": 0, "24-Apr": 0, "24-May": 0,
-                    "24-Jun": 0, "24-Jul": 0, "24-Aug": 0, "24-Sep": 0, "24-Oct": 0,
-                    "24-Nov": 0, "24-Dec": 0, "25-Jan": 0, "25-Feb": 0, "25-Mar": 0,
-                    "25-Apr": 0, "25-May": 0, "25-Jun": 0, "25-Jul": 0, "25-Aug": 927
-                }
-            },
-            {
-                direction: "Outgoing",
-                pointName: "Ashkeet",
-                pointCode: "SD17014PB4",
-                latitude: 22.000523,
-                longitude: 31.511477,
-                months: {
-                    "24-Jan": 0, "24-Feb": 0, "24-Mar": 0, "24-Apr": 0, "24-May": 0,
-                    "24-Jun": 0, "24-Jul": 0, "24-Aug": 0, "24-Sep": 0, "24-Oct": 0,
-                    "24-Nov": 0, "24-Dec": 0, "25-Jan": 0, "25-Feb": 0, "25-Mar": 0,
-                    "25-Apr": 0, "25-May": 0, "25-Jun": 0, "25-Jul": 0, "25-Aug": 519
-                }
-            },
-            {
-                direction: "Outgoing",
-                pointName: "Adekonk",
-                pointCode: "SD04115PB6",
-                latitude: 13.4623111,
-                longitude: 22.2296523,
-                months: {
-                    "24-Jan": 0, "24-Feb": 0, "24-Mar": 0, "24-Apr": 0, "24-May": 0,
-                    "24-Jun": 0, "24-Jul": 0, "24-Aug": 0, "24-Sep": 0, "24-Oct": 0,
-                    "24-Nov": 0, "24-Dec": 0, "25-Jan": 0, "25-Feb": 0, "25-Mar": 0,
-                    "25-Apr": 0, "25-May": 0, "25-Jun": 0, "25-Jul": 0, "25-Aug": 5493
-                }
-            },
-            {
-                direction: "Outgoing",
-                pointName: "Um Dukhun",
-                pointCode: "SD06135PB5",
-                latitude: 11.139,
-                longitude: 22.966,
-                months: {
-                    "24-Jan": 0, "24-Feb": 0, "24-Mar": 0, "24-Apr": 0, "24-May": 0,
-                    "24-Jun": 0, "24-Jul": 0, "24-Aug": 0, "24-Sep": 0, "24-Oct": 0,
-                    "24-Nov": 0, "24-Dec": 0, "25-Jan": 0, "25-Feb": 0, "25-Mar": 0,
-                    "25-Apr": 0, "25-May": 0, "25-Jun": 0, "25-Jul": 0, "25-Aug": 2127
-                }
-            },
-            {
-                direction: "Outgoing",
-                pointName: "Gallabat",
-                pointCode: "SD12077PB1",
-                latitude: 12.95798,
-                longitude: 36.151888,
-                months: {
-                    "24-Jan": 0, "24-Feb": 0, "24-Mar": 0, "24-Apr": 0, "24-May": 0,
-                    "24-Jun": 0, "24-Jul": 0, "24-Aug": 0, "24-Sep": 0, "24-Oct": 0,
-                    "24-Nov": 0, "24-Dec": 0, "25-Jan": 0, "25-Feb": 0, "25-Mar": 0,
-                    "25-Apr": 0, "25-May": 0, "25-Jun": 0, "25-Jul": 0, "25-Aug": 2667
-                }
-            }
-        ];
+  <div class="container">
+    <!-- Controls -->
+    <section class="controls">
+      <div class="control">
+        <label for="direction">Direction</label>
+        <select id="direction">
+          <option value="Both" selected>Both</option>
+          <option value="Incoming">Incoming</option>
+          <option value="Outgoing">Outgoing</option>
+        </select>
+      </div>
 
-        // Global variables
-        let map, trendChart, selectedPoint = null;
+      <div class="control">
+        <label for="point">Border Point</label>
+        <select id="point">
+          <option value="__ALL__" selected>All points</option>
+        </select>
+      </div>
 
-        // Initialize the dashboard
-        document.addEventListener('DOMContentLoaded', function() {
-            initializeMap();
-            populateFilters();
-            updateSummary();
-            createTrendChart();
-            
-            // Add event listeners for filters
-            document.getElementById('direction-select').addEventListener('change', applyFilters);
-            document.getElementById('point-select').addEventListener('change', applyFilters);
-            document.getElementById('month-select').addEventListener('change', applyFilters);
-            document.getElementById('reset-filters').addEventListener('click', resetFilters);
-        });
+      <div class="control">
+        <label for="month">Month</label>
+        <input id="month" type="range" min="0" max="19" step="1" value="19" />
+      </div>
 
-        // Initialize the map with Leaflet
-        function initializeMap() {
-            // Create map centered on the average coordinates of the points
-            map = L.map('map').setView([15, 30], 4);
-            
-            // Add tile layer
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '© OpenStreetMap contributors'
-            }).addTo(map);
-            
-            // Add markers for each monitoring point
-            flowData.forEach(point => {
-                const color = point.direction === 'Incoming' ? 'green' : 'red';
-                const marker = L.circleMarker([point.latitude, point.longitude], {
-                    color: color,
-                    fillColor: color,
-                    fillOpacity: 0.7,
-                    radius: 8
-                }).addTo(map);
-                
-                // Add click event to show point details
-                marker.on('click', function() {
-                    showPointDetails(point);
-                });
-                
-                // Add popup with point information
-                marker.bindPopup(`
-                    <b>${point.pointName}</b><br>
-                    Direction: ${point.direction}<br>
-                    Code: ${point.pointCode}<br>
-                    Latest Flow: ${point.months['25-Aug'].toLocaleString()}
-                `);
-            });
-        }
+      <div class="control">
+        <label for="search">Search</label>
+        <input id="search" placeholder="Type to filter table…" />
+      </div>
+    </section>
 
-        // Populate filter dropdowns
-        function populateFilters() {
-            const pointSelect = document.getElementById('point-select');
-            const monthSelect = document.getElementById('month-select');
-            
-            // Get unique point names
-            const pointNames = [...new Set(flowData.map(item => item.pointName))];
-            pointNames.forEach(name => {
-                const option = document.createElement('option');
-                option.value = name;
-                option.textContent = name;
-                pointSelect.appendChild(option);
-            });
-            
-            // Get all months from the data
-            const months = Object.keys(flowData[0].months);
-            months.forEach(month => {
-                const option = document.createElement('option');
-                option.value = month;
-                option.textContent = month;
-                monthSelect.appendChild(option);
-            });
-        }
+    <!-- KPIs -->
+    <section class="kpis">
+      <div class="kpi ok">
+        <div class="label">Incoming (selected)</div>
+        <div class="value" id="kpiIncoming">0</div>
+        <div class="delta" id="kpiIncomingDelta">vs prev. month: —</div>
+      </div>
+      <div class="kpi warn">
+        <div class="label">Outgoing (selected)</div>
+        <div class="value" id="kpiOutgoing">0</div>
+        <div class="delta" id="kpiOutgoingDelta">vs prev. month: —</div>
+      </div>
+      <div class="kpi both">
+        <div class="label">Total flow (selected)</div>
+        <div class="value" id="kpiTotal">0</div>
+        <div class="delta" id="kpiTotalDelta">vs prev. month: —</div>
+      </div>
+      <div class="kpi">
+        <div class="label">Net flow (Incoming − Outgoing)</div>
+        <div class="value" id="kpiNet">0</div>
+        <div class="delta" id="kpiNetDelta">vs prev. month: —</div>
+      </div>
+    </section>
 
-        // Update summary cards
-        function updateSummary() {
-            // Calculate totals
-            const totalIncoming = flowData
-                .filter(point => point.direction === 'Incoming')
-                .reduce((sum, point) => sum + Object.values(point.months).reduce((a, b) => a + b, 0), 0);
-                
-            const totalOutgoing = flowData
-                .filter(point => point.direction === 'Outgoing')
-                .reduce((sum, point) => sum + Object.values(point.months).reduce((a, b) => a + b, 0), 0);
-                
-            // Update DOM
-            document.getElementById('total-incoming').textContent = totalIncoming.toLocaleString();
-            document.getElementById('total-outgoing').textContent = totalOutgoing.toLocaleString();
-            document.getElementById('total-points').textContent = flowData.length;
-        }
+    <!-- Main panels -->
+    <section class="main">
+      <div class="panel">
+        <header><div class="title">Map — Circle size by selected month & direction</div><div class="subtitle">Click a marker for details</div></header>
+        <div style="position:relative; flex:1">
+          <div id="map"></div>
+          <div class="legend">
+            <div class="row"><span class="dot" style="background:var(--ok)"></span> Incoming</div>
+            <div class="row"><span class="dot" style="background:var(--warn)"></span> Outgoing</div>
+            <div class="row"><span class="dot" style="background:var(--both)"></span> Both</div>
+          </div>
+        </div>
+      </div>
 
-        // Create trend chart
-        function createTrendChart() {
-            const ctx = document.getElementById('trend-chart').getContext('2d');
-            
-            // Get all months
-            const months = Object.keys(flowData[0].months);
-            
-            // Calculate totals by month and direction
-            const incomingTotals = months.map(month => 
-                flowData
-                    .filter(point => point.direction === 'Incoming')
-                    .reduce((sum, point) => sum + point.months[month], 0)
-            );
-            
-            const outgoingTotals = months.map(month => 
-                flowData
-                    .filter(point => point.direction === 'Outgoing')
-                    .reduce((sum, point) => sum + point.months[month], 0)
-            );
-            
-            trendChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: months,
-                    datasets: [
-                        {
-                            label: 'Incoming',
-                            data: incomingTotals,
-                            borderColor: '#27ae60',
-                            backgroundColor: 'rgba(39, 174, 96, 0.1)',
-                            tension: 0.3,
-                            fill: true
-                        },
-                        {
-                            label: 'Outgoing',
-                            data: outgoingTotals,
-                            borderColor: '#e74c3c',
-                            backgroundColor: 'rgba(231, 76, 60, 0.1)',
-                            tension: 0.3,
-                            fill: true
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            title: {
-                                display: true,
-                                text: 'Flow Count'
-                            }
-                        },
-                        x: {
-                            title: {
-                                display: true,
-                                text: 'Month'
-                            }
-                        }
-                    }
-                }
-            });
-        }
+      <div class="panel">
+        <header><div class="title">Time Series — Aggregated by month</div><div class="subtitle" id="tsSubtitle">All points • Both directions</div></header>
+        <div style="padding:10px">
+          <canvas id="tsChart" height="300"></canvas>
+        </div>
+      </div>
+    </section>
 
-        // Show point details
-        function showPointDetails(point) {
-            selectedPoint = point;
-            const detailsContent = document.getElementById('point-details-content');
-            
-            // Calculate point statistics
-            const monthlyValues = Object.values(point.months);
-            const totalFlow = monthlyValues.reduce((a, b) => a + b, 0);
-            const avgFlow = totalFlow / monthlyValues.length;
-            const maxFlow = Math.max(...monthlyValues);
-            const maxMonth = Object.keys(point.months).find(key => point.months[key] === maxFlow);
-            
-            // Create HTML for point details
-            detailsContent.innerHTML = `
-                <div class="point-info">
-                    <div class="point-info-item">
-                        <label>Point Name</label>
-                        <div>${point.pointName}</div>
-                    </div>
-                    <div class="point-info-item">
-                        <label>Point Code</label>
-                        <div>${point.pointCode}</div>
-                    </div>
-                    <div class="point-info-item">
-                        <label>Direction</label>
-                        <div class="${point.direction.toLowerCase()}">${point.direction}</div>
-                    </div>
-                    <div class="point-info-item">
-                        <label>Coordinates</label>
-                        <div>${point.latitude.toFixed(6)}, ${point.longitude.toFixed(6)}</div>
-                    </div>
-                    <div class="point-info-item">
-                        <label>Total Flow</label>
-                        <div>${totalFlow.toLocaleString()}</div>
-                    </div>
-                    <div class="point-info-item">
-                        <label>Average Monthly Flow</label>
-                        <div>${avgFlow.toFixed(0).toLocaleString()}</div>
-                    </div>
-                    <div class="point-info-item">
-                        <label>Peak Flow</label>
-                        <div>${maxFlow.toLocaleString()} (${maxMonth})</div>
-                    </div>
-                </div>
-                <h3>Monthly Breakdown</h3>
-                <div class="monthly-breakdown">
-                    ${Object.entries(point.months).map(([month, value]) => `
-                        <div class="month-item">
-                            <div class="month-value">${value.toLocaleString()}</div>
-                            <div class="month-label">${month}</div>
-                        </div>
-                    `).join('')}
-                </div>
-            `;
-        }
+    <section class="panel">
+      <header style="display:flex; align-items:center; justify-content:space-between">
+        <div>
+          <div class="title">By Point — Selected Month</div>
+          <div class="subtitle" id="barSubtitle">2025-Aug • Both directions</div>
+        </div>
+        <button class="btn" id="downloadCsvBtn">Download CSV</button>
+      </header>
+      <div style="padding:10px">
+        <canvas id="barChart" height="240"></canvas>
+      </div>
+    </section>
 
-        // Apply filters to the chart
-        function applyFilters() {
-            const directionFilter = document.getElementById('direction-select').value;
-            const pointFilter = document.getElementById('point-select').value;
-            const monthFilter = document.getElementById('month-select').value;
-            
-            // Get all months
-            const months = Object.keys(flowData[0].months);
-            
-            let filteredIncomingData = [];
-            let filteredOutgoingData = [];
-            
-            // Apply direction filter
-            if (directionFilter === 'all' || directionFilter === 'Incoming') {
-                filteredIncomingData = months.map(month => 
-                    flowData
-                        .filter(point => point.direction === 'Incoming' && 
-                               (pointFilter === 'all' || point.pointName === pointFilter))
-                        .reduce((sum, point) => sum + point.months[month], 0)
-                );
-            }
-            
-            if (directionFilter === 'all' || directionFilter === 'Outgoing') {
-                filteredOutgoingData = months.map(month => 
-                    flowData
-                        .filter(point => point.direction === 'Outgoing' && 
-                               (pointFilter === 'all' || point.pointName === pointFilter))
-                        .reduce((sum, point) => sum + point.months[month], 0)
-                );
-            }
-            
-            // Apply month filter to the chart display
-            if (monthFilter !== 'all') {
-                const monthIndex = months.indexOf(monthFilter);
-                if (monthIndex !== -1) {
-                    // Show only the selected month
-                    const singleMonthData = Array(months.length).fill(0);
-                    singleMonthData[monthIndex] = filteredIncomingData[monthIndex] + filteredOutgoingData[monthIndex];
-                    
-                    trendChart.data.labels = months.map((m, i) => i === monthIndex ? m : '');
-                    trendChart.data.datasets[0].data = directionFilter !== 'Outgoing' ? 
-                        singleMonthData.map((v, i) => i === monthIndex ? filteredIncomingData[i] : 0) : 
-                        Array(months.length).fill(0);
-                    trendChart.data.datasets[1].data = directionFilter !== 'Incoming' ? 
-                        singleMonthData.map((v, i) => i === monthIndex ? filteredOutgoingData[i] : 0) : 
-                        Array(months.length).fill(0);
-                }
-            } else {
-                // Show all months
-                trendChart.data.labels = months;
-                trendChart.data.datasets[0].data = directionFilter !== 'Outgoing' ? filteredIncomingData : Array(months.length).fill(0);
-                trendChart.data.datasets[1].data = directionFilter !== 'Incoming' ? filteredOutgoingData : Array(months.length).fill(0);
-            }
-            
-            trendChart.update();
-        }
+    <section class="panel">
+      <header><div class="title">Data Table</div><div class="subtitle">Filter with the controls or type in the search box</div></header>
+      <div class="table-wrap">
+        <table id="dataTable">
+          <thead id="tableHead"></thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
+    </section>
 
-        // Reset all filters
-        function resetFilters() {
-            document.getElementById('direction-select').value = 'all';
-            document.getElementById('point-select').value = 'all';
-            document.getElementById('month-select').value = 'all';
-            createTrendChart();
-        }
-    </script>
+    <div class="footer-note">Source: Flow Monitoring data provided by user. Dashboard built with Leaflet & Chart.js.</div>
+  </div>
+
+<script>
+/* ===========================
+   1) DATA
+   =========================== */
+const monthLabels = [
+  "2024-Jan","2024-Feb","2024-Mar","2024-Apr","2024-May","2024-Jun","2024-Jul","2024-Aug",
+  "2024-Sep","2024-Oct","2024-Nov","2024-Dec",
+  "2025-Jan","2025-Feb","2025-Mar","2025-Apr","2025-May","2025-Jun","2025-Jul","2025-Aug"
+];
+
+const raw = [
+  // Direction, Point, Code, lat, lon, ...20 months...
+  ["Incoming","Argin","SD17014PB3",21.988934,31.153322,496,628,4413,712,1555,1672,353,411,502,796,606,807,561,454,425,19950,21492,11329,16875,22604],
+  ["Incoming","Ashkeet","SD17014PB4",22.000523,31.511477,0,482,5114,135,747,1481,167,152,513,728,5043,14905,22809,29072,19791,35074,14482,15636,21993,26116],
+  ["Incoming","Adekonk","SD04115PB6",13.4623111,22.2296523,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,5771],
+  ["Incoming","Um Dukhun","SD06135PB5",11.139,22.966,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2835],
+  ["Incoming","Gallabat","SD12077PB1",12.95798,36.151888,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,348],
+
+  ["Outgoing","Argin","SD17014PB3",21.988934,31.153322,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,927],
+  ["Outgoing","Ashkeet","SD17014PB4",22.000523,31.511477,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,519],
+  ["Outgoing","Adekonk","SD04115PB6",13.4623111,22.2296523,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,5493],
+  ["Outgoing","Um Dukhun","SD06135PB5",11.139,22.966,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2127],
+  ["Outgoing","Gallabat","SD12077PB1",12.95798,36.151888,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2667],
+];
+
+const rows = raw.map(r => {
+  const base = {direction:r[0], point:r[1], code:r[2], lat:r[3], lon:r[4]};
+  monthLabels.forEach((m, i) => base[m] = r[5+i] ?? 0);
+  return base;
+});
+
+// Unique points (to populate dropdown etc.)
+const points = [...new Set(rows.map(r => r.point))].map(p => {
+  const any = rows.find(r => r.point === p);
+  return { point:p, code:any.code, lat:any.lat, lon:any.lon };
+});
+
+/* ===========================
+   2) STATE & HELPERS
+   =========================== */
+const $ = sel => document.querySelector(sel);
+const directionSel = $('#direction');
+const pointSel = $('#point');
+const monthRange = $('#month');
+const searchInput = $('#search');
+const chipSelection = $('#chipSelection');
+const tsSubtitle = $('#tsSubtitle');
+const barSubtitle = $('#barSubtitle');
+
+const kpiIncoming = $('#kpiIncoming');
+const kpiOutgoing = $('#kpiOutgoing');
+const kpiTotal = $('#kpiTotal');
+const kpiNet = $('#kpiNet');
+const kpiIncomingDelta = $('#kpiIncomingDelta');
+const kpiOutgoingDelta = $('#kpiOutgoingDelta');
+const kpiTotalDelta = $('#kpiTotalDelta');
+const kpiNetDelta = $('#kpiNetDelta');
+
+let map, markers = [];
+let tsChart, barChart;
+
+function fmt(n){ return n.toLocaleString('en-US'); }
+
+function selectedMonthLabel(){ return monthLabels[parseInt(monthRange.value,10)]; }
+
+function filterData(){
+  const dir = directionSel.value; // Incoming, Outgoing, Both
+  const selPoint = pointSel.value; // __ALL__ or name
+  let arr = rows.slice();
+  if (dir !== 'Both') arr = arr.filter(r => r.direction === dir);
+  if (selPoint !== '__ALL__') arr = arr.filter(r => r.point === selPoint);
+  return arr;
+}
+
+// Aggregate by month
+function aggregateTimeSeries(dir, selPoint){
+  const incoming = Array(monthLabels.length).fill(0);
+  const outgoing = Array(monthLabels.length).fill(0);
+  rows.forEach(r => {
+    if (selPoint !== '__ALL__' && r.point !== selPoint) return;
+    monthLabels.forEach((m, i) => {
+      if (r.direction === 'Incoming') incoming[i] += r[m] || 0;
+      else if (r.direction === 'Outgoing') outgoing[i] += r[m] || 0;
+    });
+  });
+  if (dir === 'Incoming') return {labels:monthLabels, series:incoming, alt:outgoing};
+  if (dir === 'Outgoing') return {labels:monthLabels, series:outgoing, alt:incoming};
+  // Both
+  const total = incoming.map((v,i)=> v + outgoing[i]);
+  return {labels:monthLabels, series:total, incoming, outgoing};
+}
+
+function valueForPoint(r, month, dir){
+  if (dir === 'Both') return r[month] || 0;
+  if (r.direction !== dir) return 0;
+  return r[month] || 0;
+}
+
+function computeKPIs(){
+  const month = selectedMonthLabel();
+  const prevIdx = Math.max(0, monthLabels.indexOf(month) - 1);
+  const prevMonth = monthLabels[prevIdx];
+
+  const selPoint = pointSel.value;
+  const incoming = rows.filter(r => (selPoint==='__ALL__'||r.point===selPoint) && r.direction==='Incoming')
+                       .reduce((s,r)=> s + (r[month]||0), 0);
+  const outgoing = rows.filter(r => (selPoint==='__ALL__'||r.point===selPoint) && r.direction==='Outgoing')
+                       .reduce((s,r)=> s + (r[month]||0), 0);
+  const incomingPrev = rows.filter(r => (selPoint==='__ALL__'||r.point===selPoint) && r.direction==='Incoming')
+                       .reduce((s,r)=> s + (r[prevMonth]||0), 0);
+  const outgoingPrev = rows.filter(r => (selPoint==='__ALL__'||r.point===selPoint) && r.direction==='Outgoing')
+                       .reduce((s,r)=> s + (r[prevMonth]||0), 0);
+
+  const total = incoming + outgoing;
+  const totalPrev = incomingPrev + outgoingPrev;
+  const net = incoming - outgoing;
+  const netPrev = incomingPrev - outgoingPrev;
+
+  kpiIncoming.textContent = fmt(incoming);
+  kpiOutgoing.textContent = fmt(outgoing);
+  kpiTotal.textContent = fmt(total);
+  kpiNet.textContent = fmt(net);
+
+  function deltaStr(curr, prev){
+    if (prev === 0) return 'vs prev. month: —';
+    const pct = ((curr - prev)/prev)*100;
+    const arrow = (pct>0?'▲': (pct<0?'▼':'•'));
+    return `vs prev. month: ${arrow} ${pct.toFixed(1)}%`;
+  }
+  kpiIncomingDelta.textContent = deltaStr(incoming, incomingPrev);
+  kpiOutgoingDelta.textContent = deltaStr(outgoing, outgoingPrev);
+  kpiTotalDelta.textContent = deltaStr(total, totalPrev);
+  kpiNetDelta.textContent = deltaStr(net, netPrev);
+}
+
+/* ===========================
+   3) MAP
+   =========================== */
+function initMap(){
+  map = L.map('map', { zoomControl:true, scrollWheelZoom:true }).setView([15.5, 30.0], 5);
+  const tile = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution:'&copy; OpenStreetMap contributors'
+  });
+  tile.addTo(map);
+  renderMarkers();
+}
+
+function scaleRadius(v){
+  // Gentle sqrt scaling for large flows; ensure visibility for small numbers
+  const r = Math.sqrt(v) * 0.35; // tweak as needed
+  return Math.max(5, Math.min(r, 50));
+}
+
+function markerColor(){
+  const dir = directionSel.value;
+  if (dir === 'Incoming') return getComputedStyle(document.documentElement).getPropertyValue('--ok').trim();
+  if (dir === 'Outgoing') return getComputedStyle(document.documentElement).getPropertyValue('--warn').trim();
+  return getComputedStyle(document.documentElement).getPropertyValue('--both').trim();
+}
+
+function renderMarkers(){
+  // clear old
+  markers.forEach(m => m.remove());
+  markers = [];
+
+  const month = selectedMonthLabel();
+  const dir = directionSel.value;
+  const selPoint = pointSel.value;
+
+  // Build point -> value for selected constraints
+  const byPoint = new Map();
+  rows.forEach(r=>{
+    if (selPoint!=='__ALL__' && r.point!==selPoint) return;
+    const key = r.point;
+    const val = valueForPoint(r, month, dir);
+    byPoint.set(key, (byPoint.get(key)||0) + val);
+  });
+
+  const col = markerColor();
+
+  points.forEach(p=>{
+    if (!byPoint.has(p.point)) return;
+    const v = byPoint.get(p.point);
+    const circle = L.circleMarker([p.lat, p.lon], {
+      radius: scaleRadius(v),
+      color: col, weight:1.5, fillColor: col, fillOpacity:.25
+    }).addTo(map);
+
+    const inc = rows.find(r => r.point===p.point && r.direction==='Incoming')?.[month] || 0;
+    const out = rows.find(r => r.point===p.point && r.direction==='Outgoing')?.[month] || 0;
+
+    const popup = `
+      <div style="font-weight:800; margin-bottom:6px">${p.point}</div>
+      <div style="font-size:12px; color:#555">Code: ${p.code}</div>
+      <div style="margin-top:6px; font-size:13px">
+        <div><b>${month}</b></div>
+        <div>Incoming: <b style="color:var(--ok)">${fmt(inc)}</b></div>
+        <div>Outgoing: <b style="color:var(--warn)">${fmt(out)}</b></div>
+        <div>Total: <b>${fmt(inc+out)}</b></div>
+        <div>Net (In−Out): <b>${fmt(inc-out)}</b></div>
+      </div>
+    `;
+    circle.bindPopup(popup);
+    markers.push(circle);
+  });
+
+  // if a single point selected, focus it
+  if (selPoint !== '__ALL__'){
+    const p = points.find(x=>x.point===selPoint);
+    if (p) map.setView([p.lat, p.lon], 7);
+  } else {
+    // fit bounds to all visible circles if any
+    if (markers.length){
+      const group = L.featureGroup(markers);
+      map.fitBounds(group.getBounds().pad(0.15));
+    }
+  }
+}
+
+/* ===========================
+   4) CHARTS
+   =========================== */
+function initCharts(){
+  // Time series
+  const tsCtx = document.getElementById('tsChart').getContext('2d');
+  tsChart = new Chart(tsCtx, {
+    type:'line',
+    data:{ labels: monthLabels, datasets: [] },
+    options:{
+      responsive:true,
+      maintainAspectRatio:false,
+      plugins:{ legend:{ display:true, labels:{ boxWidth:10 } } },
+      interaction:{ mode:'index', intersect:false },
+      scales:{
+        x:{ ticks:{ maxRotation:0, autoSkip:true } },
+        y:{ beginAtZero:true }
+      }
+    }
+  });
+
+  // Bar
+  const barCtx = document.getElementById('barChart').getContext('2d');
+  barChart = new Chart(barCtx, {
+    type:'bar',
+    data:{ labels:[], datasets:[ { label:'Flow', data:[] } ] },
+    options:{
+      responsive:true,
+      maintainAspectRatio:false,
+      plugins:{ legend:{ display:false } },
+      scales:{ y:{ beginAtZero:true } }
+    }
+  });
+
+  renderCharts();
+}
+
+function renderCharts(){
+  const dir = directionSel.value;
+  const selPoint = pointSel.value;
+  const month = selectedMonthLabel();
+  const idx = monthLabels.indexOf(month);
+
+  // Time series logic
+  const agg = aggregateTimeSeries(dir, selPoint);
+  tsChart.data.labels = agg.labels;
+
+  if (dir === 'Both'){
+    tsChart.data.datasets = [
+      { label:'Incoming', data: agg.incoming, borderColor:getCss('--ok'), backgroundColor:getCss('--ok'), tension:.25 },
+      { label:'Outgoing', data: agg.outgoing, borderColor:getCss('--warn'), backgroundColor:getCss('--warn'), tension:.25 },
+      { label:'Total', data: agg.series, borderColor:getCss('--both'), backgroundColor:getCss('--both'), tension:.25 }
+    ];
+  } else {
+    const c = (dir==='Incoming')?getCss('--ok'):getCss('--warn');
+    tsChart.data.datasets = [
+      { label:dir, data: agg.series, borderColor:c, backgroundColor:c, tension:.25 },
+      { label:(dir==='Incoming'?'Outgoing':'Incoming'), data: agg.alt, borderColor:getCss('--muted'), backgroundColor:getCss('--muted'), borderDash:[6,4], tension:.25 }
+    ];
+  }
+  tsChart.update();
+
+  // Subtitle
+  tsSubtitle.textContent = `${selPoint==='__ALL__'?'All points':selPoint} • ${dir} direction${dir==='Both'?'s':''}`;
+
+  // Bar chart by point
+  const labels = [];
+  const vals = [];
+  points.forEach(p=>{
+    const inc = rows.find(r => r.point===p.point && r.direction==='Incoming')?.[month] || 0;
+    const out = rows.find(r => r.point===p.point && r.direction==='Outgoing')?.[month] || 0;
+    let v = (dir==='Incoming')?inc : (dir==='Outgoing'? out : inc+out);
+    labels.push(p.point);
+    vals.push(v);
+  });
+
+  barChart.data.labels = labels;
+  barChart.data.datasets[0].data = vals;
+  barChart.data.datasets[0].borderColor = (dir==='Incoming')?getCss('--ok'): (dir==='Outgoing'?getCss('--warn'):getCss('--both'));
+  barChart.data.datasets[0].backgroundColor = barChart.data.datasets[0].borderColor;
+  barChart.update();
+
+  barSubtitle.textContent = `${month} • ${dir} direction${dir==='Both'?'s':''}`;
+}
+
+function getCss(varName){
+  return getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
+}
+
+/* ===========================
+   5) TABLE
+   =========================== */
+const tableHead = $('#tableHead');
+const tableBody = $('#tableBody');
+
+function buildTableHead(){
+  const cols = ["Direction","Point","Code","Lat","Lon", ...monthLabels];
+  const tr = document.createElement('tr');
+  cols.forEach(c=>{
+    const th = document.createElement('th'); th.textContent = c; tr.appendChild(th);
+  });
+  tableHead.innerHTML = ''; tableHead.appendChild(tr);
+}
+
+function renderTable(){
+  const dir = directionSel.value;
+  const selPoint = pointSel.value;
+  const q = (searchInput.value || '').toLowerCase();
+
+  let arr = rows.slice();
+  if (dir !== 'Both') arr = arr.filter(r => r.direction === dir);
+  if (selPoint !== '__ALL__') arr = arr.filter(r => r.point === selPoint);
+  if (q) arr = arr.filter(r => (r.point + ' ' + r.code + ' ' + r.direction).toLowerCase().includes(q));
+
+  tableBody.innerHTML = '';
+  arr.forEach(r=>{
+    const tr = document.createElement('tr');
+    const base = [r.direction, r.point, r.code, r.lat, r.lon];
+    base.forEach(v=>{
+      const td = document.createElement('td'); td.textContent = v; tr.appendChild(td);
+    });
+    monthLabels.forEach(m=>{
+      const td = document.createElement('td'); td.textContent = (r[m]||0).toLocaleString('en-US'); tr.appendChild(td);
+    });
+    tableBody.appendChild(tr);
+  });
+}
+
+/* ===========================
+   6) DOWNLOAD CSV
+   =========================== */
+function toCsv(){
+  const cols = ["Direction","Point","Code","Lat","Lon", ...monthLabels];
+  const lines = [cols.join(",")];
+  rows.forEach(r=>{
+    const vals = [r.direction, r.point, r.code, r.lat, r.lon, ...monthLabels.map(m=> r[m]||0)];
+    lines.push(vals.join(","));
+  });
+  return lines.join("\n");
+}
+
+function downloadCsv(){
+  const blob = new Blob([toCsv()], {type:"text/csv;charset=utf-8"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'flow_monitoring_border_points.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+/* ===========================
+   7) UI INIT & EVENTS
+   =========================== */
+function populatePointDropdown(){
+  const sel = pointSel;
+  points.forEach(p=>{
+    const opt = document.createElement('option');
+    opt.value = p.point; opt.textContent = p.point;
+    sel.appendChild(opt);
+  });
+}
+
+function refreshAll(){
+  // Chip text
+  chipSelection.textContent = `${pointSel.value==='__ALL__'?'All Points':pointSel.value} • ${directionSel.value} • ${selectedMonthLabel()}`;
+
+  computeKPIs();
+  renderMarkers();
+  renderCharts();
+  renderTable();
+}
+
+function init(){
+  populatePointDropdown();
+  buildTableHead();
+  initMap();
+  initCharts();
+  refreshAll();
+
+  directionSel.addEventListener('change', refreshAll);
+  pointSel.addEventListener('change', refreshAll);
+  monthRange.addEventListener('input', refreshAll);
+  searchInput.addEventListener('input', renderTable);
+  document.getElementById('downloadCsvBtn').addEventListener('click', downloadCsv);
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
 </body>
 </html>
