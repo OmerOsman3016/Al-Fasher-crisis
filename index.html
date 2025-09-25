@@ -73,11 +73,26 @@
     /* Flow map controls & overlays */
     .flow-wrap{position:relative;flex:1}
     .flow-ctrls{position:absolute; top:10px; right:10px; display:flex; gap:8px; flex-wrap:wrap; z-index:5;}
-    .flow-legend{position:absolute; bottom:12px; left:12px; z-index:5; background:#fff; border:1px solid var(--border); border-radius:10px; padding:8px 10px; font-size:12px; box-shadow:0 6px 18px rgba(0,0,0,.06)}
+    /* removed floating .flow-legend (we'll use a bottom bar instead) */
     #loading-overlay{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,.85); z-index:6; font-weight:700; color:#444}
     #info-panel{position:absolute; top:10px; left:10px; max-width:320px; z-index:5; background:#fff; border:1px solid var(--border); border-radius:10px; padding:10px 12px; font-size:12px; color:#333; box-shadow:0 10px 24px rgba(0,0,0,.08)}
     #info-panel h4{margin:0 0 6px}
     #info-panel button{margin-top:6px}
+
+    /* NEW: bottom bar under the flow map */
+    .flow-bottom{
+      border-top:1px solid var(--border);
+      background:#fff;
+      padding:10px 12px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      flex-wrap:wrap;
+      font-size:12px;
+    }
+    .flow-bottom .legend-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+    .pill{background:#f8fafc;border:1px solid var(--border);padding:6px 10px;border-radius:999px;font-weight:700}
   </style>
 </head>
 <body>
@@ -175,13 +190,16 @@
           <button class="btn small" id="toggle-flows" aria-pressed="true"><i class="fas fa-wave-square"></i> <span id="flows-text">Hide Flows</span></button>
           <button class="btn small" id="toggle-points" aria-pressed="true"><i class="fas fa-location-dot"></i> <span id="points-text">Hide Points</span></button>
         </div>
+      </div>
 
-        <!-- Legend -->
-        <div class="flow-legend">
-          <div class="row" style="display:flex;align-items:center;gap:8px"><span class="dot" style="background:#FF671F"></span> Origins</div>
-          <div class="row" style="display:flex;align-items:center;gap:8px"><span class="dot" style="background:#418FDE"></span> Destinations</div>
-          <div class="row" style="margin-top:6px;color:#666">Line width ∝ volume</div>
+      <!-- NEW: Bottom bar under the map -->
+      <div class="flow-bottom">
+        <div class="legend-row">
+          <span class="dot" style="background:#FF671F"></span> Origins
+          <span class="dot" style="background:#418FDE;margin-left:12px"></span> Destinations
+          <span class="pill" title="Line width is proportional to volume">Line width ∝ volume</span>
         </div>
+        <div id="flowStats" class="pill">Loading…</div>
       </div>
     </section>
 
@@ -484,7 +502,6 @@ function initChartsAndMap(){ initMap(); initCharts(); refreshAll(); }
 <!-- ===================== FLOW MAP (animated OD) ===================== -->
 <script>
 (async function(){
-  // Mapbox token for basemap (flows still render if Mapbox fails; fallback to OSM)
   const MAPBOX_TOKEN = 'pk.eyJ1Ijoib21lcm9zbWFuIiwiYSI6ImUxZDBkODBlNjQxMDE2M2Y3OTQ3MWIwNTJkMjgzZTI3In0.ekCHuxRflTOO0RpQ6rQR7Q';
   const FLOW_CSV = 'data/IDPs_Pathway.csv';
   const BOUNDS_GEOJSON = 'data/sudan_states.geojson';
@@ -499,6 +516,7 @@ function initChartsAndMap(){ initMap(); initCharts(); refreshAll(); }
   const btnPoints= document.getElementById('toggle-points');
   const pointsText= document.getElementById('points-text');
   const helpClose= document.getElementById('close-info');
+  const flowStatsEl = document.getElementById('flowStats');
 
   const setOverlay = (msg)=>{ if(overlay){ overlay.style.display='flex'; overlay.textContent = msg; } };
   const hideOverlay= ()=>{ if(overlay){ overlay.style.display='none'; } };
@@ -550,19 +568,16 @@ function initChartsAndMap(){ initMap(); initCharts(); refreshAll(); }
   // Controls state
   let flowmapLayer, isAnimationPlaying = true, showFlows = true, showPoints = true;
 
-  // Cross-fork helpers: normalize animation/toggle APIs
+  // Cross-fork helpers
   function setAnimation(layer, play){
     if (!layer) return;
-    // Most common
     if (typeof layer.setAnimationStarted === 'function') return layer.setAnimationStarted(play);
-    // Variants
     if (play && typeof layer.startAnimation === 'function') return layer.startAnimation();
     if (!play && typeof layer.stopAnimation === 'function') return layer.stopAnimation();
     if (play && typeof layer.start === 'function') return layer.start();
     if (!play && typeof layer.stop === 'function') return layer.stop();
   }
   function kickAnimation(layer){
-    // Some builds need a small start/stop to "wake" the raf loop.
     setTimeout(()=>{ setAnimation(layer, false); requestAnimationFrame(()=> setAnimation(layer, true)); }, 100);
   }
   function setFlowsVisible(layer, visible){
@@ -573,7 +588,6 @@ function initChartsAndMap(){ initMap(); initCharts(); refreshAll(); }
   function setPointsVisible(layer, visible){
     if (!layer) return;
     if (typeof layer.setPointVisibility === 'function') return layer.setPointVisibility(visible);
-    // Fallback: redraw with zero radius (soft toggle)
     if (layer.options && typeof layer.redraw === 'function'){
       const orig = layer._pointToLayer || layer.options.pointToLayer;
       if (!layer.__origPointToLayer && orig) layer.__origPointToLayer = orig;
@@ -594,14 +608,6 @@ function initChartsAndMap(){ initMap(); initCharts(); refreshAll(); }
   if (btnFlows) btnFlows.addEventListener('click', () => { showFlows = !showFlows; setFlowsVisible(flowmapLayer, showFlows); setFlowsButtonState(); });
   if (btnPoints)btnPoints.addEventListener('click', () => { showPoints = !showPoints; setPointsVisible(flowmapLayer, showPoints); setPointsButtonState(); });
   if (helpClose) helpClose.addEventListener('click', () => document.getElementById('info-panel').style.display = 'none');
-
-  window.addEventListener('keydown', (e) => {
-    if (e.target.closest('input, textarea, [contenteditable="true"]')) return;
-    if (e.code === 'Space') { e.preventDefault(); if (btnAnim) btnAnim.click(); }
-    else if (e.key.toLowerCase() === 'f') { if (btnFlows) btnFlows.click(); }
-    else if (e.key.toLowerCase() === 'p') { if (btnPoints) btnPoints.click(); }
-    else if (e.key.toLowerCase() === 'r') flowMap.setView([16,30], 5.5);
-  });
 
   // Load boundaries + flow CSV
   setOverlay('Loading flows…');
@@ -651,23 +657,16 @@ function initChartsAndMap(){ initMap(); initCharts(); refreshAll(); }
       console.error('After normalization, no valid rows remained.'); return;
     }
 
-    // Totals for point scaling
-    const destinationTotals = new Map(), originTotals = new Map();
-    for (const d of data){
-      destinationTotals.set(d.e_locality_id, (destinationTotals.get(d.e_locality_id) || 0) + d.e_Volume);
-      originTotals.set(d.s_state_id, (originTotals.get(d.s_state_id) || 0) + d.e_Volume);
-    }
-    data.forEach(d => {
-      d.e_totalVolume = destinationTotals.get(d.e_locality_id) || d.e_Volume;
-      d.s_totalVolume = originTotals.get(d.s_state_id) || d.e_Volume;
-    });
+    // Totals for stats
+    const totalPairs = data.length;
+    const totalVolume = data.reduce((s,d)=> s + (d.e_Volume||0), 0);
 
     // Build GeoJSON of origins
     const fc = { type:'FeatureCollection', features: data.map(d => ({
       type:'Feature', geometry:{ type:'Point', coordinates:[d.s_lon, d.s_lat] }, properties:d
     })) };
 
-    // Instantiate CanvasFlowmapLayer (support class or factory)
+    // Instantiate CanvasFlowmapLayer
     const options = {
       originAndDestinationFieldIds: {
         originUniqueIdField: 's_state_id',
@@ -693,7 +692,6 @@ function initChartsAndMap(){ initMap(); initCharts(); refreshAll(); }
         defaultSymbol: { strokeStyle: '#d0d7e2', lineWidth: 0.6, lineCap: 'round', shadowColor: '#d0d7e2', shadowBlur: 1.2 }
       },
       pathDisplayMode: 'all',
-      // The following work on most forks; no-op on others
       animationStarted: true,
       animationDuration: 3200,
       animationEasingFamily: 'Linear',
@@ -724,14 +722,29 @@ function initChartsAndMap(){ initMap(); initCharts(); refreshAll(); }
       return rMin + (rMax - rMin) * t;
     }
 
-    if (HasClass) flowmapLayer = new L.CanvasFlowmapLayer(fc, options).addTo(flowMap);
-    else flowmapLayer = L.canvasFlowmapLayer(fc, options).addTo(flowMap);
+    // Precompute totals for point scaling
+    const destinationTotals = new Map(), originTotals = new Map();
+    for (const d of data){
+      destinationTotals.set(d.e_locality_id, (destinationTotals.get(d.e_locality_id) || 0) + d.e_Volume);
+      originTotals.set(d.s_state_id, (originTotals.get(d.s_state_id) || 0) + d.e_Volume);
+    }
+    data.forEach(d => {
+      d.e_totalVolume = destinationTotals.get(d.e_locality_id) || d.e_Volume;
+      d.s_totalVolume = originTotals.get(d.s_state_id) || d.e_Volume;
+    });
 
-    // Initial animation state + "kick" (fixes stuck animations on some builds)
-    setAnimation(flowmapLayer, true);
-    kickAnimation(flowmapLayer);
+    // Create layer
+    if (HasClass) flowmapLayer = new L.CanvasFlowmapLayer({ type:'FeatureCollection', features: data.map(d => ({
+      type:'Feature', geometry:{ type:'Point', coordinates:[d.s_lon, d.s_lat] }, properties:d
+    })) }, options).addTo(flowMap);
+    else flowmapLayer = L.canvasFlowmapLayer({ type:'FeatureCollection', features: data.map(d => ({
+      type:'Feature', geometry:{ type:'Point', coordinates:[d.s_lon, d.s_lat] }, properties:d
+    })) }, options).addTo(flowMap);
 
-    // Optional initial focus (change id to suit your data)
+    // Animation: start + kick (prevents stuck loops on some builds)
+    setAnimation(flowmapLayer, true); kickAnimation(flowmapLayer);
+
+    // Optional initial focus
     try { if (typeof flowmapLayer.selectFeaturesForPathDisplayById === 'function') flowmapLayer.selectFeaturesForPathDisplayById('s_state_id', 'SD01', true, 'SELECTION_NEW'); } catch {}
 
     // Hover highlight and click selection
@@ -746,6 +759,11 @@ function initChartsAndMap(){ initMap(); initCharts(); refreshAll(); }
         if (e.sharedOriginFeatures?.length && typeof flowmapLayer.selectFeaturesForPathDisplay === 'function') flowmapLayer.selectFeaturesForPathDisplay(e.sharedOriginFeatures, 'SELECTION_NEW');
         else if (e.sharedDestinationFeatures?.length && typeof flowmapLayer.selectFeaturesForPathDisplay === 'function') flowmapLayer.selectFeaturesForPathDisplay(e.sharedDestinationFeatures, 'SELECTION_NEW');
       });
+    }
+
+    // Update bottom stats
+    if (flowStatsEl){
+      flowStatsEl.textContent = `OD pairs: ${formatNumber(totalPairs)} • Total displaced across flows: ${formatNumber(totalVolume)}`;
     }
 
     hideOverlay(); setAnimButtonState(); setFlowsButtonState(); setPointsButtonState();
