@@ -9,8 +9,7 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="anonymous"/>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin="anonymous"></script>
 
-  <!-- CanvasFlowmapLayer plugin (LOCAL). If you instead have the UMD build, point to it here. -->
-  <!-- Example UMD name many repos ship: ./src/leaflet.canvasflowmaplayer.min.js -->
+  <!-- CanvasFlowmapLayer plugin (try local first; script below will fallback to CDN if this fails) -->
   <script src="./src/CanvasFlowmapLayer.js"></script>
 
   <!-- Chart.js & PapaParse -->
@@ -484,7 +483,7 @@ function initChartsAndMap(){ initMap(); initCharts(); refreshAll(); }
 
 <!-- ===================== FLOW MAP (animated OD) ===================== -->
 <script>
-(function(){
+(async function(){
   // Mapbox token for basemap (flows still render if Mapbox fails; fallback to OSM)
   const MAPBOX_TOKEN = 'pk.eyJ1Ijoib21lcm9zbWFuIiwiYSI6ImUxZDBkODBlNjQxMDE2M2Y3OTQ3MWIwNTJkMjgzZTI3In0.ekCHuxRflTOO0RpQ6rQR7Q';
   const FLOW_CSV = 'data/IDPs_Pathway.csv';
@@ -501,19 +500,32 @@ function initChartsAndMap(){ initMap(); initCharts(); refreshAll(); }
   const pointsText= document.getElementById('points-text');
   const helpClose= document.getElementById('close-info');
 
-  function setOverlay(msg){ if(overlay){ overlay.style.display='flex'; overlay.textContent = msg; } }
-  function hideOverlay(){ if(overlay){ overlay.style.display='none'; } }
-  function getCss(v){ return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
-  function scaleRadius(value, step, rMin, rMax) {
-    if (!Number.isFinite(value) || value <= 0) return rMin;
-    const v = Math.log(1 + value / Math.max(step, 1));
-    const t = Math.min(v / Math.log(1 + 20), 1);
-    return rMin + (rMax - rMin) * t;
-  }
-  function formatNumber(x){ try{ return Number(x).toLocaleString(); }catch{ return x; } }
-  function escapeHtml(str){ return String(str).replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[s])); }
+  const setOverlay = (msg)=>{ if(overlay){ overlay.style.display='flex'; overlay.textContent = msg; } };
+  const hideOverlay= ()=>{ if(overlay){ overlay.style.display='none'; } };
+  const getCss = (v)=> getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+  const formatNumber = (x)=> { try { return Number(x).toLocaleString(); } catch { return x; } };
+  const escapeHtml = (str)=> String(str).replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[s]));
 
-  // Create the flow map (separate from counts map)
+  // Ensure plugin is present; if local script didn't attach, load a stable UMD fallback.
+  async function ensureFlowPlugin(){
+    if (window.L && (L.canvasFlowmapLayer || L.CanvasFlowmapLayer)) return true;
+    await new Promise((resolve,reject)=>{
+      const s = document.createElement('script');
+      s.src = 'https://unpkg.com/leaflet-canvasflowmap-layer@1.2.1/dist/leaflet.canvasflowmap-layer.min.js';
+      s.onload = resolve; s.onerror = reject; document.head.appendChild(s);
+    });
+    return !!(window.L && (L.canvasFlowmapLayer || L.CanvasFlowmapLayer));
+  }
+
+  setOverlay('Loading flows…');
+  const ok = await ensureFlowPlugin();
+  if (!ok){
+    setOverlay('Flow plugin not loaded. Ensure ./src/CanvasFlowmapLayer.js or keep CDN fallback.');
+    console.error('CanvasFlowmapLayer not found');
+    return;
+  }
+
+  // Map
   const flowMap = L.map('flowMap', {
     preferCanvas: true, zoomControl: false,
     minZoom: 4, maxZoom: 11, zoomSnap: .5, zoomDelta: .5, attributionControl: true
@@ -532,26 +544,55 @@ function initChartsAndMap(){ initMap(); initCharts(); refreshAll(); }
   L.control.scale({ position: 'bottomleft', metric: true, imperial: false }).addTo(flowMap);
   L.control.zoom({ position: 'bottomright' }).addTo(flowMap);
 
-  // Plugin available? (local script should attach one of these)
   const HasFactory  = typeof L !== 'undefined' && typeof L.canvasFlowmapLayer === 'function';
   const HasClass    = typeof L !== 'undefined' && typeof L.CanvasFlowmapLayer === 'function';
-  if (!HasFactory && !HasClass){
-    setOverlay('Flow plugin not loaded. Ensure ./src/CanvasFlowmapLayer.js attaches to window.L (UMD build preferred).');
-    console.error('CanvasFlowmapLayer not found');
-    return;
-  }
 
-  // UI bindings
+  // Controls state
   let flowmapLayer, isAnimationPlaying = true, showFlows = true, showPoints = true;
 
+  // Cross-fork helpers: normalize animation/toggle APIs
+  function setAnimation(layer, play){
+    if (!layer) return;
+    // Most common
+    if (typeof layer.setAnimationStarted === 'function') return layer.setAnimationStarted(play);
+    // Variants
+    if (play && typeof layer.startAnimation === 'function') return layer.startAnimation();
+    if (!play && typeof layer.stopAnimation === 'function') return layer.stopAnimation();
+    if (play && typeof layer.start === 'function') return layer.start();
+    if (!play && typeof layer.stop === 'function') return layer.stop();
+  }
+  function kickAnimation(layer){
+    // Some builds need a small start/stop to "wake" the raf loop.
+    setTimeout(()=>{ setAnimation(layer, false); requestAnimationFrame(()=> setAnimation(layer, true)); }, 100);
+  }
+  function setFlowsVisible(layer, visible){
+    if (!layer) return;
+    if (typeof layer.setPathDisplayMode === 'function') return layer.setPathDisplayMode(visible ? 'all' : 'none');
+    if (typeof layer.setPathsDisplayed === 'function') return layer.setPathsDisplayed(visible ? 'all' : 'none');
+  }
+  function setPointsVisible(layer, visible){
+    if (!layer) return;
+    if (typeof layer.setPointVisibility === 'function') return layer.setPointVisibility(visible);
+    // Fallback: redraw with zero radius (soft toggle)
+    if (layer.options && typeof layer.redraw === 'function'){
+      const orig = layer._pointToLayer || layer.options.pointToLayer;
+      if (!layer.__origPointToLayer && orig) layer.__origPointToLayer = orig;
+      layer.options.pointToLayer = function(feature, latlng){
+        const f = layer.__origPointToLayer ? layer.__origPointToLayer(feature, latlng) : L.circleMarker(latlng,{radius:6});
+        if (!visible) f.setRadius(0.0001);
+        return f;
+      };
+      try { layer.redraw(); } catch(e){}
+    }
+  }
   const setAnimButtonState = () => { if (!animIcon||!animText) return; animIcon.className = isAnimationPlaying?'fas fa-pause':'fas fa-play'; animText.textContent = isAnimationPlaying?'Pause':'Play'; };
   const setFlowsButtonState= () => { if (flowsText) flowsText.textContent = showFlows ? 'Hide Flows' : 'Show Flows'; if (btnFlows) btnFlows.setAttribute('aria-pressed', String(showFlows)); };
   const setPointsButtonState=()=> { if (pointsText) pointsText.textContent = showPoints ? 'Hide Points' : 'Show Points'; if (btnPoints) btnPoints.setAttribute('aria-pressed', String(showPoints)); };
 
   if (btnReset) btnReset.addEventListener('click', () => flowMap.setView([16,30], 5.5));
-  if (btnAnim)  btnAnim.addEventListener('click', () => { isAnimationPlaying = !isAnimationPlaying; if (flowmapLayer?.setAnimationStarted) flowmapLayer.setAnimationStarted(isAnimationPlaying); setAnimButtonState(); });
-  if (btnFlows) btnFlows.addEventListener('click', () => { showFlows = !showFlows; if (flowmapLayer?.setPathDisplayMode) flowmapLayer.setPathDisplayMode(showFlows ? 'all' : 'none'); setFlowsButtonState(); });
-  if (btnPoints)btnPoints.addEventListener('click', () => { showPoints = !showPoints; if (flowmapLayer?.setPointVisibility) flowmapLayer.setPointVisibility(showPoints); setPointsButtonState(); });
+  if (btnAnim)  btnAnim.addEventListener('click', () => { isAnimationPlaying = !isAnimationPlaying; setAnimation(flowmapLayer, isAnimationPlaying); setAnimButtonState(); });
+  if (btnFlows) btnFlows.addEventListener('click', () => { showFlows = !showFlows; setFlowsVisible(flowmapLayer, showFlows); setFlowsButtonState(); });
+  if (btnPoints)btnPoints.addEventListener('click', () => { showPoints = !showPoints; setPointsVisible(flowmapLayer, showPoints); setPointsButtonState(); });
   if (helpClose) helpClose.addEventListener('click', () => document.getElementById('info-panel').style.display = 'none');
 
   window.addEventListener('keydown', (e) => {
@@ -576,7 +617,9 @@ function initChartsAndMap(){ initMap(); initCharts(); refreshAll(); }
     })
   ]).then(([states, rows]) => {
     if (states){
-      const layer = L.geoJSON(states, { style: { color: '#666', weight: 1, opacity: 0.8, fillOpacity: 0.05 } }).addTo(flowMap);
+      const layer = L.geoJSON(states, {
+        style: { color: '#666', weight: 1, opacity: 0.8, fillOpacity: 0.05 }
+      }).addTo(flowMap);
       try { flowMap.fitBounds(layer.getBounds(), { padding: [20,20] }); } catch {}
     }
 
@@ -650,10 +693,11 @@ function initChartsAndMap(){ initMap(); initCharts(); refreshAll(); }
         defaultSymbol: { strokeStyle: '#d0d7e2', lineWidth: 0.6, lineCap: 'round', shadowColor: '#d0d7e2', shadowBlur: 1.2 }
       },
       pathDisplayMode: 'all',
+      // The following work on most forks; no-op on others
       animationStarted: true,
+      animationDuration: 3200,
       animationEasingFamily: 'Linear',
       animationEasingType: 'None',
-      animationDuration: 3200,
       onEachFeature: (feature, layer) => {
         const isOrigin = feature.properties && feature.properties.isOrigin;
         const title = isOrigin ? 'Displacement Origin' : 'Displacement Destination';
@@ -673,28 +717,41 @@ function initChartsAndMap(){ initMap(); initCharts(); refreshAll(); }
       }
     };
 
-    if (typeof L.CanvasFlowmapLayer === 'function') flowmapLayer = new L.CanvasFlowmapLayer(fc, options).addTo(flowMap);
+    function scaleRadius(value, step, rMin, rMax) {
+      if (!Number.isFinite(value) || value <= 0) return rMin;
+      const v = Math.log(1 + value / Math.max(step, 1));
+      const t = Math.min(v / Math.log(1 + 20), 1);
+      return rMin + (rMax - rMin) * t;
+    }
+
+    if (HasClass) flowmapLayer = new L.CanvasFlowmapLayer(fc, options).addTo(flowMap);
     else flowmapLayer = L.canvasFlowmapLayer(fc, options).addTo(flowMap);
 
+    // Initial animation state + "kick" (fixes stuck animations on some builds)
+    setAnimation(flowmapLayer, true);
+    kickAnimation(flowmapLayer);
+
     // Optional initial focus (change id to suit your data)
-    try { flowmapLayer.selectFeaturesForPathDisplayById('s_state_id', 'SD01', true, 'SELECTION_NEW'); } catch {}
+    try { if (typeof flowmapLayer.selectFeaturesForPathDisplayById === 'function') flowmapLayer.selectFeaturesForPathDisplayById('s_state_id', 'SD01', true, 'SELECTION_NEW'); } catch {}
 
     // Hover highlight and click selection
     let hoverLock = false;
-    flowmapLayer.on('mouseover', (e) => {
-      if (hoverLock) return; hoverLock = true; setTimeout(() => hoverLock = false, 50);
-      if (e.sharedOriginFeatures?.length) flowmapLayer.selectFeaturesForPathDisplay(e.sharedOriginFeatures, 'SELECTION_NEW');
-      if (e.sharedDestinationFeatures?.length) flowmapLayer.selectFeaturesForPathDisplay(e.sharedDestinationFeatures, 'SELECTION_NEW');
-    });
-    flowmapLayer.on('click', (e) => {
-      if (e.sharedOriginFeatures?.length) flowmapLayer.selectFeaturesForPathDisplay(e.sharedOriginFeatures, 'SELECTION_NEW');
-      else if (e.sharedDestinationFeatures?.length) flowmapLayer.selectFeaturesForPathDisplay(e.sharedDestinationFeatures, 'SELECTION_NEW');
-    });
+    if (typeof flowmapLayer.on === 'function'){
+      flowmapLayer.on('mouseover', (e) => {
+        if (hoverLock) return; hoverLock = true; setTimeout(() => hoverLock = false, 50);
+        if (e.sharedOriginFeatures?.length && typeof flowmapLayer.selectFeaturesForPathDisplay === 'function') flowmapLayer.selectFeaturesForPathDisplay(e.sharedOriginFeatures, 'SELECTION_NEW');
+        if (e.sharedDestinationFeatures?.length && typeof flowmapLayer.selectFeaturesForPathDisplay === 'function') flowmapLayer.selectFeaturesForPathDisplay(e.sharedDestinationFeatures, 'SELECTION_NEW');
+      });
+      flowmapLayer.on('click', (e) => {
+        if (e.sharedOriginFeatures?.length && typeof flowmapLayer.selectFeaturesForPathDisplay === 'function') flowmapLayer.selectFeaturesForPathDisplay(e.sharedOriginFeatures, 'SELECTION_NEW');
+        else if (e.sharedDestinationFeatures?.length && typeof flowmapLayer.selectFeaturesForPathDisplay === 'function') flowmapLayer.selectFeaturesForPathDisplay(e.sharedDestinationFeatures, 'SELECTION_NEW');
+      });
+    }
 
     hideOverlay(); setAnimButtonState(); setFlowsButtonState(); setPointsButtonState();
   }).catch(err => {
     console.error(err);
-    setOverlay('Failed to load flow data. Open console for details. Are you running a local server?');
+    setOverlay('Failed to load flow data. Open console for details.');
   });
 })();
 </script>
