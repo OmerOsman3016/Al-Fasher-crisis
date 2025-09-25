@@ -3,14 +3,14 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
-  <title>Sudan — IDP Movement & Border Flow Monitoring Dashboard</title>
+  <title>Flow Monitoring Dashboard — Border Points & Flows</title>
 
-  <!-- Leaflet -->
+  <!-- Leaflet core -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="anonymous"/>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin="anonymous"></script>
 
-  <!-- CanvasFlowmapLayer (for IDP movement visualization) -->
-  <script src="https://unpkg.com/leaflet-canvas-flowmap-layer@1.5.0/dist/leaflet-canvas-flowmap-layer.min.js"></script>
+  <!-- CanvasFlowmapLayer (for animated flows) -->
+  <script src="https://unpkg.com/leaflet-canvasflowmaplayer/dist/leaflet.canvasflowmaplayer.min.js"></script>
 
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
@@ -18,51 +18,33 @@
   <!-- PapaParse -->
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 
-  <!-- Font Awesome -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
-  <!-- Fonts -->
+  <!-- Icons & font -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"/>
   <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 
   <style>
     :root{
       --brand-primary:#0033A0; --brand-accent:#418FDE;
-      --brand-warm1:#ffb81c; --brand-warm2:#ff671f; --brand-warm3:#d22630;
       --surface:#f5f7fa; --panel:#ffffff; --ink:#1f2937; --muted:#6b7280; --border:#e5e7eb; --chip:#eef2ff;
       --ok:#2BB673; --warn:#FF8C42; --both:#7A5CFA;
+      --brand-warm1:#FFB81C; --brand-warm2:#FF671F; --brand-warm3:#D22630;
     }
     *{box-sizing:border-box}
     html,body{height:100%}
     body{margin:0;font-family:"Open Sans",system-ui,Segoe UI,Roboto,Arial,sans-serif;color:var(--ink);background:var(--surface)}
-    
-    /* Header & Navigation */
     header{background:linear-gradient(90deg,var(--brand-primary),var(--brand-accent));color:#fff;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;position:sticky;top:0;z-index:10}
     header .title{font-weight:800;letter-spacing:.2px;font-size:20px}
     header .subtitle{opacity:.9;font-weight:600;font-size:12px}
     .chip{padding:6px 10px;border-radius:999px;background:var(--chip);font-size:12px;font-weight:600;color:#4537ff}
-    
-    /* Tab Navigation */
-    .tab-nav{background:var(--panel);border-bottom:1px solid var(--border);padding:0 20px;display:flex;gap:0}
-    .tab-btn{padding:12px 20px;background:none;border:none;border-bottom:3px solid transparent;font-weight:600;font-size:14px;cursor:pointer;color:var(--muted);transition:all 0.2s}
-    .tab-btn.active{color:var(--brand-primary);border-bottom-color:var(--brand-primary)}
-    .tab-btn:hover:not(.active){color:var(--ink);background-color:#f8f9fa}
-    
-    /* Tab Content */
-    .tab-content{display:none;padding:0}
-    .tab-content.active{display:block}
-    
-    /* Container & Layout */
     .container{padding:16px;max-width:1400px;margin:0 auto;display:grid;grid-template-columns:1fr;gap:16px}
-    
-    /* Controls */
+
     .controls{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:12px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
     @media(max-width:900px){.controls{grid-template-columns:1fr 1fr}}
     @media(max-width:640px){.controls{grid-template-columns:1fr}}
     .control{display:flex;gap:8px;align-items:center;background:#fff;border:1px solid var(--border);border-radius:12px;padding:10px 12px}
     .control label{font-size:12px;color:var(--muted);min-width:88px}
-    .control select,.control input[type="range"],.control input[type="text"]{width:100%;border:none;outline:none;background:transparent;font:inherit;color:var(--ink)}
-    
-    /* KPIs */
+    .control select,.control input[type="range"]{width:100%;border:none;outline:none;background:transparent;font:inherit;color:var(--ink)}
+
     .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
     @media(max-width:900px){.kpis{grid-template-columns:repeat(2,1fr)}}
     @media(max-width:520px){.kpis{grid-template-columns:1fr}}
@@ -71,241 +53,166 @@
     .kpi .value{font-size:22px;font-weight:800;margin-top:4px}
     .kpi .delta{font-size:12px;margin-top:6px}
     .kpi.ok .value{color:var(--ok)} .kpi.warn .value{color:var(--warn)} .kpi.both .value{color:var(--both)}
-    
-    /* Main panels */
+
     .main{display:grid;grid-template-columns:1.4fr 1fr;gap:16px}
     @media(max-width:1100px){.main{grid-template-columns:1fr}}
+
     .panel{background:var(--panel);border:1px solid var(--border);border-radius:14px;overflow:hidden;display:flex;flex-direction:column;min-height:360px}
     .panel header{background:#fff;border-bottom:1px solid var(--border);color:var(--ink);padding:12px 14px;position:unset}
     .panel header .title{font-size:14px;font-weight:800}
     .panel header .subtitle{font-size:12px;color:var(--muted);font-weight:600}
-    
-    /* Map Styles */
-    #map{height:520px;width:100%}
-    #idp-map{height:520px;width:100%}
-    
-    /* Flowmap Controls */
-    .flowmap-controls{position:absolute;top:70px;right:10px;z-index:1000;background:rgba(255,255,255,0.95);border-radius:10px;padding:10px;box-shadow:0 2px 10px rgba(0,0,0,0.1);display:flex;flex-direction:column;gap:8px}
-    .flowmap-btn{display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:#fff;font-weight:600;font-size:12px;cursor:pointer;transition:all 0.2s}
-    .flowmap-btn:hover{background:#f5f7fa}
-    .flowmap-btn:active{transform:translateY(1px)}
-    .flowmap-btn[aria-pressed="true"]{background:var(--brand-primary);color:white;border-color:var(--brand-primary)}
-    
-    /* Legend */
-    .legend{position:absolute;bottom:12px;left:12px;background:#fff;border:1px solid var(--border);border-radius:10px;padding:8px 10px;font-size:12px;box-shadow:0 6px 18px rgba(0,0,0,.06);z-index:1000}
+
+    #map, #flowMap{height:520px}
+    .legend{position:absolute;bottom:12px;left:12px;background:#fff;border:1px solid var(--border);border-radius:10px;padding:8px 10px;font-size:12px;box-shadow:0 6px 18px rgba(0,0,0,.06)}
     .legend .row{display:flex;align-items:center;gap:8px;margin:4px 0}
     .dot{width:12px;height:12px;border-radius:999px;display:inline-block}
-    
-    /* Buttons */
+
     .btn{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:12px;border:1px solid var(--border);background:#fff;font-weight:700;font-size:12px;cursor:pointer}
+    .btn.small{padding:6px 10px;border-radius:10px}
     .btn:active{transform:translateY(1px)}
-    
-    /* Loading overlay */
-    #loading-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(255,255,255,0.9);z-index:9999;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:600}
-    
     .footer-note{color:var(--muted);font-size:12px;text-align:center;padding:16px 0}
-    
-    /* Info panel */
-    #info-panel{position:absolute;top:70px;left:10px;z-index:1000;background:rgba(255,255,255,0.95);border-radius:10px;padding:15px;max-width:300px;box-shadow:0 2px 10px rgba(0,0,0,0.1)}
-    #close-info{float:right;background:none;border:none;font-size:16px;cursor:pointer}
+
+    /* Flow map controls & overlays */
+    .flow-wrap{position:relative;flex:1}
+    .flow-ctrls{position:absolute; top:10px; right:10px; display:flex; gap:8px; flex-wrap:wrap; z-index:5;}
+    .flow-legend{position:absolute; bottom:12px; left:12px; z-index:5; background:#fff; border:1px solid var(--border); border-radius:10px; padding:8px 10px; font-size:12px; box-shadow:0 6px 18px rgba(0,0,0,.06)}
+    #loading-overlay{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,.85); z-index:6; font-weight:700; color:#444}
+    #info-panel{position:absolute; top:10px; left:10px; max-width:320px; z-index:5; background:#fff; border:1px solid var(--border); border-radius:10px; padding:10px 12px; font-size:12px; color:#333; box-shadow:0 10px 24px rgba(0,0,0,.08)}
+    #info-panel h4{margin:0 0 6px}
+    #info-panel button{margin-top:6px}
   </style>
 </head>
 <body>
   <header>
     <div>
-      <div class="title">Sudan — IDP Movement & Border Flow Monitoring Dashboard</div>
-      <div class="subtitle" id="hdrSub">Interactive visualization of internal displacement and border movements</div>
+      <div class="title">Sudan — Flow Monitoring Dashboard</div>
+      <div class="subtitle" id="hdrSub">Map, KPIs, time-series, bars & animated flows • Loading data…</div>
     </div>
     <div class="chip" id="chipSelection">Loading…</div>
   </header>
 
-  <!-- Tab Navigation -->
-  <div class="tab-nav">
-    <button class="tab-btn active" data-tab="border-tab">Border Flow Monitoring</button>
-    <button class="tab-btn" data-tab="idp-tab">IDP Movement Analysis</button>
-  </div>
+  <div class="container">
+    <!-- Controls -->
+    <section class="controls">
+      <div class="control">
+        <label for="direction">Direction</label>
+        <select id="direction">
+          <option value="Both" selected>Both</option>
+          <option value="Incoming">Incoming</option>
+          <option value="Outgoing">Outgoing</option>
+        </select>
+      </div>
+      <div class="control">
+        <label for="point">Border Point</label>
+        <select id="point"><option value="__ALL__" selected>All points</option></select>
+      </div>
+      <div class="control">
+        <label for="month">Month</label>
+        <input id="month" type="range" min="0" max="0" step="1" value="0"/>
+      </div>
+    </section>
 
-  <!-- Border Flow Monitoring Tab -->
-  <div id="border-tab" class="tab-content active">
-    <div class="container">
-      <!-- Controls -->
-      <section class="controls">
-        <div class="control">
-          <label for="direction">Direction</label>
-          <select id="direction">
-            <option value="Both" selected>Both</option>
-            <option value="Incoming">Incoming</option>
-            <option value="Outgoing">Outgoing</option>
-          </select>
-        </div>
-        <div class="control">
-          <label for="point">Border Point</label>
-          <select id="point"><option value="__ALL__" selected>All points</option></select>
-        </div>
-        <div class="control">
-          <label for="month">Month</label>
-          <input id="month" type="range" min="0" max="0" step="1" value="0"/>
-        </div>
-        <div class="control">
-          <label for="search">Search</label>
-          <input id="search" type="text" placeholder="Search locations"/>
-        </div>
-      </section>
+    <!-- KPIs -->
+    <section class="kpis">
+      <div class="kpi ok"><div class="label">Incoming (selected)</div><div class="value" id="kpiIncoming">0</div><div class="delta" id="kpiIncomingDelta">vs prev. month: —</div></div>
+      <div class="kpi warn"><div class="label">Outgoing (selected)</div><div class="value" id="kpiOutgoing">0</div><div class="delta" id="kpiOutgoingDelta">vs prev. month: —</div></div>
+      <div class="kpi both"><div class="label">Total flow (selected)</div><div class="value" id="kpiTotal">0</div><div class="delta" id="kpiTotalDelta">vs prev. month: —</div></div>
+      <div class="kpi"><div class="label">Net flow (Incoming − Outgoing)</div><div class="value" id="kpiNet">0</div><div class="delta" id="kpiNetDelta">vs prev. month: —</div></div>
+    </section>
 
-      <!-- KPIs -->
-      <section class="kpis">
-        <div class="kpi ok"><div class="label">Incoming (selected)</div><div class="value" id="kpiIncoming">0</div><div class="delta" id="kpiIncomingDelta">vs prev. month: —</div></div>
-        <div class="kpi warn"><div class="label">Outgoing (selected)</div><div class="value" id="kpiOutgoing">0</div><div class="delta" id="kpiOutgoingDelta">vs prev. month: —</div></div>
-        <div class="kpi both"><div class="label">Total flow (selected)</div><div class="value" id="kpiTotal">0</div><div class="delta" id="kpiTotalDelta">vs prev. month: —</div></div>
-        <div class="kpi"><div class="label">Net flow (Incoming − Outgoing)</div><div class="value" id="kpiNet">0</div><div class="delta" id="kpiNetDelta">vs prev. month: —</div></div>
-      </section>
-
-      <!-- Main panels -->
-      <section class="main">
-        <div class="panel">
-          <header><div class="title">Map — Circle size by selected month & direction</div><div class="subtitle">Click a marker for details</div></header>
-          <div style="position:relative;flex:1">
-            <div id="map"></div>
-            <div class="legend">
-              <div class="row"><span class="dot" style="background:var(--ok)"></span> Incoming</div>
-              <div class="row"><span class="dot" style="background:var(--warn)"></span> Outgoing</div>
-              <div class="row"><span class="dot" style="background:var(--both)"></span> Both</div>
-            </div>
-          </div>
-        </div>
-        <div class="panel">
-          <header><div class="title">Time Series — Aggregated by month</div><div class="subtitle" id="tsSubtitle">All points • Both directions</div></header>
-          <div style="padding:10px"><canvas id="tsChart" height="300"></canvas></div>
-        </div>
-      </section>
-
-      <section class="panel">
-        <header style="display:flex;align-items:center;justify-content:space-between">
-          <div>
-            <div class="title">By Point — Selected Month</div>
-            <div class="subtitle" id="barSubtitle">—</div>
-          </div>
-          <button class="btn" id="downloadCsvBtn">Download CSV</button>
-        </header>
-        <div style="padding:10px"><canvas id="barChart" height="240"></canvas></div>
-      </section>
-
-      <div class="footer-note">Source: data/FM - Data.cleaned.csv (fallback: data/FM - Data.csv). Built with Leaflet & Chart.js.</div>
-    </div>
-  </div>
-
-  <!-- IDP Movement Analysis Tab -->
-  <div id="idp-tab" class="tab-content">
-    <div class="container">
-      <section class="panel">
-        <header>
-          <div class="title">IDP Movement Visualization</div>
-          <div class="subtitle">Internal displacement flows within Sudan</div>
-        </header>
+    <!-- Counts Map + Time Series -->
+    <section class="main">
+      <div class="panel">
+        <header><div class="title">Counts Map — Circle size by selected month & direction</div><div class="subtitle">Click a marker for details</div></header>
         <div style="position:relative;flex:1">
-          <div id="idp-map"></div>
-          
-          <!-- Flowmap Controls -->
-          <div class="flowmap-controls">
-            <button class="flowmap-btn" id="reset-view" title="Reset view (R)">
-              <i class="fas fa-home"></i> Reset View
-            </button>
-            <button class="flowmap-btn" id="toggle-animation" title="Play/Pause animation (Space)">
-              <i class="fas fa-play" id="animation-icon"></i>
-              <span id="animation-text">Play</span>
-            </button>
-            <button class="flowmap-btn" id="toggle-flows" title="Toggle flows (F)" aria-pressed="true">
-              <i class="fas fa-wave-square"></i>
-              <span id="flows-text">Hide Flows</span>
-            </button>
-            <button class="flowmap-btn" id="toggle-points" title="Toggle points (P)" aria-pressed="true">
-              <i class="fas fa-map-marker-alt"></i>
-              <span id="points-text">Hide Points</span>
-            </button>
-          </div>
-          
-          <!-- Info Panel -->
-          <div id="info-panel">
-            <button id="close-info">&times;</button>
-            <h3 style="margin-top:0">IDP Movement Map</h3>
-            <p>This visualization shows internal displacement flows within Sudan. Orange circles represent origins, blue circles represent destinations.</p>
-            <p><strong>Controls:</strong></p>
-            <ul style="padding-left:15px;margin:0">
-              <li><strong>Space:</strong> Play/Pause animation</li>
-              <li><strong>F:</strong> Toggle flow lines</li>
-              <li><strong>P:</strong> Toggle points</li>
-              <li><strong>R:</strong> Reset view</li>
-            </ul>
+          <div id="map"></div>
+          <div class="legend">
+            <div class="row"><span class="dot" style="background:var(--ok)"></span> Incoming</div>
+            <div class="row"><span class="dot" style="background:var(--warn)"></span> Outgoing</div>
+            <div class="row"><span class="dot" style="background:var(--both)"></span> Both</div>
           </div>
         </div>
-      </section>
-      
-      <section class="panel">
-        <header>
-          <div class="title">IDP Movement Summary</div>
-          <div class="subtitle">Key statistics about internal displacement</div>
-        </header>
-        <div style="padding:20px">
-          <div class="kpis">
-            <div class="kpi ok"><div class="label">Total IDPs Tracked</div><div class="value" id="idpTotal">0</div></div>
-            <div class="kpi warn"><div class="label">Origin Locations</div><div class="value" id="originCount">0</div></div>
-            <div class="kpi both"><div class="label">Destination Locations</div><div class="value" id="destCount">0</div></div>
-            <div class="kpi"><div class="label">Movement Pathways</div><div class="value" id="pathwayCount">0</div></div>
-          </div>
+      </div>
+      <div class="panel">
+        <header><div class="title">Time Series — Aggregated by month</div><div class="subtitle" id="tsSubtitle">All points • Both directions</div></header>
+        <div style="padding:10px"><canvas id="tsChart" height="300"></canvas></div>
+      </div>
+    </section>
+
+    <!-- By Point (sorted) -->
+    <section class="panel">
+      <header style="display:flex;align-items:center;justify-content:space-between">
+        <div>
+          <div class="title">By Point — Selected Month (sorted)</div>
+          <div class="subtitle" id="barSubtitle">—</div>
         </div>
-      </section>
+        <button class="btn" id="downloadCsvBtn">Download CSV</button>
+      </header>
+      <div style="padding:10px"><canvas id="barChart" height="240"></canvas></div>
+    </section>
+
+    <!-- FLOW MAP -->
+    <section class="panel">
+      <header><div class="title">Flow Map — Animated Origins → Destinations</div><div class="subtitle">Toggle flows/points & play/pause animation</div></header>
+      <div class="flow-wrap">
+        <div id="flowMap"></div>
+
+        <!-- Loading overlay -->
+        <div id="loading-overlay">Loading flows…</div>
+
+        <!-- Info panel -->
+        <div id="info-panel">
+          <h4>How to use</h4>
+          <ul style="margin:0 0 6px 16px;padding:0">
+            <li>Click lines or points to focus flows</li>
+            <li><b>Space</b>: Play/Pause • <b>F</b>: Flows • <b>P</b>: Points • <b>R</b>: Reset</li>
+          </ul>
+          <button class="btn small" id="close-info"><i class="fas fa-xmark"></i> Hide</button>
+        </div>
+
+        <!-- Controls -->
+        <div class="flow-ctrls">
+          <button class="btn small" id="reset-view" title="Reset view"><i class="fas fa-crosshairs"></i> Reset</button>
+          <button class="btn small" id="toggle-animation" aria-pressed="true"><i id="animation-icon" class="fas fa-pause"></i> <span id="animation-text">Pause</span></button>
+          <button class="btn small" id="toggle-flows" aria-pressed="true"><i class="fas fa-wave-square"></i> <span id="flows-text">Hide Flows</span></button>
+          <button class="btn small" id="toggle-points" aria-pressed="true"><i class="fas fa-location-dot"></i> <span id="points-text">Hide Points</span></button>
+        </div>
+
+        <!-- Legend -->
+        <div class="flow-legend">
+          <div class="row" style="display:flex;align-items:center;gap:8px"><span class="dot" style="background:#FF671F"></span> Origins</div>
+          <div class="row" style="display:flex;align-items:center;gap:8px"><span class="dot" style="background:#418FDE"></span> Destinations</div>
+          <div class="row" style="margin-top:6px;color:#666">Line width ∝ volume</div>
+        </div>
+      </div>
+    </section>
+
+    <div class="footer-note">
+      Sources: data/FM - Data.cleaned.csv (fallback: data/FM - Data.csv), data/IDPs_Pathway.csv, data/sudan_states.geojson.
+      Built with Leaflet, CanvasFlowmapLayer & Chart.js.
     </div>
   </div>
 
-  <!-- Loading Overlay -->
-  <div id="loading-overlay">Loading data...</div>
-
+<!-- ===================== DASHBOARD (counts/charts) ===================== -->
 <script>
-/* ===== CONFIG ===== */
-const MAPBOX_TOKEN = 'pk.eyJ1Ijoib21lcm9zbWFuIiwiYSI6ImUxZDBkODBlNjQxMDE2M2Y3OTQ3MWIwNTJkMjgzZTI3In0.ekCHuxRflTOO0RpQ6rQR7Q';
-const CSV_PATHS = ["data/FM - Data.cleaned.csv", "data/FM - Data.csv"];
-
-/* ===== DOM ===== */
+const CSV_PATHS = ["data/FM - Data.cleaned.csv", "data/FM - Data.csv"]; // cleaned first
 const $ = s => document.querySelector(s);
-const directionSel = $('#direction'), pointSel = $('#point'), monthRange = $('#month'), searchInput = $('#search');
+
+const directionSel = $('#direction'), pointSel = $('#point'), monthRange = $('#month');
 const chipSelection = $('#chipSelection'), hdrSub = $('#hdrSub'), tsSubtitle = $('#tsSubtitle'), barSubtitle = $('#barSubtitle');
 const kpiIncoming = $('#kpiIncoming'), kpiOutgoing = $('#kpiOutgoing'), kpiTotal = $('#kpiTotal'), kpiNet = $('#kpiNet');
 const kpiIncomingDelta = $('#kpiIncomingDelta'), kpiOutgoingDelta = $('#kpiOutgoingDelta'), kpiTotalDelta = $('#kpiTotalDelta'), kpiNetDelta = $('#kpiNetDelta');
 
-// IDP elements
-const idpTotal = $('#idpTotal'), originCount = $('#originCount'), destCount = $('#destCount'), pathwayCount = $('#pathwayCount');
-
-/* ===== STATE ===== */
 let rows = [], points = [], monthCols = [], monthLabels = [];
-let borderMap, idpMap, markers = [], tsChart, barChart;
-let stateBoundariesLayer, flowmapLayer, isAnimationPlaying = true, showFlows = true, showPoints = true;
+let map, markers = [], tsChart, barChart;
 
-/* ===== TAB MANAGEMENT ===== */
-document.querySelectorAll('.tab-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    // Update active tab button
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    
-    // Show corresponding tab content
-    document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
-    document.getElementById(btn.dataset.tab).classList.add('active');
-    
-    // Trigger resize for maps
-    setTimeout(() => {
-      if (borderMap) borderMap.invalidateSize();
-      if (idpMap) idpMap.invalidateSize();
-    }, 100);
-  });
-});
-
-/* ===== BORDER FLOW MONITORING FUNCTIONS ===== */
 const MONTH_IDX = {Jan:1,Feb:2,Mar:3,Apr:4,May:5,Jun:6,Jul:7,Aug:8,Sep:9,Oct:10,Nov:11,Dec:12};
 function expandYear(two){ const n=+two; if(n>=0&&n<=49) return 2000+n; if(n>=50&&n<=99) return 1900+n; return n; }
 function fmt(n){ return Number(n||0).toLocaleString('en-US'); }
 function getCss(v){ return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
 function selectedMonthLabel(){ return monthLabels[+monthRange.value] || monthLabels[0]; }
 
+/* header sanitize & numeric coercion */
 function sanitizeKeys(obj){
   const out = {};
   for (const k of Object.keys(obj)){
@@ -319,7 +226,6 @@ function num(v){
   const n = Number(String(v).replace(/[, \t\r\n]+/g,'').trim());
   return isFinite(n) ? n : 0;
 }
-
 function detectMonths(keys){
   const rxYY = /^(\d{2})-(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)$/i;
   const rxYYYY = /^(20\d{2})-(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)$/i;
@@ -335,6 +241,7 @@ function detectMonths(keys){
   return {found: candidates.map(c=>c.raw), pretty: candidates.map(c=>c.pretty)};
 }
 
+/* load CSV with fallback */
 function parseCsv(path){
   return new Promise((resolve,reject)=>{
     Papa.parse(path,{download:true,header:true,skipEmptyLines:true,
@@ -343,7 +250,6 @@ function parseCsv(path){
     });
   });
 }
-
 async function loadCsv(){
   let lastErr;
   for (const p of CSV_PATHS){
@@ -356,6 +262,7 @@ async function loadCsv(){
   throw lastErr || new Error("Failed to load any CSV.");
 }
 
+/* normalize & index */
 function normalizeData(csvRows){
   if (!csvRows.length) throw new Error("CSV is empty.");
   const first = csvRows[0];
@@ -397,9 +304,10 @@ function normalizeData(csvRows){
 
   const seen = new Map();
   for (const r of rows){ if (!seen.has(r.point)) seen.set(r.point,{point:r.point,code:r.code,lat:r.lat,lon:r.lon}); }
-  points = [...seen.values()];
+  points = [...seen.values()].sort((a,b)=>a.point.localeCompare(b.point)); // dropdown sorted
 }
 
+/* aggregates + KPIs */
 function aggregateTimeSeries(dir, selPoint){
   const incoming = Array(monthLabels.length).fill(0);
   const outgoing = Array(monthLabels.length).fill(0);
@@ -415,7 +323,6 @@ function aggregateTimeSeries(dir, selPoint){
   if (dir==='Outgoing') return {labels:monthLabels, series:outgoing, alt:incoming};
   return {labels:monthLabels, series: incoming.map((v,i)=>v+outgoing[i]), incoming, outgoing};
 }
-
 function computeKPIs(){
   const idx = +monthRange.value;
   const month = monthLabels[idx];
@@ -438,15 +345,14 @@ function computeKPIs(){
   kpiNetDelta.textContent = delta(net,netP);
 }
 
-function initBorderMap(){
-  borderMap = L.map('map',{zoomControl:true,scrollWheelZoom:true}).setView([15.5,30],5);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'&copy; OpenStreetMap'}).addTo(borderMap);
+/* counts map */
+function initMap(){
+  map = L.map('map',{zoomControl:true,scrollWheelZoom:true}).setView([15.5,30],5);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'&copy; OpenStreetMap'}).addTo(map);
   renderMarkers();
 }
-
 function scaleRadius(v){ const r=Math.sqrt(v)*0.35; return Math.max(5,Math.min(r,50)); }
 function markerColor(){ return directionSel.value==='Incoming'?getCss('--ok'):(directionSel.value==='Outgoing'?getCss('--warn'):getCss('--both')); }
-
 function renderMarkers(){
   (markers||[]).forEach(m=>m.remove()); markers=[];
   const month = selectedMonthLabel(), dir = directionSel.value, selPoint = pointSel.value;
@@ -462,7 +368,7 @@ function renderMarkers(){
     const v = byPoint.get(p.point);
     const inc = rows.find(r=>r.point===p.point && r.direction.toLowerCase()==='incoming')?.[month]||0;
     const out = rows.find(r=>r.point===p.point && r.direction.toLowerCase()==='outgoing')?.[month]||0;
-    const c = L.circleMarker([p.lat,p.lon],{radius:scaleRadius(v),color:col,weight:1.5,fillColor:col,fillOpacity:.25}).addTo(borderMap);
+    const c = L.circleMarker([p.lat,p.lon],{radius:scaleRadius(v),color:col,weight:1.5,fillColor:col,fillOpacity:.25}).addTo(map);
     c.bindPopup(`
       <div style="font-weight:800;margin-bottom:6px">${p.point}</div>
       <div style="font-size:12px;color:#555">Code: ${p.code}</div>
@@ -477,12 +383,13 @@ function renderMarkers(){
     markers.push(c);
   }
   if (pointSel.value!=='__ALL__'){
-    const p = points.find(x=>x.point===pointSel.value); if(p) borderMap.setView([p.lat,p.lon],7);
+    const p = points.find(x=>x.point===pointSel.value); if(p) map.setView([p.lat,p.lon],7);
   } else if (markers.length){
-    const group=L.featureGroup(markers); borderMap.fitBounds(group.getBounds().pad(0.15));
+    const group=L.featureGroup(markers); map.fitBounds(group.getBounds().pad(0.15));
   }
 }
 
+/* charts */
 function initCharts(){
   tsChart = new Chart(document.getElementById('tsChart'),{
     type:'line', data:{labels:[],datasets:[]},
@@ -495,7 +402,6 @@ function initCharts(){
   });
   renderCharts();
 }
-
 function renderCharts(){
   const dir = directionSel.value, selPoint = pointSel.value, month = selectedMonthLabel();
   const agg = aggregateTimeSeries(dir, selPoint);
@@ -516,76 +422,76 @@ function renderCharts(){
   tsChart.update();
   tsSubtitle.textContent = `${selPoint==='__ALL__'?'All points':selPoint} • ${dir} direction${dir==='Both'?'s':''}`;
 
-  const labels=[], vals=[];
+  // Build & sort the bar series (desc)
+  const items=[];
   for (const p of points){
     const inc = rows.find(r=>r.point===p.point && r.direction.toLowerCase()==='incoming')?.[month]||0;
     const out = rows.find(r=>r.point===p.point && r.direction.toLowerCase()==='outgoing')?.[month]||0;
-    labels.push(p.point); vals.push(dir==='Incoming'?inc:(dir==='Outgoing'?out:inc+out));
+    const val = dir==='Incoming'?inc:(dir==='Outgoing'?out:inc+out);
+    items.push({name:p.point, val});
   }
-  barChart.data.labels = labels;
+  items.sort((a,b)=>b.val-a.val); // DESC
+  barChart.data.labels = items.map(d=>d.name);
   const col = dir==='Incoming'?getCss('--ok'):(dir==='Outgoing'?getCss('--warn'):getCss('--both'));
-  barChart.data.datasets[0].data = vals;
+  barChart.data.datasets[0].data = items.map(d=>d.val);
   barChart.data.datasets[0].borderColor = col;
   barChart.data.datasets[0].backgroundColor = col;
   barChart.update();
   barSubtitle.textContent = `${month} • ${dir} direction${dir==='Both'?'s':''}`;
 }
 
-async function downloadCsv(){
-  const active = window.__csvPath || CSV_PATHS[0];
-  const res = await fetch(active); const blob = await res.blob();
-  const url = URL.createObjectURL(blob); const a=document.createElement('a');
-  a.href=url; a.download=active.split('/').pop(); a.click(); URL.revokeObjectURL(url);
-}
-
+/* UI */
 function populatePointDropdown(){
   pointSel.innerHTML = '<option value="__ALL__" selected>All points</option>';
   points.forEach(p=>{ const o=document.createElement('option'); o.value=p.point; o.textContent=p.point; pointSel.appendChild(o); });
 }
-
 function refreshAll(){
   chipSelection.textContent = `${pointSel.value==='__ALL__'?'All Points':pointSel.value} • ${directionSel.value} • ${selectedMonthLabel()}`;
   computeKPIs(); renderMarkers(); renderCharts();
 }
+function initChartsAndMap(){ initMap(); initCharts(); refreshAll(); }
 
-function initBorderDashboard(){
-  initBorderMap(); initCharts(); refreshAll();
-}
+/* boot */
+(async function init(){
+  try{
+    const {rows:csv, path} = await loadCsv();
+    window.__csvPath = path;
+    normalizeData(csv);
 
-/* ===== IDP MOVEMENT FUNCTIONS ===== */
-function initIdpMap(){
-  // --- Map init ---
-  idpMap = L.map('idp-map', {
-    preferCanvas: true,
-    zoomControl: false,
-    minZoom: 4, maxZoom: 11,
-    zoomSnap: 0.5, zoomDelta: 0.5,
-    attributionControl: true
-  }).setView([16, 30], 5.5);
+    monthRange.max = Math.max(0, monthLabels.length-1);
+    monthRange.value = monthRange.max;
+    populatePointDropdown();
 
-  // Basemaps
-  const cartoLight = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { attribution: '&copy; OpenStreetMap & CartoDB' });
-  const mbLight   = L.tileLayer(`https://api.mapbox.com/styles/v1/mapbox/light-v10/tiles/{z}/{x}/{y}?access_token=${MAPBOX_TOKEN}`, { tileSize: 512, zoomOffset: -1, attribution: '&copy; Mapbox & OpenStreetMap' });
-  const mbStreets = L.tileLayer(`https://api.mapbox.com/styles/v1/mapbox/streets-v11/tiles/{z}/{x}/{y}?access_token=${MAPBOX_TOKEN}`, { tileSize: 512, zoomOffset: -1, attribution: '&copy; Mapbox & OpenStreetMap' });
-  const mbSat     = L.tileLayer(`https://api.mapbox.com/styles/v1/mapbox/satellite-v9/tiles/{z}/{x}/{y}?access_token=${MAPBOX_TOKEN}`, { tileSize: 512, zoomOffset: -1, attribution: '&copy; Mapbox & OpenStreetMap' });
-  const mbOutdoors= L.tileLayer(`https://api.mapbox.com/styles/v1/mapbox/outdoors-v11/tiles/{z}/{x}/{y}?access_token=${MAPBOX_TOKEN}`, { tileSize: 512, zoomOffset: -1, attribution: '&copy; Mapbox & OpenStreetMap' });
-  const mbCustom  = L.tileLayer('https://api.mapbox.com/styles/v1/omerosman/cm8oy6is4006101si7ll3bs4h/tiles/{z}/{x}/{y}?access_token=' + MAPBOX_TOKEN, { tileSize: 512, zoomOffset: -1, attribution: '&copy; Mapbox & OpenStreetMap' });
+    hdrSub.textContent = `Map, KPIs, charts & flows • Months: ${monthLabels[0]} → ${monthLabels[monthLabels.length-1]} (source: ${path.split('/').pop()})`;
 
-  mbCustom.addTo(idpMap);
+    directionSel.addEventListener('change', refreshAll);
+    pointSel.addEventListener('change', refreshAll);
+    monthRange.addEventListener('input', refreshAll);
+    document.getElementById('downloadCsvBtn').addEventListener('click', async ()=>{
+      const active = window.__csvPath || CSV_PATHS[0];
+      const res = await fetch(active); const blob = await res.blob();
+      const url = URL.createObjectURL(blob); const a=document.createElement('a');
+      a.href=url; a.download=active.split('/').pop(); a.click(); URL.revokeObjectURL(url);
+    });
 
-  L.control.layers({
-    "Mapbox Custom": mbCustom,
-    "Mapbox Light": mbLight,
-    "Mapbox Streets": mbStreets,
-    "Mapbox Outdoors": mbOutdoors,
-    "Mapbox Satellite": mbSat,
-    "Carto Light": cartoLight
-  }).addTo(idpMap);
+    initChartsAndMap();
+  }catch(err){
+    console.error(err);
+    hdrSub.textContent = 'Failed to load/parse CSV. Check data/FM - Data.cleaned.csv (or FM - Data.csv).';
+    chipSelection.textContent = 'Error loading data';
+  }
+})();
+</script>
 
-  L.control.scale({ position: 'bottomleft', metric: true, imperial: false }).addTo(idpMap);
-  L.control.zoom({ position: 'bottomright' }).addTo(idpMap);
+<!-- ===================== FLOW MAP (animated OD) ===================== -->
+<script>
+(function(){
+  // Mapbox token you provided
+  const MAPBOX_TOKEN = 'pk.eyJ1Ijoib21lcm9zbWFuIiwiYSI6ImUxZDBkODBlNjQxMDE2M2Y3OTQ3MWIwNTJkMjgzZTI3In0.ekCHuxRflTOO0RpQ6rQR7Q';
+  const FLOW_CSV = 'data/IDPs_Pathway.csv';
+  const BOUNDS_GEOJSON = 'data/sudan_states.geojson';
 
-  // UI bindings for IDP map
+  const overlay  = document.getElementById('loading-overlay');
   const btnReset = document.getElementById('reset-view');
   const btnAnim  = document.getElementById('toggle-animation');
   const animIcon = document.getElementById('animation-icon');
@@ -596,271 +502,202 @@ function initIdpMap(){
   const pointsText= document.getElementById('points-text');
   const helpClose= document.getElementById('close-info');
 
-  btnReset.addEventListener('click', () => idpMap.setView([16,30], 5.5));
+  function setOverlay(msg){ if(overlay){ overlay.style.display='flex'; overlay.textContent = msg; } }
+  function hideOverlay(){ if(overlay){ overlay.style.display='none'; } }
+  function getCss(v){ return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
+  function scaleRadius(value, step, rMin, rMax) {
+    if (!Number.isFinite(value) || value <= 0) return rMin;
+    const v = Math.log(1 + value / Math.max(step, 1));
+    const t = Math.min(v / Math.log(1 + 20), 1);
+    return rMin + (rMax - rMin) * t;
+  }
+  function formatNumber(x){ try{ return Number(x).toLocaleString(); }catch{ return x; } }
+  function escapeHtml(str){ return String(str).replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[s])); }
 
-  btnAnim.addEventListener('click', toggleAnimation);
-  btnFlows.addEventListener('click', toggleFlows);
-  btnPoints.addEventListener('click', togglePoints);
-  helpClose.addEventListener('click', () => document.getElementById('info-panel').style.display = 'none');
+  // Create the flow map (separate from counts map)
+  const flowMap = L.map('flowMap', {
+    preferCanvas: true, zoomControl: false,
+    minZoom: 4, maxZoom: 11, zoomSnap: .5, zoomDelta: .5, attributionControl: true
+  }).setView([16, 30], 5.5);
 
-  // Keyboard shortcuts
+  // Basemap with fallback
+  try{
+    const cartoLight = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { attribution: '&copy; OpenStreetMap & CartoDB' });
+    const mbCustom  = L.tileLayer('https://api.mapbox.com/styles/v1/omerosman/cm8oy6is4006101si7ll3bs4h/tiles/{z}/{x}/{y}?access_token=' + MAPBOX_TOKEN, { tileSize: 512, zoomOffset: -1, attribution: '&copy; Mapbox & OpenStreetMap' });
+    mbCustom.addTo(flowMap);
+    L.control.layers({"Mapbox Custom": mbCustom, "Carto Light": cartoLight}).addTo(flowMap);
+  }catch(e){
+    console.warn('Mapbox style failed, using OSM fallback', e);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'&copy; OpenStreetMap'}).addTo(flowMap);
+  }
+  L.control.scale({ position: 'bottomleft', metric: true, imperial: false }).addTo(flowMap);
+  L.control.zoom({ position: 'bottomright' }).addTo(flowMap);
+
+  // Plugin available?
+  const HasFactory  = typeof L !== 'undefined' && typeof L.canvasFlowmapLayer === 'function';
+  const HasClass    = typeof L !== 'undefined' && typeof L.CanvasFlowmapLayer === 'function';
+  if (!HasFactory && !HasClass){
+    setOverlay('Flow plugin not loaded. Ensure leaflet.canvasflowmaplayer.min.js is included after Leaflet.');
+    console.error('CanvasFlowmapLayer not found');
+    return;
+  }
+
+  // UI bindings
+  let flowmapLayer, isAnimationPlaying = true, showFlows = true, showPoints = true;
+
+  const setAnimButtonState = () => { if (!animIcon||!animText) return; animIcon.className = isAnimationPlaying?'fas fa-pause':'fas fa-play'; animText.textContent = isAnimationPlaying?'Pause':'Play'; };
+  const setFlowsButtonState= () => { if (flowsText) flowsText.textContent = showFlows ? 'Hide Flows' : 'Show Flows'; if (btnFlows) btnFlows.setAttribute('aria-pressed', String(showFlows)); };
+  const setPointsButtonState=()=> { if (pointsText) pointsText.textContent = showPoints ? 'Hide Points' : 'Show Points'; if (btnPoints) btnPoints.setAttribute('aria-pressed', String(showPoints)); };
+
+  if (btnReset) btnReset.addEventListener('click', () => flowMap.setView([16,30], 5.5));
+  if (btnAnim)  btnAnim.addEventListener('click', () => { isAnimationPlaying = !isAnimationPlaying; if (flowmapLayer?.setAnimationStarted) flowmapLayer.setAnimationStarted(isAnimationPlaying); setAnimButtonState(); });
+  if (btnFlows) btnFlows.addEventListener('click', () => { showFlows = !showFlows; if (flowmapLayer?.setPathDisplayMode) flowmapLayer.setPathDisplayMode(showFlows ? 'all' : 'none'); setFlowsButtonState(); });
+  if (btnPoints)btnPoints.addEventListener('click', () => { showPoints = !showPoints; if (flowmapLayer?.setPointVisibility) flowmapLayer.setPointVisibility(showPoints); setPointsButtonState(); });
+  if (helpClose) helpClose.addEventListener('click', () => document.getElementById('info-panel').style.display = 'none');
+
   window.addEventListener('keydown', (e) => {
     if (e.target.closest('input, textarea, [contenteditable="true"]')) return;
-    if (e.code === 'Space') { e.preventDefault(); toggleAnimation(); }
-    else if (e.key.toLowerCase() === 'f') toggleFlows();
-    else if (e.key.toLowerCase() === 'p') togglePoints();
-    else if (e.key.toLowerCase() === 'r') idpMap.setView([16,30], 5.5);
+    if (e.code === 'Space') { e.preventDefault(); if (btnAnim) btnAnim.click(); }
+    else if (e.key.toLowerCase() === 'f') { if (btnFlows) btnFlows.click(); }
+    else if (e.key.toLowerCase() === 'p') { if (btnPoints) btnPoints.click(); }
+    else if (e.key.toLowerCase() === 'r') flowMap.setView([16,30], 5.5);
   });
 
-  function setAnimButtonState() {
-    if (isAnimationPlaying) { animIcon.className = 'fas fa-pause'; animText.textContent = 'Pause'; }
-    else { animIcon.className = 'fas fa-play'; animText.textContent = 'Play'; }
-  }
-  function setFlowsButtonState() { flowsText.textContent = showFlows ? 'Hide Flows' : 'Show Flows'; btnFlows.setAttribute('aria-pressed', String(showFlows)); }
-  function setPointsButtonState(){ pointsText.textContent= showPoints ? 'Hide Points' : 'Show Points'; btnPoints.setAttribute('aria-pressed', String(showPoints)); }
-
-  function toggleAnimation(){
-    isAnimationPlaying = !isAnimationPlaying;
-    if (flowmapLayer && typeof flowmapLayer.setAnimationStarted === 'function') flowmapLayer.setAnimationStarted(isAnimationPlaying);
-    setAnimButtonState();
-  }
-  function toggleFlows(){
-    showFlows = !showFlows;
-    if (flowmapLayer && typeof flowmapLayer.setPathDisplayMode === 'function') {
-      flowmapLayer.setPathDisplayMode(showFlows ? 'all' : 'none');
-    }
-    setFlowsButtonState();
-  }
-  function togglePoints(){
-    showPoints = !showPoints;
-    if (flowmapLayer && typeof flowmapLayer.setPointVisibility === 'function') {
-      flowmapLayer.setPointVisibility(showPoints);
-    } else {
-      console.warn('setPointVisibility not available on this CanvasFlowmapLayer build.');
-    }
-    setPointsButtonState();
-  }
-
-  // Load IDP data
-  loadIdpData();
-}
-
-function loadIdpData(){
-  const overlay = document.getElementById('loading-overlay');
+  // Load boundaries + flow CSV
+  setOverlay('Loading flows…');
   Promise.all([
-    fetch('./data/sudan_states.geojson').then(r => r.json()).catch(err => { console.error('States GeoJSON error', err); return null; }),
+    fetch(BOUNDS_GEOJSON).then(r => { if(!r.ok) throw new Error('Missing '+BOUNDS_GEOJSON); return r.json(); })
+                         .catch(err => { console.warn('States GeoJSON:', err); return null; }),
     new Promise((resolve, reject) => {
-      Papa.parse('./data/IDPs_Pathway.csv', {
+      if (typeof Papa === 'undefined') return reject(new Error('PapaParse not loaded'));
+      Papa.parse(FLOW_CSV, {
         download: true, header: true, dynamicTyping: true, skipEmptyLines: true,
         complete: (res) => resolve(res.data), error: reject
       });
     })
   ]).then(([states, rows]) => {
-    if (states) {
-      stateBoundariesLayer = L.geoJSON(states, {
-        style: { color: '#666', weight: 1, opacity: 0.8, fillOpacity: 0.05 }
-      }).addTo(idpMap);
-      try { idpMap.fitBounds(stateBoundariesLayer.getBounds(), { padding: [20,20] }); } catch {}
+    if (states){
+      const layer = L.geoJSON(states, { style: { color: '#666', weight: 1, opacity: 0.8, fillOpacity: 0.05 } }).addTo(flowMap);
+      try { flowMap.fitBounds(layer.getBounds(), { padding: [20,20] }); } catch {}
     }
 
-    // Clean & process tabular rows
-    const data = rows
-      .map(row => normalizeIdpRow(row))
-      .filter(r => Number.isFinite(r.s_lat) && Number.isFinite(r.s_lon) && Number.isFinite(r.e_lat) && Number.isFinite(r.e_lon) && Number.isFinite(r.e_Volume) && r.e_Volume > 0);
+    if (!rows || !rows.length){
+      setOverlay('No flow rows found in ' + FLOW_CSV);
+      console.error('Empty flow CSV'); return;
+    }
 
-    const { destinationTotals, originTotals } = computeIdpTotals(data);
+    // Normalize expected fields
+    const data = rows.map(r => ({
+      s_state_id: String(r.s_state_id || r.origin_state_id || r.state_code || '').trim(),
+      s_State:    r.s_State || r.origin_state || r.state || 'Unknown',
+      s_lat:      parseFloat(r.s_lat ?? r.origin_lat ?? r.o_lat),
+      s_lon:      parseFloat(r.s_lon ?? r.origin_lon ?? r.o_lon),
+      e_locality_id: String(r.e_locality_id || r.dest_locality_id || r.locality_code || '').trim(),
+      e_locality:    r.e_locality || r.dest_locality || r.locality || 'Unknown',
+      e_lat:      parseFloat(r.e_lat ?? r.dest_lat ?? r.d_lat),
+      e_lon:      parseFloat(r.e_lon ?? r.dest_lon ?? r.d_lon),
+      e_Volume:   parseFloat(r.e_Volume ?? r.volume ?? r.total ?? 0) || 0,
+      main_needs: r.main_needs || r.needs || ''
+    })).filter(d =>
+      Number.isFinite(d.s_lat) && Number.isFinite(d.s_lon) &&
+      Number.isFinite(d.e_lat) && Number.isFinite(d.e_lon) &&
+      Number.isFinite(d.e_Volume) && d.e_Volume > 0
+    );
+
+    if (!data.length){
+      setOverlay('Flow CSV parsed, but required columns/values are missing.\nNeed: s_state_id,s_lat,s_lon,e_locality_id,e_lat,e_lon,e_Volume');
+      console.error('After normalization, no valid rows remained.'); return;
+    }
+
+    // Totals for point scaling
+    const destinationTotals = new Map(), originTotals = new Map();
+    for (const d of data){
+      destinationTotals.set(d.e_locality_id, (destinationTotals.get(d.e_locality_id) || 0) + d.e_Volume);
+      originTotals.set(d.s_state_id, (originTotals.get(d.s_state_id) || 0) + d.e_Volume);
+    }
     data.forEach(d => {
       d.e_totalVolume = destinationTotals.get(d.e_locality_id) || d.e_Volume;
       d.s_totalVolume = originTotals.get(d.s_state_id) || d.e_Volume;
     });
 
-    initFlowmap(data);
-    updateIdpStats(data);
-    overlay.style.display = 'none';
-    setAnimButtonState(); setFlowsButtonState(); setPointsButtonState();
+    // Build GeoJSON of origins
+    const fc = { type:'FeatureCollection', features: data.map(d => ({
+      type:'Feature', geometry:{ type:'Point', coordinates:[d.s_lon, d.s_lat] }, properties:d
+    })) };
+
+    // Instantiate CanvasFlowmapLayer (support class or factory)
+    const options = {
+      originAndDestinationFieldIds: {
+        originUniqueIdField: 's_state_id',
+        originGeometry: { x: 's_lon', y: 's_lat' },
+        destinationUniqueIdField: 'e_locality_id',
+        destinationGeometry: { x: 'e_lon', y: 'e_lat' }
+      },
+      pointToLayer: function(feature, latlng) {
+        const isOrigin = feature.properties && feature.properties.isOrigin;
+        const vol = isOrigin ? (feature.properties.s_totalVolume || 0) : (feature.properties.e_totalVolume || 0);
+        const r = isOrigin ? scaleRadius(vol, 20000, 6, 12) : scaleRadius(vol, 20000, 5, 10);
+        const color = isOrigin ? '#ff671f' : '#418FDE';
+        return L.circleMarker(latlng, { radius:r, weight:1, color:'#fff', fillColor:color, fillOpacity:isOrigin?0.85:0.75, opacity:1 });
+      },
+      canvasBezierStyle: {
+        type: 'classBreaks',
+        field: 'e_Volume',
+        classBreakInfos: [
+          { classMinValue: 1,      classMaxValue: 50000,   symbol: { strokeStyle: getCss('--brand-warm1') || '#ffb81c', lineWidth: 0.7, lineCap: 'round', shadowColor: '#fee8c8', shadowBlur: 2 } },
+          { classMinValue: 50000,  classMaxValue: 100000,  symbol: { strokeStyle: getCss('--brand-warm2') || '#ff671f', lineWidth: 1.5, lineCap: 'round', shadowColor: '#fdbb84', shadowBlur: 2 } },
+          { classMinValue: 100000, classMaxValue: 1600000, symbol: { strokeStyle: getCss('--brand-warm3') || '#d22630', lineWidth: 3,   lineCap: 'round', shadowColor: '#e34a33', shadowBlur: 2 } }
+        ],
+        defaultSymbol: { strokeStyle: '#d0d7e2', lineWidth: 0.6, lineCap: 'round', shadowColor: '#d0d7e2', shadowBlur: 1.2 }
+      },
+      pathDisplayMode: 'all',
+      animationStarted: true,
+      animationEasingFamily: 'Linear',
+      animationEasingType: 'None',
+      animationDuration: 3200,
+      onEachFeature: (feature, layer) => {
+        const isOrigin = feature.properties && feature.properties.isOrigin;
+        const title = isOrigin ? 'Displacement Origin' : 'Displacement Destination';
+        const name  = isOrigin ? (feature.properties.s_State || 'Unknown') : (feature.properties.e_locality || 'Unknown');
+        const total = isOrigin ? (feature.properties.s_totalVolume || 0) : (feature.properties.e_totalVolume || 0);
+        const tip = `${title}: ${escapeHtml(name)}`;
+        layer.bindTooltip(tip, { direction:'top', offset:[0,-2] });
+        const popup = `
+          <div style="min-width:220px">
+            <h4 style="margin:0 0 8px;color:var(--brand-primary);font-weight:600">${title}</h4>
+            <p style="margin:0 0 6px"><strong>${isOrigin ? 'State' : 'Location'}:</strong> ${escapeHtml(name)}</p>
+            <p style="margin:0 0 6px"><strong>Total Displaced:</strong> ${formatNumber(total)}</p>
+            ${feature.properties.main_needs ? `<p style="margin:0 0 6px"><strong>Main Needs:</strong> ${escapeHtml(String(feature.properties.main_needs))}</p>` : ''}
+            <p style="margin:6px 0 0"><small>Click markers/lines to focus flows</small></p>
+          </div>`;
+        layer.bindPopup(popup);
+      }
+    };
+
+    if (typeof L.CanvasFlowmapLayer === 'function') flowmapLayer = new L.CanvasFlowmapLayer(fc, options).addTo(flowMap);
+    else flowmapLayer = L.canvasFlowmapLayer(fc, options).addTo(flowMap);
+
+    // Optional initial focus (change id if needed)
+    try { flowmapLayer.selectFeaturesForPathDisplayById('s_state_id', 'SD01', true, 'SELECTION_NEW'); } catch {}
+
+    // Hover highlight and click selection
+    let hoverLock = false;
+    flowmapLayer.on('mouseover', (e) => {
+      if (hoverLock) return; hoverLock = true; setTimeout(() => hoverLock = false, 50);
+      if (e.sharedOriginFeatures?.length) flowmapLayer.selectFeaturesForPathDisplay(e.sharedOriginFeatures, 'SELECTION_NEW');
+      if (e.sharedDestinationFeatures?.length) flowmapLayer.selectFeaturesForPathDisplay(e.sharedDestinationFeatures, 'SELECTION_NEW');
+    });
+    flowmapLayer.on('click', (e) => {
+      if (e.sharedOriginFeatures?.length) flowmapLayer.selectFeaturesForPathDisplay(e.sharedOriginFeatures, 'SELECTION_NEW');
+      else if (e.sharedDestinationFeatures?.length) flowmapLayer.selectFeaturesForPathDisplay(e.sharedDestinationFeatures, 'SELECTION_NEW');
+    });
+
+    hideOverlay(); setAnimButtonState(); setFlowsButtonState(); setPointsButtonState();
   }).catch(err => {
-    overlay.innerHTML = '<div style="color:#b00020;text-align:center">Failed to load IDP data. Check console.</div>';
     console.error(err);
+    setOverlay('Failed to load flow data. Open console for details. Are you running a local server?');
   });
-}
-
-function normalizeIdpRow(r) {
-  return {
-    s_state_id: String(r.s_state_id || r.origin_state_id || r.state_code || '').trim(),
-    s_State: r.s_State || r.origin_state || r.state || 'Unknown',
-    s_lat: parseFloat(r.s_lat),
-    s_lon: parseFloat(r.s_lon),
-    e_locality_id: String(r.e_locality_id || r.dest_locality_id || r.locality_code || '').trim(),
-    e_locality: r.e_locality || r.dest_locality || r.locality || 'Unknown',
-    e_lat: parseFloat(r.e_lat),
-    e_lon: parseFloat(r.e_lon),
-    e_Volume: parseFloat(r.e_Volume || r.volume || r.total || 0) || 0,
-    main_needs: r.main_needs || r.needs || '',
-    ...r
-  };
-}
-
-function computeIdpTotals(data) {
-  const destinationTotals = new Map();
-  const originTotals = new Map();
-  for (const d of data) {
-    destinationTotals.set(d.e_locality_id, (destinationTotals.get(d.e_locality_id) || 0) + d.e_Volume);
-    originTotals.set(d.s_state_id, (originTotals.get(d.s_state_id) || 0) + d.e_Volume);
-  }
-  return { destinationTotals, originTotals };
-}
-
-function initFlowmap(data) {
-  const fc = {
-    type: 'FeatureCollection',
-    features: data.map(d => ({
-      type: 'Feature',
-      geometry: { type: 'Point', coordinates: [d.s_lon, d.s_lat] },
-      properties: d
-    }))
-  };
-
-  flowmapLayer = L.canvasFlowmapLayer(fc, {
-    originAndDestinationFieldIds: {
-      originUniqueIdField: 's_state_id',
-      originGeometry: { x: 's_lon', y: 's_lat' },
-      destinationUniqueIdField: 'e_locality_id',
-      destinationGeometry: { x: 'e_lon', y: 'e_lat' }
-    },
-
-    pointToLayer: function(feature, latlng) {
-      const isOrigin = feature.properties && feature.properties.isOrigin;
-      const vol = isOrigin ? (feature.properties.s_totalVolume || 0) : (feature.properties.e_totalVolume || 0);
-      const r = isOrigin ? scaleIdpRadius(vol, 20000, 6, 12) : scaleIdpRadius(vol, 20000, 5, 10);
-      const color = isOrigin ? '#ff671f' : '#418FDE';
-      return L.circleMarker(latlng, {
-        radius: r,
-        weight: 1,
-        color: '#fff',
-        fillColor: color,
-        fillOpacity: isOrigin ? 0.85 : 0.75,
-        opacity: 1
-      });
-    },
-
-    canvasBezierStyle: {
-      type: 'classBreaks',
-      field: 'e_Volume',
-      classBreakInfos: [
-        { classMinValue: 1,      classMaxValue: 50000,   symbol: { strokeStyle: getComputedStyle(document.documentElement).getPropertyValue('--brand-warm1') || '#ffb81c', lineWidth: 0.7, lineCap: 'round', shadowColor: '#fee8c8', shadowBlur: 2 } },
-        { classMinValue: 50000,  classMaxValue: 100000,  symbol: { strokeStyle: getComputedStyle(document.documentElement).getPropertyValue('--brand-warm2') || '#ff671f', lineWidth: 1.5, lineCap: 'round', shadowColor: '#fdbb84', shadowBlur: 2 } },
-        { classMinValue: 100000, classMaxValue: 1600000, symbol: { strokeStyle: getComputedStyle(document.documentElement).getPropertyValue('--brand-warm3') || '#d22630', lineWidth: 3,   lineCap: 'round', shadowColor: '#e34a33', shadowBlur: 2 } }
-      ],
-      defaultSymbol: { strokeStyle: '#d0d7e2', lineWidth: 0.6, lineCap: 'round', shadowColor: '#d0d7e2', shadowBlur: 1.2 }
-    },
-
-    pathDisplayMode: 'all',
-    animationStarted: true,
-    animationEasingFamily: 'Linear',
-    animationEasingType: 'None',
-    animationDuration: 3200,
-
-    onEachFeature: (feature, layer) => attachInteractivity(feature, layer)
-  }).addTo(idpMap);
-
-  try { flowmapLayer.selectFeaturesForPathDisplayById('s_state_id', 'SD01', true, 'SELECTION_NEW'); } catch {}
-
-  let hoverLock = false;
-  flowmapLayer.on('mouseover', (e) => {
-    if (hoverLock) return; hoverLock = true; setTimeout(() => hoverLock = false, 50);
-    if (e.sharedOriginFeatures?.length) flowmapLayer.selectFeaturesForPathDisplay(e.sharedOriginFeatures, 'SELECTION_NEW');
-    if (e.sharedDestinationFeatures?.length) flowmapLayer.selectFeaturesForPathDisplay(e.sharedDestinationFeatures, 'SELECTION_NEW');
-  });
-
-  flowmapLayer.on('click', (e) => {
-    if (e.sharedOriginFeatures?.length) flowmapLayer.selectFeaturesForPathDisplay(e.sharedOriginFeatures, 'SELECTION_NEW');
-    else if (e.sharedDestinationFeatures?.length) flowmapLayer.selectFeaturesForPathDisplay(e.sharedDestinationFeatures, 'SELECTION_NEW');
-  });
-}
-
-function attachInteractivity(feature, layer) {
-  const isOrigin = feature.properties && feature.properties.isOrigin;
-  const title = isOrigin ? 'Displacement Origin' : 'Displacement Destination';
-  const name  = isOrigin ? (feature.properties.s_State || 'Unknown') : (feature.properties.e_locality || 'Unknown');
-  const total = isOrigin ? (feature.properties.s_totalVolume || 0) : (feature.properties.e_totalVolume || 0);
-
-  const tip = `${title}: ${escapeHtml(name)}`;
-  layer.bindTooltip(tip, { direction: 'top', offset: [0,-2] });
-
-  const popup = `
-    <div style="min-width:220px">
-      <h4 style="margin:0 0 8px;color:var(--brand-primary);font-weight:600">${title}</h4>
-      <p style="margin:0 0 6px"><strong>${isOrigin ? 'State' : 'Location'}:</strong> ${escapeHtml(name)}</p>
-      <p style="margin:0 0 6px"><strong>Total Displaced:</strong> ${formatNumber(total)}</p>
-      ${feature.properties.main_needs ? `<p style="margin:0 0 6px"><strong>Main Needs:</strong> ${escapeHtml(String(feature.properties.main_needs))}</p>` : ''}
-      <p style="margin:6px 0 0"><small>Click markers/lines to focus flows</small></p>
-    </div>`;
-  layer.bindPopup(popup);
-}
-
-function scaleIdpRadius(value, step, rMin, rMax) {
-  if (!Number.isFinite(value) || value <= 0) return rMin;
-  const v = Math.log(1 + value / Math.max(step, 1));
-  const t = Math.min(v / Math.log(1 + (20)), 1);
-  return rMin + (rMax - rMin) * t;
-}
-
-function formatNumber(x) {
-  try { return Number(x).toLocaleString(undefined); } catch { return x; }
-}
-
-function escapeHtml(str) {
-  return String(str).replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[s]));
-}
-
-function updateIdpStats(data) {
-  const totalIdps = data.reduce((sum, d) => sum + d.e_Volume, 0);
-  const uniqueOrigins = new Set(data.map(d => d.s_state_id)).size;
-  const uniqueDestinations = new Set(data.map(d => d.e_locality_id)).size;
-  const pathways = data.length;
-  
-  idpTotal.textContent = formatNumber(totalIdps);
-  originCount.textContent = formatNumber(uniqueOrigins);
-  destCount.textContent = formatNumber(uniqueDestinations);
-  pathwayCount.textContent = formatNumber(pathways);
-}
-
-/* ===== INITIALIZATION ===== */
-async function init(){
-  try{
-    // Load border flow data
-    const {rows:csv, path} = await loadCsv();
-    window.__csvPath = path;
-    normalizeData(csv);
-
-    monthRange.max = Math.max(0, monthLabels.length-1);
-    monthRange.value = monthRange.max;
-    populatePointDropdown();
-
-    hdrSub.textContent = `Interactive map, KPIs & charts • Months: ${monthLabels[0]} → ${monthLabels[monthLabels.length-1]} (source: ${path.split('/').pop()})`;
-
-    // Border flow event listeners
-    directionSel.addEventListener('change', refreshAll);
-    pointSel.addEventListener('change', refreshAll);
-    monthRange.addEventListener('input', refreshAll);
-    document.getElementById('downloadCsvBtn').addEventListener('click', downloadCsv);
-
-    // Initialize both dashboards
-    initBorderDashboard();
-    initIdpMap();
-    
-    // Hide loading overlay
-    document.getElementById('loading-overlay').style.display = 'none';
-    
-  }catch(err){
-    console.error(err);
-    hdrSub.textContent = 'Failed to load/parse CSV. Check data files.';
-    chipSelection.textContent = 'Error loading data';
-    document.getElementById('loading-overlay').style.display = 'none';
-  }
-}
-
-document.addEventListener('DOMContentLoaded', init);
+})();
 </script>
 </body>
 </html>
