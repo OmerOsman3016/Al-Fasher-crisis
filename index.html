@@ -12,6 +12,9 @@
   <!-- Chart.js (charts) -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
+  <!-- PapaParse (CSV) -->
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+
   <!-- Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 
@@ -52,9 +55,7 @@
       display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;
       position:sticky; top:0; z-index:10;
     }
-    header .title{
-      font-weight:800; letter-spacing:.2px; font-size:20px;
-    }
+    header .title{ font-weight:800; letter-spacing:.2px; font-size:20px; }
     header .subtitle{opacity:.9; font-weight:600; font-size:12px}
 
     .container{
@@ -83,7 +84,7 @@
       display:flex; gap:8px; align-items:center; background:#fff; border:1px solid var(--border); border-radius:12px; padding:10px 12px;
     }
     .control label{ font-size:12px; color:var(--muted); min-width:88px }
-    .control select, .control input[type="range"]{
+    .control select, .control input[type="range"], .control input[type="text"]{
       width:100%; border:none; outline:none; background:transparent; font:inherit; color:var(--ink);
     }
     .chip{
@@ -91,9 +92,7 @@
     }
 
     /* KPIs */
-    .kpis{
-      display:grid; grid-template-columns:repeat(4,1fr); gap:12px;
-    }
+    .kpis{ display:grid; grid-template-columns:repeat(4,1fr); gap:12px; }
     @media (max-width: 900px){ .kpis{ grid-template-columns:repeat(2,1fr) } }
     @media (max-width: 520px){ .kpis{ grid-template-columns:1fr } }
 
@@ -111,9 +110,7 @@
     .kpi.both .value{ color:var(--both) }
 
     /* Main grid */
-    .main{
-      display:grid; grid-template-columns: 1.4fr 1fr; gap:16px;
-    }
+    .main{ display:grid; grid-template-columns: 1.4fr 1fr; gap:16px; }
     @media (max-width: 1100px){ .main{ grid-template-columns:1fr } }
 
     .panel{
@@ -125,27 +122,23 @@
       min-height:360px;
     }
     .panel header{
-      background:#fff;
-      border-bottom:1px solid var(--border);
-      color:var(--ink);
-      padding:12px 14px;
-      position:unset;
+      background:#fff; border-bottom:1px solid var(--border);
+      color:var(--ink); padding:12px 14px; position:unset;
     }
     .panel header .title{ font-size:14px; font-weight:800 }
     .panel header .subtitle{ font-size:12px; color:var(--muted); font-weight:600 }
 
     #map{ height:520px; }
     .legend{
-      position:absolute; bottom:12px; left:12px; background:#fff; border:1px solid var(--border); border-radius:10px; padding:8px 10px; font-size:12px; box-shadow:0 6px 18px rgba(0,0,0,.06);
+      position:absolute; bottom:12px; left:12px; background:#fff; border:1px solid var(--border);
+      border-radius:10px; padding:8px 10px; font-size:12px; box-shadow:0 6px 18px rgba(0,0,0,.06);
     }
     .legend .row{ display:flex; align-items:center; gap:8px; margin:4px 0 }
     .dot{ width:12px; height:12px; border-radius:999px; display:inline-block }
 
     /* Table */
     .table-wrap{ overflow:auto; }
-    table{
-      width:100%; border-collapse:separate; border-spacing:0; font-size:13px;
-    }
+    table{ width:100%; border-collapse:separate; border-spacing:0; font-size:13px; }
     thead th{
       position:sticky; top:0; background:#fff; z-index:1;
       text-align:left; padding:10px; border-bottom:1px solid var(--border); white-space:nowrap; font-weight:800; color:var(--muted);
@@ -153,11 +146,8 @@
     tbody td{ padding:8px 10px; border-bottom:1px solid var(--border); white-space:nowrap; }
     tbody tr:hover{ background:#fafbff; }
 
-    .footer-note{
-      color:var(--muted); font-size:12px; text-align:center; padding:16px 0;
-    }
+    .footer-note{ color:var(--muted); font-size:12px; text-align:center; padding:16px 0; }
 
-    /* Buttons / toggles */
     .btn{
       display:inline-flex; align-items:center; gap:8px; padding:8px 12px; border-radius:12px; border:1px solid var(--border); background:#fff;
       font-weight:700; font-size:12px; cursor:pointer;
@@ -169,9 +159,9 @@
   <header>
     <div>
       <div class="title">Sudan — Flow Monitoring Dashboard (Border Points)</div>
-      <div class="subtitle">Interactive map, KPIs, time-series & table • Months: Jan 2024 → Aug 2025</div>
+      <div class="subtitle" id="hdrSub">Interactive map, KPIs, time-series & table • Loading data…</div>
     </div>
-    <div class="chip" id="chipSelection">All Points • Both Directions • 2025-Aug</div>
+    <div class="chip" id="chipSelection">Loading…</div>
   </header>
 
   <div class="container">
@@ -188,19 +178,17 @@
 
       <div class="control">
         <label for="point">Border Point</label>
-        <select id="point">
-          <option value="__ALL__" selected>All points</option>
-        </select>
+        <select id="point"><option value="__ALL__" selected>All points</option></select>
       </div>
 
       <div class="control">
         <label for="month">Month</label>
-        <input id="month" type="range" min="0" max="19" step="1" value="19" />
+        <input id="month" type="range" min="0" max="0" step="1" value="0" />
       </div>
 
       <div class="control">
         <label for="search">Search</label>
-        <input id="search" placeholder="Type to filter table…" />
+        <input id="search" type="text" placeholder="Type to filter table…" />
       </div>
     </section>
 
@@ -244,9 +232,7 @@
 
       <div class="panel">
         <header><div class="title">Time Series — Aggregated by month</div><div class="subtitle" id="tsSubtitle">All points • Both directions</div></header>
-        <div style="padding:10px">
-          <canvas id="tsChart" height="300"></canvas>
-        </div>
+        <div style="padding:10px"><canvas id="tsChart" height="300"></canvas></div>
       </div>
     </section>
 
@@ -254,13 +240,11 @@
       <header style="display:flex; align-items:center; justify-content:space-between">
         <div>
           <div class="title">By Point — Selected Month</div>
-          <div class="subtitle" id="barSubtitle">2025-Aug • Both directions</div>
+          <div class="subtitle" id="barSubtitle">—</div>
         </div>
         <button class="btn" id="downloadCsvBtn">Download CSV</button>
       </header>
-      <div style="padding:10px">
-        <canvas id="barChart" height="240"></canvas>
-      </div>
+      <div style="padding:10px"><canvas id="barChart" height="240"></canvas></div>
     </section>
 
     <section class="panel">
@@ -273,48 +257,17 @@
       </div>
     </section>
 
-    <div class="footer-note">Source: Flow Monitoring data provided by user. Dashboard built with Leaflet & Chart.js.</div>
+    <div class="footer-note">Source: Flow Monitoring CSV (data/FM - Data.csv). Dashboard built with Leaflet & Chart.js.</div>
   </div>
 
 <script>
 /* ===========================
-   1) DATA
+   CONFIG
    =========================== */
-const monthLabels = [
-  "2024-Jan","2024-Feb","2024-Mar","2024-Apr","2024-May","2024-Jun","2024-Jul","2024-Aug",
-  "2024-Sep","2024-Oct","2024-Nov","2024-Dec",
-  "2025-Jan","2025-Feb","2025-Mar","2025-Apr","2025-May","2025-Jun","2025-Jul","2025-Aug"
-];
-
-const raw = [
-  // Direction, Point, Code, lat, lon, ...20 months...
-  ["Incoming","Argin","SD17014PB3",21.988934,31.153322,496,628,4413,712,1555,1672,353,411,502,796,606,807,561,454,425,19950,21492,11329,16875,22604],
-  ["Incoming","Ashkeet","SD17014PB4",22.000523,31.511477,0,482,5114,135,747,1481,167,152,513,728,5043,14905,22809,29072,19791,35074,14482,15636,21993,26116],
-  ["Incoming","Adekonk","SD04115PB6",13.4623111,22.2296523,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,5771],
-  ["Incoming","Um Dukhun","SD06135PB5",11.139,22.966,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2835],
-  ["Incoming","Gallabat","SD12077PB1",12.95798,36.151888,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,348],
-
-  ["Outgoing","Argin","SD17014PB3",21.988934,31.153322,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,927],
-  ["Outgoing","Ashkeet","SD17014PB4",22.000523,31.511477,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,519],
-  ["Outgoing","Adekonk","SD04115PB6",13.4623111,22.2296523,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,5493],
-  ["Outgoing","Um Dukhun","SD06135PB5",11.139,22.966,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2127],
-  ["Outgoing","Gallabat","SD12077PB1",12.95798,36.151888,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2667],
-];
-
-const rows = raw.map(r => {
-  const base = {direction:r[0], point:r[1], code:r[2], lat:r[3], lon:r[4]};
-  monthLabels.forEach((m, i) => base[m] = r[5+i] ?? 0);
-  return base;
-});
-
-// Unique points (to populate dropdown etc.)
-const points = [...new Set(rows.map(r => r.point))].map(p => {
-  const any = rows.find(r => r.point === p);
-  return { point:p, code:any.code, lat:any.lat, lon:any.lon };
-});
+const CSV_PATH = "data/FM - Data.csv";
 
 /* ===========================
-   2) STATE & HELPERS
+   DOM SHORTCUTS
    =========================== */
 const $ = sel => document.querySelector(sel);
 const directionSel = $('#direction');
@@ -322,6 +275,7 @@ const pointSel = $('#point');
 const monthRange = $('#month');
 const searchInput = $('#search');
 const chipSelection = $('#chipSelection');
+const hdrSub = $('#hdrSub');
 const tsSubtitle = $('#tsSubtitle');
 const barSubtitle = $('#barSubtitle');
 
@@ -334,13 +288,133 @@ const kpiOutgoingDelta = $('#kpiOutgoingDelta');
 const kpiTotalDelta = $('#kpiTotalDelta');
 const kpiNetDelta = $('#kpiNetDelta');
 
+const tableHead = $('#tableHead');
+const tableBody = $('#tableBody');
+
+/* ===========================
+   GLOBAL STATE
+   =========================== */
+let rows = [];           // normalized rows
+let points = [];         // unique {point, code, lat, lon}
+let monthCols = [];      // original CSV month columns e.g. "24-Jan"
+let monthLabels = [];    // pretty labels e.g. "2024-Jan"
 let map, markers = [];
 let tsChart, barChart;
 
-function fmt(n){ return n.toLocaleString('en-US'); }
+/* ===========================
+   HELPERS
+   =========================== */
+function fmt(n){ return Number(n||0).toLocaleString('en-US'); }
 
-function selectedMonthLabel(){ return monthLabels[parseInt(monthRange.value,10)]; }
+const MONTH_IDX = {Jan:1,Feb:2,Mar:3,Apr:4,May:5,Jun:6,Jul:7,Aug:8,Sep:9,Oct:10,Nov:11,Dec:12};
+function expandYear(tag){ // "24" -> 2024 ; "25" -> 2025 ; else 2000+?
+  const n = parseInt(tag,10);
+  if (n>=0 && n<=49) return 2000+n; // safe default
+  if (n>=50 && n<=99) return 1900+n;
+  return n;
+}
 
+function detectMonths(sampleRow){
+  const keys = Object.keys(sampleRow);
+  const rx = /^(\d{2})-(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)$/;
+  const found = keys.filter(k => rx.test(k));
+  // sort chronologically
+  found.sort((a,b)=>{
+    const [_, ya, ma] = a.match(rx);
+    const [__, yb, mb] = b.match(rx);
+    const A = expandYear(ya)*100 + MONTH_IDX[ma];
+    const B = expandYear(yb)*100 + MONTH_IDX[mb];
+    return A - B;
+  });
+  // pretty labels
+  const pretty = found.map(k=>{
+    const [_, y, m] = k.match(rx);
+    return `${expandYear(y)}-${m}`;
+  });
+  return {found, pretty};
+}
+
+function sanitizeKeys(obj){
+  const out = {};
+  Object.keys(obj).forEach(k=>{
+    const nk = k.replace(/\s+/g,' ').trim();
+    out[nk] = obj[k];
+  });
+  return out;
+}
+
+function num(v){
+  if (v===null || v===undefined || v==="") return 0;
+  const n = Number(v);
+  return isFinite(n) ? n : 0;
+}
+
+function selectedMonthLabel(){ return monthLabels[parseInt(monthRange.value,10)] || monthLabels[0]; }
+function selectedMonthCol(){
+  const idx = parseInt(monthRange.value,10);
+  return monthCols[idx] || monthCols[0];
+}
+
+/* ===========================
+   CSV LOADING & NORMALIZATION
+   =========================== */
+async function loadCsv(){
+  return new Promise((resolve,reject)=>{
+    Papa.parse(CSV_PATH, {
+      download:true, header:true, skipEmptyLines:true,
+      complete: res => resolve(res.data.map(sanitizeKeys)),
+      error: err => reject(err)
+    });
+  });
+}
+
+function normalizeData(csvRows){
+  if (!csvRows.length) return;
+
+  // Map column aliases
+  // Accept both single/double-spaced headers (as shared)
+  const COL = {
+    dir: "Direction of Movement",
+    name: "Flow Monitoring Point Name",
+    name_alt: "Flow Monitoring  Point Name",
+    code: "Flow Monitoring  Point Code",
+    lat: "latitude",
+    lon: "longitude"
+  };
+
+  // Unify "Point Name" key if double spaces exist
+  const hasName = COL.name in csvRows[0] ? COL.name : (COL.name_alt in csvRows[0] ? COL.name_alt : null);
+  if (!hasName) throw new Error("Could not find 'Flow Monitoring Point Name' column.");
+
+  // Detect months from the first row
+  const {found, pretty} = detectMonths(csvRows[0]);
+  monthCols = found;
+  monthLabels = pretty;
+
+  // Normalize rows into our internal structure
+  rows = csvRows.map(r=>{
+    const base = {
+      direction: (r[COL.dir]||"").trim(),
+      point: (r[hasName]||"").trim(),
+      code: (r[COL.code]||"").trim(),
+      lat: Number(r[COL.lat]),
+      lon: Number(r[COL.lon])
+    };
+    monthCols.forEach((m,i)=> base[monthLabels[i]] = num(r[m]));
+    return base;
+  });
+
+  // Unique points
+  const seen = new Map();
+  rows.forEach(r=>{
+    if (!seen.has(r.point)) seen.set(r.point, {point:r.point, code:r.code, lat:r.lat, lon:r.lon});
+  });
+  points = Array.from(seen.values());
+}
+
+/* ===========================
+   FILTERS & AGGREGATES
+   =========================== */
 function filterData(){
   const dir = directionSel.value; // Incoming, Outgoing, Both
   const selPoint = pointSel.value; // __ALL__ or name
@@ -350,33 +424,25 @@ function filterData(){
   return arr;
 }
 
-// Aggregate by month
 function aggregateTimeSeries(dir, selPoint){
   const incoming = Array(monthLabels.length).fill(0);
   const outgoing = Array(monthLabels.length).fill(0);
-  rows.forEach(r => {
+  rows.forEach(r=>{
     if (selPoint !== '__ALL__' && r.point !== selPoint) return;
-    monthLabels.forEach((m, i) => {
-      if (r.direction === 'Incoming') incoming[i] += r[m] || 0;
-      else if (r.direction === 'Outgoing') outgoing[i] += r[m] || 0;
+    monthLabels.forEach((m,i)=>{
+      if (r.direction==='Incoming') incoming[i] += r[m]||0;
+      if (r.direction==='Outgoing') outgoing[i] += r[m]||0;
     });
   });
-  if (dir === 'Incoming') return {labels:monthLabels, series:incoming, alt:outgoing};
-  if (dir === 'Outgoing') return {labels:monthLabels, series:outgoing, alt:incoming};
-  // Both
-  const total = incoming.map((v,i)=> v + outgoing[i]);
-  return {labels:monthLabels, series:total, incoming, outgoing};
-}
-
-function valueForPoint(r, month, dir){
-  if (dir === 'Both') return r[month] || 0;
-  if (r.direction !== dir) return 0;
-  return r[month] || 0;
+  if (dir==='Incoming') return {labels:monthLabels, series:incoming, alt:outgoing};
+  if (dir==='Outgoing') return {labels:monthLabels, series:outgoing, alt:incoming};
+  return {labels:monthLabels, series: incoming.map((v,i)=>v+outgoing[i]), incoming, outgoing};
 }
 
 function computeKPIs(){
-  const month = selectedMonthLabel();
-  const prevIdx = Math.max(0, monthLabels.indexOf(month) - 1);
+  const idx = parseInt(monthRange.value,10);
+  const month = monthLabels[idx];
+  const prevIdx = Math.max(0, idx-1);
   const prevMonth = monthLabels[prevIdx];
 
   const selPoint = pointSel.value;
@@ -404,7 +470,7 @@ function computeKPIs(){
     const pct = ((curr - prev)/prev)*100;
     const arrow = (pct>0?'▲': (pct<0?'▼':'•'));
     return `vs prev. month: ${arrow} ${pct.toFixed(1)}%`;
-  }
+    }
   kpiIncomingDelta.textContent = deltaStr(incoming, incomingPrev);
   kpiOutgoingDelta.textContent = deltaStr(outgoing, outgoingPrev);
   kpiTotalDelta.textContent = deltaStr(total, totalPrev);
@@ -412,7 +478,7 @@ function computeKPIs(){
 }
 
 /* ===========================
-   3) MAP
+   MAP
    =========================== */
 function initMap(){
   map = L.map('map', { zoomControl:true, scrollWheelZoom:true }).setView([15.5, 30.0], 5);
@@ -424,33 +490,35 @@ function initMap(){
 }
 
 function scaleRadius(v){
-  // Gentle sqrt scaling for large flows; ensure visibility for small numbers
-  const r = Math.sqrt(v) * 0.35; // tweak as needed
+  const r = Math.sqrt(v) * 0.35;
   return Math.max(5, Math.min(r, 50));
 }
 
+function getCss(varName){
+  return getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
+}
 function markerColor(){
   const dir = directionSel.value;
-  if (dir === 'Incoming') return getComputedStyle(document.documentElement).getPropertyValue('--ok').trim();
-  if (dir === 'Outgoing') return getComputedStyle(document.documentElement).getPropertyValue('--warn').trim();
-  return getComputedStyle(document.documentElement).getPropertyValue('--both').trim();
+  if (dir === 'Incoming') return getCss('--ok');
+  if (dir === 'Outgoing') return getCss('--warn');
+  return getCss('--both');
 }
 
 function renderMarkers(){
   // clear old
-  markers.forEach(m => m.remove());
+  (markers||[]).forEach(m => m.remove());
   markers = [];
 
-  const month = selectedMonthLabel();
+  const idx = parseInt(monthRange.value,10);
+  const month = monthLabels[idx];
   const dir = directionSel.value;
   const selPoint = pointSel.value;
 
-  // Build point -> value for selected constraints
   const byPoint = new Map();
   rows.forEach(r=>{
     if (selPoint!=='__ALL__' && r.point!==selPoint) return;
     const key = r.point;
-    const val = valueForPoint(r, month, dir);
+    const val = (dir==='Both') ? (r[month]||0) : (r.direction===dir ? (r[month]||0) : 0);
     byPoint.set(key, (byPoint.get(key)||0) + val);
   });
 
@@ -482,48 +550,37 @@ function renderMarkers(){
     markers.push(circle);
   });
 
-  // if a single point selected, focus it
   if (selPoint !== '__ALL__'){
     const p = points.find(x=>x.point===selPoint);
     if (p) map.setView([p.lat, p.lon], 7);
-  } else {
-    // fit bounds to all visible circles if any
-    if (markers.length){
-      const group = L.featureGroup(markers);
-      map.fitBounds(group.getBounds().pad(0.15));
-    }
+  } else if (markers.length){
+    const group = L.featureGroup(markers);
+    map.fitBounds(group.getBounds().pad(0.15));
   }
 }
 
 /* ===========================
-   4) CHARTS
+   CHARTS
    =========================== */
 function initCharts(){
-  // Time series
   const tsCtx = document.getElementById('tsChart').getContext('2d');
   tsChart = new Chart(tsCtx, {
     type:'line',
-    data:{ labels: monthLabels, datasets: [] },
+    data:{ labels: [], datasets: [] },
     options:{
-      responsive:true,
-      maintainAspectRatio:false,
+      responsive:true, maintainAspectRatio:false,
       plugins:{ legend:{ display:true, labels:{ boxWidth:10 } } },
       interaction:{ mode:'index', intersect:false },
-      scales:{
-        x:{ ticks:{ maxRotation:0, autoSkip:true } },
-        y:{ beginAtZero:true }
-      }
+      scales:{ x:{ ticks:{ maxRotation:0, autoSkip:true } }, y:{ beginAtZero:true } }
     }
   });
 
-  // Bar
   const barCtx = document.getElementById('barChart').getContext('2d');
   barChart = new Chart(barCtx, {
     type:'bar',
     data:{ labels:[], datasets:[ { label:'Flow', data:[] } ] },
     options:{
-      responsive:true,
-      maintainAspectRatio:false,
+      responsive:true, maintainAspectRatio:false,
       plugins:{ legend:{ display:false } },
       scales:{ y:{ beginAtZero:true } }
     }
@@ -536,12 +593,10 @@ function renderCharts(){
   const dir = directionSel.value;
   const selPoint = pointSel.value;
   const month = selectedMonthLabel();
-  const idx = monthLabels.indexOf(month);
 
-  // Time series logic
+  // Time series
   const agg = aggregateTimeSeries(dir, selPoint);
   tsChart.data.labels = agg.labels;
-
   if (dir === 'Both'){
     tsChart.data.datasets = [
       { label:'Incoming', data: agg.incoming, borderColor:getCss('--ok'), backgroundColor:getCss('--ok'), tension:.25 },
@@ -556,8 +611,6 @@ function renderCharts(){
     ];
   }
   tsChart.update();
-
-  // Subtitle
   tsSubtitle.textContent = `${selPoint==='__ALL__'?'All points':selPoint} • ${dir} direction${dir==='Both'?'s':''}`;
 
   // Bar chart by point
@@ -566,36 +619,27 @@ function renderCharts(){
   points.forEach(p=>{
     const inc = rows.find(r => r.point===p.point && r.direction==='Incoming')?.[month] || 0;
     const out = rows.find(r => r.point===p.point && r.direction==='Outgoing')?.[month] || 0;
-    let v = (dir==='Incoming')?inc : (dir==='Outgoing'? out : inc+out);
+    const v = (dir==='Incoming')?inc : (dir==='Outgoing'? out : inc+out);
     labels.push(p.point);
     vals.push(v);
   });
-
   barChart.data.labels = labels;
+  const col = (dir==='Incoming')?getCss('--ok') : (dir==='Outgoing'? getCss('--warn') : getCss('--both'));
   barChart.data.datasets[0].data = vals;
-  barChart.data.datasets[0].borderColor = (dir==='Incoming')?getCss('--ok'): (dir==='Outgoing'?getCss('--warn'):getCss('--both'));
-  barChart.data.datasets[0].backgroundColor = barChart.data.datasets[0].borderColor;
+  barChart.data.datasets[0].borderColor = col;
+  barChart.data.datasets[0].backgroundColor = col;
   barChart.update();
 
   barSubtitle.textContent = `${month} • ${dir} direction${dir==='Both'?'s':''}`;
 }
 
-function getCss(varName){
-  return getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
-}
-
 /* ===========================
-   5) TABLE
+   TABLE
    =========================== */
-const tableHead = $('#tableHead');
-const tableBody = $('#tableBody');
-
 function buildTableHead(){
   const cols = ["Direction","Point","Code","Lat","Lon", ...monthLabels];
   const tr = document.createElement('tr');
-  cols.forEach(c=>{
-    const th = document.createElement('th'); th.textContent = c; tr.appendChild(th);
-  });
+  cols.forEach(c=>{ const th = document.createElement('th'); th.textContent = c; tr.appendChild(th); });
   tableHead.innerHTML = ''; tableHead.appendChild(tr);
 }
 
@@ -613,72 +657,80 @@ function renderTable(){
   arr.forEach(r=>{
     const tr = document.createElement('tr');
     const base = [r.direction, r.point, r.code, r.lat, r.lon];
-    base.forEach(v=>{
-      const td = document.createElement('td'); td.textContent = v; tr.appendChild(td);
-    });
+    base.forEach(v=>{ const td = document.createElement('td'); td.textContent = v; tr.appendChild(td); });
     monthLabels.forEach(m=>{
-      const td = document.createElement('td'); td.textContent = (r[m]||0).toLocaleString('en-US'); tr.appendChild(td);
+      const td = document.createElement('td'); td.textContent = fmt(r[m]||0); tr.appendChild(td);
     });
     tableBody.appendChild(tr);
   });
 }
 
 /* ===========================
-   6) DOWNLOAD CSV
+   DOWNLOAD (original CSV)
    =========================== */
-function toCsv(){
-  const cols = ["Direction","Point","Code","Lat","Lon", ...monthLabels];
-  const lines = [cols.join(",")];
-  rows.forEach(r=>{
-    const vals = [r.direction, r.point, r.code, r.lat, r.lon, ...monthLabels.map(m=> r[m]||0)];
-    lines.push(vals.join(","));
-  });
-  return lines.join("\n");
-}
-
-function downloadCsv(){
-  const blob = new Blob([toCsv()], {type:"text/csv;charset=utf-8"});
+async function downloadCsv(){
+  const res = await fetch(CSV_PATH);
+  const blob = await res.blob();
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  a.href = url; a.download = 'flow_monitoring_border_points.csv';
+  a.href = url; a.download = 'FM - Data.csv';
   a.click();
   URL.revokeObjectURL(url);
 }
 
 /* ===========================
-   7) UI INIT & EVENTS
+   UI INIT & EVENTS
    =========================== */
 function populatePointDropdown(){
-  const sel = pointSel;
+  pointSel.innerHTML = '<option value="__ALL__" selected>All points</option>';
   points.forEach(p=>{
     const opt = document.createElement('option');
     opt.value = p.point; opt.textContent = p.point;
-    sel.appendChild(opt);
+    pointSel.appendChild(opt);
   });
 }
 
 function refreshAll(){
-  // Chip text
   chipSelection.textContent = `${pointSel.value==='__ALL__'?'All Points':pointSel.value} • ${directionSel.value} • ${selectedMonthLabel()}`;
-
   computeKPIs();
   renderMarkers();
   renderCharts();
   renderTable();
 }
 
-function init(){
-  populatePointDropdown();
-  buildTableHead();
+function initChartsAndMap(){
   initMap();
   initCharts();
   refreshAll();
+}
 
-  directionSel.addEventListener('change', refreshAll);
-  pointSel.addEventListener('change', refreshAll);
-  monthRange.addEventListener('input', refreshAll);
-  searchInput.addEventListener('input', renderTable);
-  document.getElementById('downloadCsvBtn').addEventListener('click', downloadCsv);
+async function init(){
+  try{
+    const csvRows = await loadCsv();
+    await normalizeData(csvRows);
+
+    // Sync month slider & headers
+    monthRange.max = Math.max(0, monthLabels.length-1);
+    monthRange.value = monthRange.max; // default to latest
+    buildTableHead();
+    populatePointDropdown();
+
+    hdrSub.textContent = `Interactive map, KPIs, time-series & table • Months: ${monthLabels[0]} → ${monthLabels[monthLabels.length-1]}`;
+
+    // Events
+    directionSel.addEventListener('change', refreshAll);
+    pointSel.addEventListener('change', refreshAll);
+    monthRange.addEventListener('input', refreshAll);
+    searchInput.addEventListener('input', renderTable);
+    document.getElementById('downloadCsvBtn').addEventListener('click', downloadCsv);
+
+    // Charts + Map
+    initChartsAndMap();
+  } catch(err){
+    console.error(err);
+    hdrSub.textContent = 'Failed to load CSV. Check the path and filename (data/FM - Data.csv).';
+    chipSelection.textContent = 'Error loading data';
+  }
 }
 
 document.addEventListener('DOMContentLoaded', init);
