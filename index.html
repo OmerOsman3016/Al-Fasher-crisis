@@ -9,13 +9,12 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="anonymous"/>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin="anonymous"></script>
 
-  <!-- CanvasFlowmapLayer (for animated flows) -->
-  <script src="https://unpkg.com/leaflet-canvasflowmaplayer/dist/leaflet.canvasflowmaplayer.min.js"></script>
+  <!-- CanvasFlowmapLayer plugin (LOCAL). If you instead have the UMD build, point to it here. -->
+  <!-- Example UMD name many repos ship: ./src/leaflet.canvasflowmaplayer.min.js -->
+  <script src="./src/CanvasFlowmapLayer.js"></script>
 
-  <!-- Chart.js -->
+  <!-- Chart.js & PapaParse -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-
-  <!-- PapaParse -->
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 
   <!-- Icons & font -->
@@ -486,7 +485,7 @@ function initChartsAndMap(){ initMap(); initCharts(); refreshAll(); }
 <!-- ===================== FLOW MAP (animated OD) ===================== -->
 <script>
 (function(){
-  // Mapbox token you provided
+  // Mapbox token for basemap (flows still render if Mapbox fails; fallback to OSM)
   const MAPBOX_TOKEN = 'pk.eyJ1Ijoib21lcm9zbWFuIiwiYSI6ImUxZDBkODBlNjQxMDE2M2Y3OTQ3MWIwNTJkMjgzZTI3In0.ekCHuxRflTOO0RpQ6rQR7Q';
   const FLOW_CSV = 'data/IDPs_Pathway.csv';
   const BOUNDS_GEOJSON = 'data/sudan_states.geojson';
@@ -533,11 +532,11 @@ function initChartsAndMap(){ initMap(); initCharts(); refreshAll(); }
   L.control.scale({ position: 'bottomleft', metric: true, imperial: false }).addTo(flowMap);
   L.control.zoom({ position: 'bottomright' }).addTo(flowMap);
 
-  // Plugin available?
+  // Plugin available? (local script should attach one of these)
   const HasFactory  = typeof L !== 'undefined' && typeof L.canvasFlowmapLayer === 'function';
   const HasClass    = typeof L !== 'undefined' && typeof L.CanvasFlowmapLayer === 'function';
   if (!HasFactory && !HasClass){
-    setOverlay('Flow plugin not loaded. Ensure leaflet.canvasflowmaplayer.min.js is included after Leaflet.');
+    setOverlay('Flow plugin not loaded. Ensure ./src/CanvasFlowmapLayer.js attaches to window.L (UMD build preferred).');
     console.error('CanvasFlowmapLayer not found');
     return;
   }
@@ -582,7 +581,7 @@ function initChartsAndMap(){ initMap(); initCharts(); refreshAll(); }
     }
 
     if (!rows || !rows.length){
-      setOverlay('No flow rows found in ' + FLOW_CSV);
+      setOverlay('No flow rows found in data/IDPs_Pathway.csv');
       console.error('Empty flow CSV'); return;
     }
 
@@ -677,7 +676,7 @@ function initChartsAndMap(){ initMap(); initCharts(); refreshAll(); }
     if (typeof L.CanvasFlowmapLayer === 'function') flowmapLayer = new L.CanvasFlowmapLayer(fc, options).addTo(flowMap);
     else flowmapLayer = L.canvasFlowmapLayer(fc, options).addTo(flowMap);
 
-    // Optional initial focus (change id if needed)
+    // Optional initial focus (change id to suit your data)
     try { flowmapLayer.selectFeaturesForPathDisplayById('s_state_id', 'SD01', true, 'SELECTION_NEW'); } catch {}
 
     // Hover highlight and click selection
