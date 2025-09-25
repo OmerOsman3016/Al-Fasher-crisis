@@ -142,12 +142,12 @@
       </div>
     </section>
 
-    <div class="footer-note">Source: Flow Monitoring CSV (data/FM - Data.csv). Built with Leaflet & Chart.js.</div>
+    <div class="footer-note">Source: data/FM - Data.cleaned.csv (fallback: data/FM - Data.csv). Built with Leaflet & Chart.js.</div>
   </div>
 
 <script>
 /* ===== CONFIG ===== */
-const CSV_PATH = "data/FM - Data.csv";
+const CSV_PATHS = ["data/FM - Data.cleaned.csv", "data/FM - Data.csv"]; // try cleaned first
 
 /* ===== DOM ===== */
 const $ = s => document.querySelector(s);
@@ -171,7 +171,7 @@ function fmt(n){ return Number(n||0).toLocaleString('en-US'); }
 function getCss(v){ return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
 function selectedMonthLabel(){ return monthLabels[+monthRange.value] || monthLabels[0]; }
 
-/* Trim keys; collapse multiple spaces; normalize dashes/whitespace */
+/* Normalize header keys: collapse spaces & fancy dashes */
 function sanitizeKeys(obj){
   const out = {};
   for (const k of Object.keys(obj)){
@@ -187,16 +187,13 @@ function num(v){
   return isFinite(n) ? n : 0;
 }
 
-/* Detect month columns from keys like "24-Jan" or "2024-Jan" (tolerate stray spaces/different hyphens) */
-function detectMonths(fromKeys){
-  const keys = fromKeys.map(k => String(k).replace(/\u2013|\u2014/g,'-').replace(/\s+/g,'').trim());
-  const orig = fromKeys;
+/* Detect month columns: "24-Jan" or "2024-Jan" */
+function detectMonths(keys){
   const rxYY = /^(\d{2})-(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)$/i;
   const rxYYYY = /^(20\d{2})-(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)$/i;
-
   const candidates = [];
-  for (let i=0;i<keys.length;i++){
-    const k = keys[i], raw = orig[i];
+  for (const raw of keys){
+    const k = String(raw).replace(/\u2013|\u2014/g,'-').replace(/\s+/g,'').trim();
     let y, m;
     if (rxYY.test(k)){ const [,yy,mm] = k.match(rxYY); y = expandYear(yy); m = mm.substring(0,3); }
     else if (rxYYYY.test(k)){ const [,yyyy,mm] = k.match(rxYYYY); y = +yyyy; m = mm.substring(0,3); }
@@ -206,14 +203,25 @@ function detectMonths(fromKeys){
   return {found: candidates.map(c=>c.raw), pretty: candidates.map(c=>c.pretty)};
 }
 
-/* ===== LOAD CSV ===== */
-async function loadCsv(){
+/* ===== LOAD CSV (try cleaned then original) ===== */
+function parseCsv(path){
   return new Promise((resolve,reject)=>{
-    Papa.parse(CSV_PATH,{download:true,header:true,skipEmptyLines:true,
+    Papa.parse(path,{download:true,header:true,skipEmptyLines:true,
       complete: res => resolve(res.data.map(sanitizeKeys)),
       error: err => reject(err)
     });
   });
+}
+async function loadCsv(){
+  let lastErr;
+  for (const p of CSV_PATHS){
+    try{
+      const rows = await parseCsv(p);
+      console.log(`Loaded CSV: ${p}`, rows.length, "rows");
+      return {rows, path:p};
+    }catch(err){ console.warn(`Failed loading ${p}`, err); lastErr = err; }
+  }
+  throw lastErr || new Error("Failed to load any CSV.");
 }
 
 /* ===== NORMALIZE ===== */
@@ -221,7 +229,7 @@ function normalizeData(csvRows){
   if (!csvRows.length) throw new Error("CSV is empty.");
   const first = csvRows[0];
 
-  // Column alias sets (after sanitizeKeys they tend to be single-space)
+  // Standard headers (cleaned file) with fallbacks
   const COL = {
     dir: ["Direction of Movement","Direction"],
     name: ["Flow Monitoring Point Name","Flow Monitoring  Point Name"],
@@ -253,7 +261,7 @@ function normalizeData(csvRows){
   // Normalize rows
   rows = csvRows.map(r=>{
     const row = {
-      direction: String(r[kDir]||"").trim(),
+      direction: String(r[kDir]||"").trim(),  // "Incoming"/"Outgoing"
       point: String(r[kName]||"").trim(),
       code: String(r[kCode]||"").trim(),
       lat: Number(r[kLat]),
@@ -429,9 +437,11 @@ function renderTable(){
 
 /* ===== DOWNLOAD ===== */
 async function downloadCsv(){
-  const res = await fetch(CSV_PATH); const blob = await res.blob();
+  // download the active source (cleaned or original)
+  const active = window.__csvPath || CSV_PATHS[0];
+  const res = await fetch(active); const blob = await res.blob();
   const url = URL.createObjectURL(blob); const a=document.createElement('a');
-  a.href=url; a.download='FM - Data.csv'; a.click(); URL.revokeObjectURL(url);
+  a.href=url; a.download=active.split('/').pop(); a.click(); URL.revokeObjectURL(url);
 }
 
 /* ===== UI ===== */
@@ -448,7 +458,8 @@ function initChartsAndMap(){ initMap(); initCharts(); refreshAll(); }
 /* ===== INIT ===== */
 async function init(){
   try{
-    const csv = await loadCsv();
+    const {rows:csv, path} = await loadCsv();
+    window.__csvPath = path; // remember which path succeeded
     normalizeData(csv);
 
     // month slider + headers
@@ -456,7 +467,7 @@ async function init(){
     monthRange.value = monthRange.max; // latest month by default
     buildTableHead(); populatePointDropdown();
 
-    hdrSub.textContent = `Interactive map, KPIs, time-series & table • Months: ${monthLabels[0]} → ${monthLabels[monthLabels.length-1]}`;
+    hdrSub.textContent = `Interactive map, KPIs, time-series & table • Months: ${monthLabels[0]} → ${monthLabels[monthLabels.length-1]} (source: ${path.split('/').pop()})`;
 
     // events
     directionSel.addEventListener('change', refreshAll);
@@ -468,7 +479,7 @@ async function init(){
     initChartsAndMap();
   }catch(err){
     console.error(err);
-    hdrSub.textContent = 'Failed to load/parse CSV. Open console for details. Check data/FM - Data.csv path.';
+    hdrSub.textContent = 'Failed to load/parse CSV. Open console for details. Check data/FM - Data.cleaned.csv (or FM - Data.csv).';
     chipSelection.textContent = 'Error loading data';
   }
 }
