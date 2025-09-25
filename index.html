@@ -309,7 +309,7 @@ function fmt(n){ return Number(n||0).toLocaleString('en-US'); }
 const MONTH_IDX = {Jan:1,Feb:2,Mar:3,Apr:4,May:5,Jun:6,Jul:7,Aug:8,Sep:9,Oct:10,Nov:11,Dec:12};
 function expandYear(tag){ // "24" -> 2024 ; "25" -> 2025 ; else 2000+?
   const n = parseInt(tag,10);
-  if (n>=0 && n<=49) return 2000+n; // safe default
+  if (n>=0 && n<=49) return 2000+n;
   if (n>=50 && n<=99) return 1900+n;
   return n;
 }
@@ -318,7 +318,6 @@ function detectMonths(sampleRow){
   const keys = Object.keys(sampleRow);
   const rx = /^(\d{2})-(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)$/;
   const found = keys.filter(k => rx.test(k));
-  // sort chronologically
   found.sort((a,b)=>{
     const [_, ya, ma] = a.match(rx);
     const [__, yb, mb] = b.match(rx);
@@ -326,7 +325,6 @@ function detectMonths(sampleRow){
     const B = expandYear(yb)*100 + MONTH_IDX[mb];
     return A - B;
   });
-  // pretty labels
   const pretty = found.map(k=>{
     const [_, y, m] = k.match(rx);
     return `${expandYear(y)}-${m}`;
@@ -337,7 +335,7 @@ function detectMonths(sampleRow){
 function sanitizeKeys(obj){
   const out = {};
   Object.keys(obj).forEach(k=>{
-    const nk = k.replace(/\s+/g,' ').trim();
+    const nk = k.replace(/\s+/g,' ').trim(); // collapse any double spaces in headers
     out[nk] = obj[k];
   });
   return out;
@@ -345,7 +343,7 @@ function sanitizeKeys(obj){
 
 function num(v){
   if (v===null || v===undefined || v==="") return 0;
-  const n = Number(v);
+  const n = Number(String(v).replace(/,/g,'')); // tolerate "1,234"
   return isFinite(n) ? n : 0;
 }
 
@@ -371,34 +369,41 @@ async function loadCsv(){
 function normalizeData(csvRows){
   if (!csvRows.length) return;
 
-  // Map column aliases
-  // Accept both single/double-spaced headers (as shared)
+  // Support both single and double-space variants after sanitizeKeys()
   const COL = {
-    dir: "Direction of Movement",
-    name: "Flow Monitoring Point Name",
-    name_alt: "Flow Monitoring  Point Name",
-    code: "Flow Monitoring  Point Code",
-    lat: "latitude",
-    lon: "longitude"
+    dir: ["Direction of Movement","Direction"],
+    name: ["Flow Monitoring Point Name","Flow Monitoring  Point Name"],
+    code: ["Flow Monitoring Point Code","Flow Monitoring  Point Code"],
+    lat: ["latitude","Latitude","lat"],
+    lon: ["longitude","Longitude","lon"]
   };
 
-  // Unify "Point Name" key if double spaces exist
-  const hasName = COL.name in csvRows[0] ? COL.name : (COL.name_alt in csvRows[0] ? COL.name_alt : null);
-  if (!hasName) throw new Error("Could not find 'Flow Monitoring Point Name' column.");
+  const first = csvRows[0];
+  const pick = (arr) => arr.find(k => k in first);
 
-  // Detect months from the first row
-  const {found, pretty} = detectMonths(csvRows[0]);
+  const kDir  = pick(COL.dir);
+  const kName = pick(COL.name);
+  const kCode = pick(COL.code);
+  const kLat  = pick(COL.lat);
+  const kLon  = pick(COL.lon);
+
+  if (!kDir || !kName || !kCode || !kLat || !kLon){
+    throw new Error("Required columns not found. Expected 'Direction of Movement', 'Flow Monitoring  Point Name/Code', 'latitude', 'longitude'.");
+  }
+
+  // Detect months like 24-Jan, 24-Feb, ...
+  const {found, pretty} = detectMonths(first);
   monthCols = found;
   monthLabels = pretty;
 
-  // Normalize rows into our internal structure
+  // Normalize each row
   rows = csvRows.map(r=>{
     const base = {
-      direction: (r[COL.dir]||"").trim(),
-      point: (r[hasName]||"").trim(),
-      code: (r[COL.code]||"").trim(),
-      lat: Number(r[COL.lat]),
-      lon: Number(r[COL.lon])
+      direction: (r[kDir] || "").trim(),
+      point:     (r[kName]|| "").trim(),
+      code:      (r[kCode]|| "").trim(),
+      lat: Number(r[kLat]),
+      lon: Number(r[kLon])
     };
     monthCols.forEach((m,i)=> base[monthLabels[i]] = num(r[m]));
     return base;
@@ -466,11 +471,11 @@ function computeKPIs(){
   kpiNet.textContent = fmt(net);
 
   function deltaStr(curr, prev){
-    if (prev === 0) return 'vs prev. month: —';
+    if (prev === 0 || !isFinite(prev)) return 'vs prev. month: —';
     const pct = ((curr - prev)/prev)*100;
     const arrow = (pct>0?'▲': (pct<0?'▼':'•'));
     return `vs prev. month: ${arrow} ${pct.toFixed(1)}%`;
-    }
+  }
   kpiIncomingDelta.textContent = deltaStr(incoming, incomingPrev);
   kpiOutgoingDelta.textContent = deltaStr(outgoing, outgoingPrev);
   kpiTotalDelta.textContent = deltaStr(total, totalPrev);
@@ -505,12 +510,10 @@ function markerColor(){
 }
 
 function renderMarkers(){
-  // clear old
   (markers||[]).forEach(m => m.remove());
   markers = [];
 
-  const idx = parseInt(monthRange.value,10);
-  const month = monthLabels[idx];
+  const month = selectedMonthLabel();
   const dir = directionSel.value;
   const selPoint = pointSel.value;
 
@@ -707,7 +710,7 @@ function initChartsAndMap(){
 async function init(){
   try{
     const csvRows = await loadCsv();
-    await normalizeData(csvRows);
+    normalizeData(csvRows);
 
     // Sync month slider & headers
     monthRange.max = Math.max(0, monthLabels.length-1);
