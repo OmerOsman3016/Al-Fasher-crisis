@@ -527,9 +527,11 @@ function initMap(){
     cartoLight.addTo(map);
   }
 
-  L.control.layers(
-    { 'Mapbox': mapboxBase || null, 'Carto Light': cartoLight, 'OSM': osm }
-  ).addTo(map);
+  const baseLayers = {};
+  if (mapboxBase) baseLayers['Mapbox'] = mapboxBase;
+  baseLayers['Carto Light'] = cartoLight;
+  baseLayers['OSM'] = osm;
+  L.control.layers(baseLayers).addTo(map);
 
   renderMarkers();
 }
@@ -538,19 +540,34 @@ function initMap(){
 function scaleRadius(v){ const r=Math.sqrt(v)*0.35; return Math.max(5,Math.min(r,50)); }
 function markerColor(){ return directionSel.value==='Incoming'?getCss('--ok'):(directionSel.value==='Outgoing'?getCss('--warn'):getCss('--both')); }
 
-// Build a scalable border-point (checkpoint gate) icon
+// NEW simpler booth + barrier badge icon (replaces previous)
 function makeBorderPointIcon(value, color){
   const r = scaleRadius(value);
-  const size = Math.round(Math.max(18, Math.min(r*2+8, 64)));
-  const sw = Math.max(1, Math.round(size/16));
-  const stroke = '#fff';
+  const size = Math.round(Math.max(22, Math.min(r*2+10, 72)));          // clamp size
+  const stroke = 'rgba(255,255,255,.9)';
+  const sw = Math.max(1, Math.round(size/18));
+  const barrierW = Math.round(size*0.44);
+  const barrierH = Math.max(4, Math.round(size*0.10));
+  const chevronW = Math.max(2, Math.round(size/20));
+  const pivotR = Math.max(1, Math.round(size*0.04));
 
   const html = `
   <svg width="${size}" height="${size}" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
-    <rect x="8"  y="18" width="6" height="34" fill="${color}" stroke="${stroke}" stroke-width="${sw}"/>
-    <rect x="50" y="18" width="6" height="34" fill="${color}" stroke="${stroke}" stroke-width="${sw}"/>
-    <rect x="14" y="12" width="36" height="10" rx="2" fill="${color}" opacity=".95" stroke="${stroke}" stroke-width="${sw}"/>
-    <rect x="20" y="36" width="24" height="6" rx="2" fill="${color}" opacity=".85" stroke="${stroke}" stroke-width="${sw}"/>
+    <!-- colored badge -->
+    <rect x="2" y="2" width="60" height="60" rx="12" fill="${color}"/>
+    <rect x="2" y="2" width="60" height="60" rx="12" fill="none" stroke="${stroke}" stroke-width="${sw}"/>
+
+    <!-- small booth -->
+    <rect x="10" y="26" width="18" height="18" rx="2" fill="#ffffff" opacity=".95"/>
+    <rect x="13" y="30" width="6" height="10" rx="1" fill="${color}" opacity=".85"/>
+
+    <!-- barrier pivot + arm -->
+    <circle cx="30" cy="40" r="${pivotR}" fill="#ffffff"/>
+    <rect x="30" y="38" width="${barrierW}" height="${barrierH}" rx="2" fill="#ffffff" transform="rotate(-28 30 40)"/>
+
+    <!-- subtle flow chevrons -->
+    <path d="M34 25 l6 7 l-6 7" fill="none" stroke="#ffffff" stroke-width="${chevronW}" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M46 25 l6 7 l-6 7" fill="none" stroke="#ffffff" stroke-width="${chevronW}" stroke-linecap="round" stroke-linejoin="round"/>
   </svg>`;
 
   return L.divIcon({
