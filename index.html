@@ -26,7 +26,6 @@
       --surface:#f5f7fa; --panel:#ffffff; --ink:#1f2937; --muted:#6b7280; --border:#e5e7eb; --chip:#eef2ff;
       --ok:#2BB673; --warn:#FF8C42; --both:#7A5CFA;
       --brand-warm1:#FFB81C; --brand-warm2:#FF671F; --brand-warm3:#D22630;
-      --sticky-top:64px;
     }
     *{box-sizing:border-box}
     html,body{height:100%}
@@ -37,8 +36,8 @@
     .chip{padding:6px 10px;border-radius:999px;background:var(--chip);font-size:12px;font-weight:700;color:#4537ff;border:1px solid #dadcff}
     .container{padding:16px;max-width:1400px;margin:0 auto;display:grid;grid-template-columns:1fr;gap:16px}
 
-    /* Controls */
-    .controls{position:sticky;top:var(--sticky-top);z-index:9;background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:12px;display:grid;grid-template-columns:1.1fr 1.4fr 2fr auto;gap:12px}
+    /* Controls (NOT sticky per request) */
+    .controls{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:12px;display:grid;grid-template-columns:1.1fr 1.4fr 2fr auto;gap:12px}
     @media(max-width:980px){.controls{grid-template-columns:1fr 1fr}}
     @media(max-width:640px){.controls{grid-template-columns:1fr}}
     .control{display:flex;flex-direction:column;gap:6px;background:#fff;border:1px solid var(--border);border-radius:12px;padding:10px 12px}
@@ -57,7 +56,7 @@
     .kpi-panel{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:12px}
     .tabbar{display:flex;gap:8px;margin-bottom:8px}
     .tabbar .btn[aria-pressed="true"]{background:#eef2ff;border-color:#cfd8ff}
-    .kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:12px} /* 3 cards now */
+    .kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
     @media(max-width:900px){.kpis{grid-template-columns:repeat(2,1fr)}}
     @media(max-width:520px){.kpis{grid-template-columns:1fr}}
     .kpi{background:#fff;border:1px solid var(--border);border-radius:14px;padding:14px}
@@ -96,7 +95,6 @@
     .flow-bottom .legend-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
     .pill{background:#f8fafc;border:1px solid var(--border);padding:6px 10px;border-radius:999px;font-weight:700}
 
-    /* Empty states for charts (helper) */
     .empty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#777;font-size:12px;pointer-events:none}
   </style>
 </head>
@@ -110,7 +108,7 @@
   </header>
 
   <div class="container">
-    <!-- Controls -->
+    <!-- Controls (not sticky) -->
     <section class="controls">
       <div class="control">
         <label for="direction">Direction</label>
@@ -297,6 +295,10 @@
 const CSV_PATHS = ["data/FM - Data.cleaned.csv", "data/FM - Data.csv"]; // cleaned first
 const $ = s => document.querySelector(s);
 
+// Mapbox for Counts Map
+const MAPBOX_TOKEN_COUNTS = 'pk.eyJ1Ijoib21lcm9zbWFuIiwiYSI6ImUxZDBkODBlNjQxMDE2M2Y3OTQ3MWIwNTJkMjgzZTI3In0.ekCHuxRflTOO0RpQ6rQR7Q';
+const MAPBOX_STYLE_COUNTS = 'omerosman/cm8oy6is4006101si7ll3bs4h'; // replace with your style if needed
+
 // Controls
 const directionSel = $('#direction'), pointSel = $('#point'), monthRange = $('#month');
 const monthPrev = $('#monthPrev'), monthNext = $('#monthNext'), monthPlay = $('#monthPlay'), resetFilters = $('#resetFilters');
@@ -435,7 +437,7 @@ function aggregateTimeSeries(dir, selPoint){
   }
   if (dir==='Incoming') return {labels:monthLabels, series:incoming, alt:outgoing};
   if (dir==='Outgoing') return {labels:monthLabels, series:outgoing, alt:incoming};
-  return {labels:monthLabels, series: incoming.map((v,i)=>v+outgoing[i]), incoming, outgoing};
+  return {labels:monthLabels, incoming, outgoing};
 }
 function computeKPIs(){
   const idx = +monthRange.value;
@@ -470,10 +472,47 @@ function computeCumulativeKPIs(){
   cumTotal.textContent    = fmt(incAll + outAll);
 }
 
-/* Counts map */
+/* Counts map (Mapbox + fallback) */
 function initMap(){
   map = L.map('map',{zoomControl:true,scrollWheelZoom:true}).setView([15.5,30],5);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'&copy; OpenStreetMap'}).addTo(map);
+
+  const cartoLight = L.tileLayer(
+    'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+    { attribution: '&copy; OpenStreetMap & CartoDB' }
+  );
+  const osm = L.tileLayer(
+    'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    { attribution: '&copy; OpenStreetMap' }
+  );
+
+  let mapbox;
+  if (MAPBOX_TOKEN_COUNTS && MAPBOX_STYLE_COUNTS) {
+    mapbox = L.tileLayer(
+      `https://api.mapbox.com/styles/v1/${MAPBOX_STYLE_COUNTS}/tiles/{z}/{x}/{y}?access_token=${MAPBOX_TOKEN_COUNTS}`,
+      { tileSize: 512, zoomOffset: -1, attribution: '&copy; Mapbox & OpenStreetMap' }
+    );
+
+    let switched = false;
+    mapbox.on('tileerror', () => {
+      if (switched) return;
+      switched = true;
+      try { map.removeLayer(mapbox); } catch {}
+      cartoLight.addTo(map);
+    });
+
+    mapbox.addTo(map);
+  } else {
+    cartoLight.addTo(map);
+  }
+
+  L.control.layers(
+    {
+      'Mapbox': mapbox || null,
+      'Carto Light': cartoLight,
+      'OSM': osm
+    }
+  ).addTo(map);
+
   renderMarkers();
 }
 function scaleRadius(v){ const r=Math.sqrt(v)*0.35; return Math.max(5,Math.min(r,50)); }
@@ -502,7 +541,6 @@ function renderMarkers(){
         <div>Incoming: <b style="color:var(--ok)">${fmt(inc)}</b></div>
         <div>Outgoing: <b style="color:var(--warn)">${fmt(out)}</b></div>
         <div>Total: <b>${fmt(inc+out)}</b></div>
-        <div>Net (In−Out): <b>${fmt(inc-out)}</b></div>
       </div>
     `);
     markers.push(c);
@@ -541,7 +579,7 @@ function renderCharts(){
   const dir = directionSel.value, selPoint = pointSel.value, month = selectedMonthLabel();
   const agg = aggregateTimeSeries(dir, selPoint);
 
-  // Time series: remove Total when Both; show only Incoming & Outgoing
+  // Time series: only Incoming & Outgoing (no "Total")
   tsChart.data.labels = agg.labels;
   if (dir === 'Both') {
     tsChart.data.datasets = [
@@ -551,8 +589,10 @@ function renderCharts(){
   } else {
     const c = dir==='Incoming' ? getCss('--ok') : getCss('--warn');
     tsChart.data.datasets = [
-      { label: dir, data: agg.series, borderColor: c, backgroundColor: c, tension: .25 },
-      { label: (dir==='Incoming' ? 'Outgoing' : 'Incoming'), data: agg.alt, borderColor: getCss('--muted'), backgroundColor: getCss('--muted'), borderDash:[6,4], tension: .25 }
+      { label: dir, data: dir==='Incoming'?agg.incoming:agg.outgoing, borderColor: c, backgroundColor: c, tension: .25 },
+      { label: (dir==='Incoming' ? 'Outgoing' : 'Incoming'),
+        data: dir==='Incoming'?agg.outgoing:agg.incoming,
+        borderColor: getCss('--muted'), backgroundColor: getCss('--muted'), borderDash:[6,4], tension: .25 }
     ];
   }
   tsChart.update();
@@ -844,7 +884,8 @@ function stepMonth(dir=+1){
     });
 
     const totalPairs = data.length;
-    const totalVolume = data.reduce((s,d)=> s + (d.e_Volume||0), 0);
+    theTotal = data.reduce((s,d)=> s + (d.e_Volume||0), 0);
+    const totalVolume = theTotal;
 
     // Build GeoJSON of origins
     const fc = { type:'FeatureCollection', features: data.map(d => ({
@@ -909,17 +950,6 @@ function stepMonth(dir=+1){
 
     if (typeof L.CanvasFlowmapLayer === 'function') flowmapLayer = new L.CanvasFlowmapLayer(fc, options).addTo(flowMap);
     else flowmapLayer = L.canvasFlowmapLayer(fc, options).addTo(flowMap);
-
-    // Start/repair animation tick
-    function setAnimation(layer, play){
-      if (!layer) return;
-      if (typeof layer.setAnimationStarted === 'function') return layer.setAnimationStarted(play);
-      if (play && typeof layer.startAnimation === 'function') return layer.startAnimation();
-      if (!play && typeof layer.stopAnimation === 'function') return layer.stopAnimation();
-      if (play && typeof layer.start === 'function') return layer.start();
-      if (!play && typeof layer.stop === 'function') return layer.stop();
-    }
-    function kickAnimation(layer){ setTimeout(()=>{ setAnimation(layer, false); requestAnimationFrame(()=> setAnimation(layer, true)); }, 100); }
 
     setAnimation(flowmapLayer, true); kickAnimation(flowmapLayer);
 
