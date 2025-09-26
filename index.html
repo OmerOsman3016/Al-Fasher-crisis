@@ -5,11 +5,11 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
   <title>Flow Monitoring Dashboard — Border Points & Flows</title>
 
-  <!-- Leaflet core -->
+  <!-- Leaflet -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="anonymous"/>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin="anonymous"></script>
 
-  <!-- CanvasFlowmapLayer plugin (try local first; script below will fallback to CDN if this fails) -->
+  <!-- CanvasFlowmapLayer (local with CDN fallback in script) -->
   <script src="./src/CanvasFlowmapLayer.js"></script>
 
   <!-- Chart.js & PapaParse -->
@@ -49,7 +49,7 @@
     .kpi{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:14px}
     .kpi .label{font-size:12px;color:var(--muted)}
     .kpi .value{font-size:22px;font-weight:800;margin-top:4px}
-    .kpi .delta{font-size:12px;margin-top:6px}
+    .kpi .delta{font-size:12px;margin-top:6px;color:var(--muted)}
     .kpi.ok .value{color:var(--ok)} .kpi.warn .value{color:var(--warn)} .kpi.both .value{color:var(--both)}
 
     .main{display:grid;grid-template-columns:1.4fr 1fr;gap:16px}
@@ -78,8 +78,8 @@
     #info-panel h4{margin:0 0 6px}
     #info-panel button{margin-top:6px}
 
-    /* Bottom bars */
-    .flow-bottom, .count-bottom{
+    /* Flow bottom bar (legend + totals) */
+    .flow-bottom{
       border-top:1px solid var(--border);
       background:#fff;
       padding:10px 12px;
@@ -124,12 +124,20 @@
       </div>
     </section>
 
-    <!-- KPIs -->
+    <!-- KPIs (selected month) -->
     <section class="kpis">
-      <div class="kpi ok"><div class="label">Incoming (selected)</div><div class="value" id="kpiIncoming">0</div><div class="delta" id="kpiIncomingDelta">vs prev. month: —</div></div>
-      <div class="kpi warn"><div class="label">Outgoing (selected)</div><div class="value" id="kpiOutgoing">0</div><div class="delta" id="kpiOutgoingDelta">vs prev. month: —</div></div>
-      <div class="kpi both"><div class="label">Total flow (selected)</div><div class="value" id="kpiTotal">0</div><div class="delta" id="kpiTotalDelta">vs prev. month: —</div></div>
-      <div class="kpi"><div class="label">Net flow (Incoming − Outgoing)</div><div class="value" id="kpiNet">0</div><div class="delta" id="kpiNetDelta">vs prev. month: —</div></div>
+      <div class="kpi ok"><div class="label">Incoming (selected month)</div><div class="value" id="kpiIncoming">0</div><div class="delta" id="kpiIncomingDelta">vs prev. month: —</div></div>
+      <div class="kpi warn"><div class="label">Outgoing (selected month)</div><div class="value" id="kpiOutgoing">0</div><div class="delta" id="kpiOutgoingDelta">vs prev. month: —</div></div>
+      <div class="kpi both"><div class="label">Total flow (selected month)</div><div class="value" id="kpiTotal">0</div><div class="delta" id="kpiTotalDelta">vs prev. month: —</div></div>
+      <div class="kpi"><div class="label">Net flow (In − Out)</div><div class="value" id="kpiNet">0</div><div class="delta" id="kpiNetDelta">vs prev. month: —</div></div>
+    </section>
+
+    <!-- NEW: KPIs (cumulative across all months, respects Point filter) -->
+    <section class="kpis" aria-label="Cumulative KPIs">
+      <div class="kpi ok"><div class="label">Cumulative Incoming (all months)</div><div class="value" id="cumIncoming">0</div></div>
+      <div class="kpi warn"><div class="label">Cumulative Outgoing (all months)</div><div class="value" id="cumOutgoing">0</div></div>
+      <div class="kpi both"><div class="label">Cumulative Total (all months)</div><div class="value" id="cumTotal">0</div></div>
+      <div class="kpi"><div class="label">Cumulative Net (In − Out)</div><div class="value" id="cumNet">0</div></div>
     </section>
 
     <!-- Counts Map + Time Series -->
@@ -143,11 +151,6 @@
             <div class="row"><span class="dot" style="background:var(--warn)"></span> Outgoing</div>
             <div class="row"><span class="dot" style="background:var(--both)"></span> Both</div>
           </div>
-        </div>
-        <!-- NEW: Counts bottom bar with sums -->
-        <div class="count-bottom">
-          <div id="countSelected" class="pill">Selected month — Incoming: 0 • Outgoing: 0 • Total: 0</div>
-          <div id="countCumulative" class="pill">All months — Incoming: 0 • Outgoing: 0 • Total: 0</div>
         </div>
       </div>
 
@@ -197,7 +200,7 @@
         </div>
       </div>
 
-      <!-- Flow bottom bar -->
+      <!-- Bottom bar for flow legend + totals -->
       <div class="flow-bottom">
         <div class="legend-row">
           <span class="dot" style="background:#FF671F"></span> Origins
@@ -216,7 +219,7 @@
 
 <!-- ===================== DASHBOARD (counts/charts) ===================== -->
 <script>
-const CSV_PATHS = ["data/FM - Data.cleaned.csv", "data/FM - Data.csv"]; // cleaned first
+const CSV_PATHS = ["data/FM - Data.cleaned.csv", "data/FM - Data.csv"];
 const $ = s => document.querySelector(s);
 
 const directionSel = $('#direction'), pointSel = $('#point'), monthRange = $('#month');
@@ -224,9 +227,8 @@ const chipSelection = $('#chipSelection'), hdrSub = $('#hdrSub'), tsSubtitle = $
 const kpiIncoming = $('#kpiIncoming'), kpiOutgoing = $('#kpiOutgoing'), kpiTotal = $('#kpiTotal'), kpiNet = $('#kpiNet');
 const kpiIncomingDelta = $('#kpiIncomingDelta'), kpiOutgoingDelta = $('#kpiOutgoingDelta'), kpiTotalDelta = $('#kpiTotalDelta'), kpiNetDelta = $('#kpiNetDelta');
 
-// NEW: counts bottom elements
-const countSelectedEl = document.getElementById('countSelected');
-const countCumulativeEl = document.getElementById('countCumulative');
+// NEW cumulative KPI nodes
+const cumIncoming = $('#cumIncoming'), cumOutgoing = $('#cumOutgoing'), cumTotal = $('#cumTotal'), cumNet = $('#cumNet');
 
 let rows = [], points = [], monthCols = [], monthLabels = [];
 let map, markers = [], tsChart, barChart;
@@ -237,7 +239,6 @@ function fmt(n){ return Number(n||0).toLocaleString('en-US'); }
 function getCss(v){ return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
 function selectedMonthLabel(){ return monthLabels[+monthRange.value] || monthLabels[0]; }
 
-/* header sanitize & numeric coercion */
 function sanitizeKeys(obj){
   const out = {};
   for (const k of Object.keys(obj)){
@@ -329,7 +330,7 @@ function normalizeData(csvRows){
 
   const seen = new Map();
   for (const r of rows){ if (!seen.has(r.point)) seen.set(r.point,{point:r.point,code:r.code,lat:r.lat,lon:r.lon}); }
-  points = [...seen.values()].sort((a,b)=>a.point.localeCompare(b.point)); // dropdown sorted
+  points = [...seen.values()].sort((a,b)=>a.point.localeCompare(b.point));
 }
 
 /* aggregates + KPIs */
@@ -371,19 +372,9 @@ function computeKPIs(){
   kpiNetDelta.textContent = delta(net,netP);
 }
 
-/* NEW: sums for bottom bar */
-function updateCountBottom(){
-  if (!monthLabels.length) return;
+/* NEW: cumulative KPIs (all months; respects Point filter) */
+function computeCumulativeKPIs(){
   const selPoint = pointSel.value;
-  const month = selectedMonthLabel();
-
-  const sumMonth = (dir) => rows
-    .filter(r => (selPoint==='__ALL__' || r.point===selPoint) && r.direction===dir)
-    .reduce((s,r)=> s + (r[month]||0), 0);
-
-  const incSel = sumMonth('incoming');
-  const outSel = sumMonth('outgoing');
-
   const sumAll = (dir) => rows
     .filter(r => (selPoint==='__ALL__' || r.point===selPoint) && r.direction===dir)
     .reduce((s,r)=> s + monthLabels.reduce((t,m)=> t + (r[m]||0), 0), 0);
@@ -391,10 +382,10 @@ function updateCountBottom(){
   const incAll = sumAll('incoming');
   const outAll = sumAll('outgoing');
 
-  if (countSelectedEl)
-    countSelectedEl.textContent = `Selected month (${month}) — Incoming: ${fmt(incSel)} • Outgoing: ${fmt(outSel)} • Total: ${fmt(incSel+outSel)}`;
-  if (countCumulativeEl)
-    countCumulativeEl.textContent = `All months — Incoming: ${fmt(incAll)} • Outgoing: ${fmt(outAll)} • Total: ${fmt(incAll+outAll)}`;
+  cumIncoming.textContent = fmt(incAll);
+  cumOutgoing.textContent = fmt(outAll);
+  cumTotal.textContent    = fmt(incAll + outAll);
+  cumNet.textContent      = fmt(incAll - outAll);
 }
 
 /* counts map */
@@ -482,7 +473,7 @@ function renderCharts(){
     const val = dir==='Incoming'?inc:(dir==='Outgoing'?out:inc+out);
     items.push({name:p.point, val});
   }
-  items.sort((a,b)=>b.val-a.val); // DESC
+  items.sort((a,b)=>b.val-a.val);
   barChart.data.labels = items.map(d=>d.name);
   const col = dir==='Incoming'?getCss('--ok'):(dir==='Outgoing'?getCss('--warn'):getCss('--both'));
   barChart.data.datasets[0].data = items.map(d=>d.val);
@@ -499,7 +490,7 @@ function populatePointDropdown(){
 }
 function refreshAll(){
   chipSelection.textContent = `${pointSel.value==='__ALL__'?'All Points':pointSel.value} • ${directionSel.value} • ${selectedMonthLabel()}`;
-  computeKPIs(); renderMarkers(); renderCharts(); updateCountBottom();
+  computeKPIs(); computeCumulativeKPIs(); renderMarkers(); renderCharts();
 }
 function initChartsAndMap(){ initMap(); initCharts(); refreshAll(); }
 
@@ -560,7 +551,6 @@ function initChartsAndMap(){ initMap(); initCharts(); refreshAll(); }
   const formatNumber = (x)=> { try { return Number(x).toLocaleString(); } catch { return x; } };
   const escapeHtml = (str)=> String(str).replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[s]));
 
-  // Ensure plugin is present; if local script didn't attach, load a stable UMD fallback.
   async function ensureFlowPlugin(){
     if (window.L && (L.canvasFlowmapLayer || L.CanvasFlowmapLayer)) return true;
     await new Promise((resolve,reject)=>{
@@ -579,13 +569,11 @@ function initChartsAndMap(){ initMap(); initCharts(); refreshAll(); }
     return;
   }
 
-  // Map
   const flowMap = L.map('flowMap', {
     preferCanvas: true, zoomControl: false,
     minZoom: 4, maxZoom: 11, zoomSnap: .5, zoomDelta: .5, attributionControl: true
   }).setView([16, 30], 5.5);
 
-  // Basemap with fallback
   try{
     const cartoLight = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { attribution: '&copy; OpenStreetMap & CartoDB' });
     const mbCustom  = L.tileLayer('https://api.mapbox.com/styles/v1/omerosman/cm8oy6is4006101si7ll3bs4h/tiles/{z}/{x}/{y}?access_token=' + MAPBOX_TOKEN, { tileSize: 512, zoomOffset: -1, attribution: '&copy; Mapbox & OpenStreetMap' });
@@ -598,13 +586,8 @@ function initChartsAndMap(){ initMap(); initCharts(); refreshAll(); }
   L.control.scale({ position: 'bottomleft', metric: true, imperial: false }).addTo(flowMap);
   L.control.zoom({ position: 'bottomright' }).addTo(flowMap);
 
-  const HasFactory  = typeof L !== 'undefined' && typeof L.canvasFlowmapLayer === 'function';
-  const HasClass    = typeof L !== 'undefined' && typeof L.CanvasFlowmapLayer === 'function';
-
-  // Controls state
   let flowmapLayer, isAnimationPlaying = true, showFlows = true, showPoints = true;
 
-  // Cross-fork helpers
   function setAnimation(layer, play){
     if (!layer) return;
     if (typeof layer.setAnimationStarted === 'function') return layer.setAnimationStarted(play);
@@ -613,9 +596,7 @@ function initChartsAndMap(){ initMap(); initCharts(); refreshAll(); }
     if (play && typeof layer.start === 'function') return layer.start();
     if (!play && typeof layer.stop === 'function') return layer.stop();
   }
-  function kickAnimation(layer){
-    setTimeout(()=>{ setAnimation(layer, false); requestAnimationFrame(()=> setAnimation(layer, true)); }, 100);
-  }
+  function kickAnimation(layer){ setTimeout(()=>{ setAnimation(layer, false); requestAnimationFrame(()=> setAnimation(layer, true)); }, 100); }
   function setFlowsVisible(layer, visible){
     if (!layer) return;
     if (typeof layer.setPathDisplayMode === 'function') return layer.setPathDisplayMode(visible ? 'all' : 'none');
@@ -635,17 +616,16 @@ function initChartsAndMap(){ initMap(); initCharts(); refreshAll(); }
       try { layer.redraw(); } catch(e){}
     }
   }
-  const setAnimButtonState = () => { if (!animIcon||!animText) return; animIcon.className = isAnimationPlaying?'fas fa-pause':'fas fa-play'; animText.textContent = isAnimationPlaying?'Pause':'Play'; };
-  const setFlowsButtonState= () => { if (flowsText) flowsText.textContent = showFlows ? 'Hide Flows' : 'Show Flows'; if (btnFlows) btnFlows.setAttribute('aria-pressed', String(showFlows)); };
-  const setPointsButtonState=()=> { if (pointsText) pointsText.textContent = showPoints ? 'Hide Points' : 'Show Points'; if (btnPoints) btnPoints.setAttribute('aria-pressed', String(showPoints)); };
+  const setAnimButtonState = () => { const icon=document.getElementById('animation-icon'), txt=document.getElementById('animation-text'); if (!icon||!txt) return; icon.className = isAnimationPlaying?'fas fa-pause':'fas fa-play'; txt.textContent = isAnimationPlaying?'Pause':'Play'; };
+  const setFlowsButtonState= () => { const t=document.getElementById('flows-text'); if (t) t.textContent = showFlows ? 'Hide Flows' : 'Show Flows'; const b=document.getElementById('toggle-flows'); if (b) b.setAttribute('aria-pressed', String(showFlows)); };
+  const setPointsButtonState=()=> { const t=document.getElementById('points-text'); if (t) t.textContent = showPoints ? 'Hide Points' : 'Show Points'; const b=document.getElementById('toggle-points'); if (b) b.setAttribute('aria-pressed', String(showPoints)); };
 
-  if (btnReset) btnReset.addEventListener('click', () => flowMap.setView([16,30], 5.5));
-  if (btnAnim)  btnAnim.addEventListener('click', () => { isAnimationPlaying = !isAnimationPlaying; setAnimation(flowmapLayer, isAnimationPlaying); setAnimButtonState(); });
-  if (btnFlows) btnFlows.addEventListener('click', () => { showFlows = !showFlows; setFlowsVisible(flowmapLayer, showFlows); setFlowsButtonState(); });
-  if (btnPoints)btnPoints.addEventListener('click', () => { showPoints = !showPoints; setPointsVisible(flowmapLayer, showPoints); setPointsButtonState(); });
-  if (helpClose) helpClose.addEventListener('click', () => document.getElementById('info-panel').style.display = 'none');
+  document.getElementById('reset-view')?.addEventListener('click', () => flowMap.setView([16,30], 5.5));
+  document.getElementById('toggle-animation')?.addEventListener('click', () => { isAnimationPlaying = !isAnimationPlaying; setAnimation(flowmapLayer, isAnimationPlaying); setAnimButtonState(); });
+  document.getElementById('toggle-flows')?.addEventListener('click', () => { showFlows = !showFlows; setFlowsVisible(flowmapLayer, showFlows); setFlowsButtonState(); });
+  document.getElementById('toggle-points')?.addEventListener('click', () => { showPoints = !showPoints; setPointsVisible(flowmapLayer, showPoints); setPointsButtonState(); });
+  document.getElementById('close-info')?.addEventListener('click', () => document.getElementById('info-panel').style.display = 'none');
 
-  // Load boundaries + flow CSV
   setOverlay('Loading flows…');
   Promise.all([
     fetch(BOUNDS_GEOJSON).then(r => { if(!r.ok) throw new Error('Missing '+BOUNDS_GEOJSON); return r.json(); })
@@ -659,9 +639,7 @@ function initChartsAndMap(){ initMap(); initCharts(); refreshAll(); }
     })
   ]).then(([states, rows]) => {
     if (states){
-      const layer = L.geoJSON(states, {
-        style: { color: '#666', weight: 1, opacity: 0.8, fillOpacity: 0.05 }
-      }).addTo(flowMap);
+      const layer = L.geoJSON(states, { style: { color: '#666', weight: 1, opacity: 0.8, fillOpacity: 0.05 } }).addTo(flowMap);
       try { flowMap.fitBounds(layer.getBounds(), { padding: [20,20] }); } catch {}
     }
 
@@ -670,7 +648,6 @@ function initChartsAndMap(){ initMap(); initCharts(); refreshAll(); }
       console.error('Empty flow CSV'); return;
     }
 
-    // Normalize expected fields
     const data = rows.map(r => ({
       s_state_id: String(r.s_state_id || r.origin_state_id || r.state_code || '').trim(),
       s_State:    r.s_State || r.origin_state || r.state || 'Unknown',
@@ -693,7 +670,7 @@ function initChartsAndMap(){ initMap(); initCharts(); refreshAll(); }
       console.error('After normalization, no valid rows remained.'); return;
     }
 
-    // Totals for point scaling & stats
+    // Totals for scaling & stats
     const destinationTotals = new Map(), originTotals = new Map();
     for (const d of data){
       destinationTotals.set(d.e_locality_id, (destinationTotals.get(d.e_locality_id) || 0) + d.e_Volume);
@@ -707,12 +684,10 @@ function initChartsAndMap(){ initMap(); initCharts(); refreshAll(); }
     const totalPairs = data.length;
     const totalVolume = data.reduce((s,d)=> s + (d.e_Volume||0), 0);
 
-    // Build GeoJSON of origins
     const fc = { type:'FeatureCollection', features: data.map(d => ({
       type:'Feature', geometry:{ type:'Point', coordinates:[d.s_lon, d.s_lat] }, properties:d
     })) };
 
-    // Instantiate CanvasFlowmapLayer
     const options = {
       originAndDestinationFieldIds: {
         originUniqueIdField: 's_state_id',
@@ -768,30 +743,24 @@ function initChartsAndMap(){ initMap(); initCharts(); refreshAll(); }
       return rMin + (rMax - rMin) * t;
     }
 
-    if (HasClass) flowmapLayer = new L.CanvasFlowmapLayer(fc, options).addTo(flowMap);
+    if (typeof L.CanvasFlowmapLayer === 'function') flowmapLayer = new L.CanvasFlowmapLayer(fc, options).addTo(flowMap);
     else flowmapLayer = L.canvasFlowmapLayer(fc, options).addTo(flowMap);
 
-    // Animation: start + kick
     setAnimation(flowmapLayer, true); kickAnimation(flowmapLayer);
 
-    // Optional initial focus
-    try { if (typeof flowmapLayer.selectFeaturesForPathDisplayById === 'function') flowmapLayer.selectFeaturesForPathDisplayById('s_state_id', 'SD01', true, 'SELECTION_NEW'); } catch {}
+    try { flowmapLayer.selectFeaturesForPathDisplayById?.('s_state_id', 'SD01', true, 'SELECTION_NEW'); } catch {}
 
-    // Hover highlight and click selection
     let hoverLock = false;
-    if (typeof flowmapLayer.on === 'function'){
-      flowmapLayer.on('mouseover', (e) => {
-        if (hoverLock) return; hoverLock = true; setTimeout(() => hoverLock = false, 50);
-        if (e.sharedOriginFeatures?.length && typeof flowmapLayer.selectFeaturesForPathDisplay === 'function') flowmapLayer.selectFeaturesForPathDisplay(e.sharedOriginFeatures, 'SELECTION_NEW');
-        if (e.sharedDestinationFeatures?.length && typeof flowmapLayer.selectFeaturesForPathDisplay === 'function') flowmapLayer.selectFeaturesForPathDisplay(e.sharedDestinationFeatures, 'SELECTION_NEW');
-      });
-      flowmapLayer.on('click', (e) => {
-        if (e.sharedOriginFeatures?.length && typeof flowmapLayer.selectFeaturesForPathDisplay === 'function') flowmapLayer.selectFeaturesForPathDisplay(e.sharedOriginFeatures, 'SELECTION_NEW');
-        else if (e.sharedDestinationFeatures?.length && typeof flowmapLayer.selectFeaturesForPathDisplay === 'function') flowmapLayer.selectFeaturesForPathDisplay(e.sharedDestinationFeatures, 'SELECTION_NEW');
-      });
-    }
+    flowmapLayer.on?.('mouseover', (e) => {
+      if (hoverLock) return; hoverLock = true; setTimeout(() => hoverLock = false, 50);
+      if (e.sharedOriginFeatures?.length) flowmapLayer.selectFeaturesForPathDisplay?.(e.sharedOriginFeatures, 'SELECTION_NEW');
+      if (e.sharedDestinationFeatures?.length) flowmapLayer.selectFeaturesForPathDisplay?.(e.sharedDestinationFeatures, 'SELECTION_NEW');
+    });
+    flowmapLayer.on?.('click', (e) => {
+      if (e.sharedOriginFeatures?.length) flowmapLayer.selectFeaturesForPathDisplay?.(e.sharedOriginFeatures, 'SELECTION_NEW');
+      else if (e.sharedDestinationFeatures?.length) flowmapLayer.selectFeaturesForPathDisplay?.(e.sharedDestinationFeatures, 'SELECTION_NEW');
+    });
 
-    // Flow bottom stats
     if (flowStatsEl){
       flowStatsEl.textContent = `OD pairs: ${formatNumber(totalPairs)} • Total displaced across flows: ${formatNumber(totalVolume)}`;
     }
