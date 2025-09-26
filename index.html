@@ -57,7 +57,7 @@
     .kpi-panel{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:12px}
     .tabbar{display:flex;gap:8px;margin-bottom:8px}
     .tabbar .btn[aria-pressed="true"]{background:#eef2ff;border-color:#cfd8ff}
-    .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+    .kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:12px} /* 3 cards now */
     @media(max-width:900px){.kpis{grid-template-columns:repeat(2,1fr)}}
     @media(max-width:520px){.kpis{grid-template-columns:1fr}}
     .kpi{background:#fff;border:1px solid var(--border);border-radius:14px;padding:14px}
@@ -162,7 +162,6 @@
         <div class="kpi ok"><div class="label">Incoming (selected month)</div><div class="value" id="kpiIncoming" aria-live="polite">0</div><div class="delta" id="kpiIncomingDelta">vs prev. month: —</div></div>
         <div class="kpi warn"><div class="label">Outgoing (selected month)</div><div class="value" id="kpiOutgoing" aria-live="polite">0</div><div class="delta" id="kpiOutgoingDelta">vs prev. month: —</div></div>
         <div class="kpi both"><div class="label">Total flow (selected month)</div><div class="value" id="kpiTotal" aria-live="polite">0</div><div class="delta" id="kpiTotalDelta">vs prev. month: —</div></div>
-        <div class="kpi"><div class="label">Net flow (In − Out)</div><div class="value" id="kpiNet" aria-live="polite">0</div><div class="delta" id="kpiNetDelta">vs prev. month: —</div></div>
       </section>
 
       <!-- KPIs (cumulative across all months, respects Point filter) -->
@@ -170,7 +169,6 @@
         <div class="kpi ok"><div class="label">Cumulative Incoming (all months)</div><div class="value" id="cumIncoming" aria-live="polite">0</div></div>
         <div class="kpi warn"><div class="label">Cumulative Outgoing (all months)</div><div class="value" id="cumOutgoing" aria-live="polite">0</div></div>
         <div class="kpi both"><div class="label">Cumulative Total (all months)</div><div class="value" id="cumTotal" aria-live="polite">0</div></div>
-        <div class="kpi"><div class="label">Cumulative Net (In − Out)</div><div class="value" id="cumNet" aria-live="polite">0</div></div>
       </section>
     </section>
 
@@ -310,10 +308,10 @@ const chipSelection = $('#chipSelection'), hdrSub = $('#hdrSub'), ctxMonth = $('
 const ctxPoint = $('#ctxPoint'), ctxDir = $('#ctxDir');
 
 // KPI nodes (this month)
-const kpiIncoming = $('#kpiIncoming'), kpiOutgoing = $('#kpiOutgoing'), kpiTotal = $('#kpiTotal'), kpiNet = $('#kpiNet');
-const kpiIncomingDelta = $('#kpiIncomingDelta'), kpiOutgoingDelta = $('#kpiOutgoingDelta'), kpiTotalDelta = $('#kpiTotalDelta'), kpiNetDelta = $('#kpiNetDelta');
+const kpiIncoming = $('#kpiIncoming'), kpiOutgoing = $('#kpiOutgoing'), kpiTotal = $('#kpiTotal');
+const kpiIncomingDelta = $('#kpiIncomingDelta'), kpiOutgoingDelta = $('#kpiOutgoingDelta'), kpiTotalDelta = $('#kpiTotalDelta');
 // KPI nodes (cumulative)
-const cumIncoming = $('#cumIncoming'), cumOutgoing = $('#cumOutgoing'), cumTotal = $('#cumTotal'), cumNet = $('#cumNet');
+const cumIncoming = $('#cumIncoming'), cumOutgoing = $('#cumOutgoing'), cumTotal = $('#cumTotal');
 
 // Charts + UI
 const downloadTsBtn = $('#downloadTs'), downloadBarBtn = $('#downloadBar'), topNSel = $('#topN');
@@ -449,16 +447,14 @@ function computeKPIs(){
     .reduce((s,r)=> s + (r[m]||0), 0);
   const inc = sum('incoming', month), out = sum('outgoing', month);
   const incP = sum('incoming', prevMonth), outP = sum('outgoing', prevMonth);
-  const total = inc+out, totalP = incP+outP, net = inc-out, netP = incP-outP;
+  const total = inc+out, totalP = incP+outP;
   kpiIncoming.textContent = fmt(inc);
   kpiOutgoing.textContent = fmt(out);
   kpiTotal.textContent = fmt(total);
-  kpiNet.textContent = fmt(net);
   const delta = (c,p)=> (p?`vs prev. month: ${(c-p)>0?'▲':(c-p)<0?'▼':'•'} ${(((c-p)/p)*100).toFixed(1)}%`:'vs prev. month: —');
   kpiIncomingDelta.textContent = delta(inc,incP);
   kpiOutgoingDelta.textContent = delta(out,outP);
   kpiTotalDelta.textContent = delta(total,totalP);
-  kpiNetDelta.textContent = delta(net,netP);
 }
 function computeCumulativeKPIs(){
   const selPoint = pointSel.value;
@@ -472,7 +468,6 @@ function computeCumulativeKPIs(){
   cumIncoming.textContent = fmt(incAll);
   cumOutgoing.textContent = fmt(outAll);
   cumTotal.textContent    = fmt(incAll + outAll);
-  cumNet.textContent      = fmt(incAll - outAll);
 }
 
 /* Counts map */
