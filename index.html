@@ -73,14 +73,13 @@
     /* Flow map controls & overlays */
     .flow-wrap{position:relative;flex:1}
     .flow-ctrls{position:absolute; top:10px; right:10px; display:flex; gap:8px; flex-wrap:wrap; z-index:5;}
-    /* removed floating .flow-legend (we'll use a bottom bar instead) */
     #loading-overlay{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,.85); z-index:6; font-weight:700; color:#444}
     #info-panel{position:absolute; top:10px; left:10px; max-width:320px; z-index:5; background:#fff; border:1px solid var(--border); border-radius:10px; padding:10px 12px; font-size:12px; color:#333; box-shadow:0 10px 24px rgba(0,0,0,.08)}
     #info-panel h4{margin:0 0 6px}
     #info-panel button{margin-top:6px}
 
-    /* NEW: bottom bar under the flow map */
-    .flow-bottom{
+    /* Bottom bars */
+    .flow-bottom, .count-bottom{
       border-top:1px solid var(--border);
       background:#fff;
       padding:10px 12px;
@@ -145,7 +144,13 @@
             <div class="row"><span class="dot" style="background:var(--both)"></span> Both</div>
           </div>
         </div>
+        <!-- NEW: Counts bottom bar with sums -->
+        <div class="count-bottom">
+          <div id="countSelected" class="pill">Selected month — Incoming: 0 • Outgoing: 0 • Total: 0</div>
+          <div id="countCumulative" class="pill">All months — Incoming: 0 • Outgoing: 0 • Total: 0</div>
+        </div>
       </div>
+
       <div class="panel">
         <header><div class="title">Time Series — Aggregated by month</div><div class="subtitle" id="tsSubtitle">All points • Both directions</div></header>
         <div style="padding:10px"><canvas id="tsChart" height="300"></canvas></div>
@@ -192,7 +197,7 @@
         </div>
       </div>
 
-      <!-- NEW: Bottom bar under the map -->
+      <!-- Flow bottom bar -->
       <div class="flow-bottom">
         <div class="legend-row">
           <span class="dot" style="background:#FF671F"></span> Origins
@@ -218,6 +223,10 @@ const directionSel = $('#direction'), pointSel = $('#point'), monthRange = $('#m
 const chipSelection = $('#chipSelection'), hdrSub = $('#hdrSub'), tsSubtitle = $('#tsSubtitle'), barSubtitle = $('#barSubtitle');
 const kpiIncoming = $('#kpiIncoming'), kpiOutgoing = $('#kpiOutgoing'), kpiTotal = $('#kpiTotal'), kpiNet = $('#kpiNet');
 const kpiIncomingDelta = $('#kpiIncomingDelta'), kpiOutgoingDelta = $('#kpiOutgoingDelta'), kpiTotalDelta = $('#kpiTotalDelta'), kpiNetDelta = $('#kpiNetDelta');
+
+// NEW: counts bottom elements
+const countSelectedEl = document.getElementById('countSelected');
+const countCumulativeEl = document.getElementById('countCumulative');
 
 let rows = [], points = [], monthCols = [], monthLabels = [];
 let map, markers = [], tsChart, barChart;
@@ -308,7 +317,7 @@ function normalizeData(csvRows){
 
   rows = csvRows.map(r=>{
     const row = {
-      direction: String(r[kDir]||"").trim(),
+      direction: String(r[kDir]||"").trim().toLowerCase(),
       point: String(r[kName]||"").trim(),
       code: String(r[kCode]||"").trim(),
       lat: Number(r[kLat]),
@@ -331,21 +340,22 @@ function aggregateTimeSeries(dir, selPoint){
     if (selPoint !== '__ALL__' && r.point !== selPoint) continue;
     monthLabels.forEach((m,i)=>{
       const v = r[m]||0;
-      if (r.direction.toLowerCase()==='incoming') incoming[i]+=v;
-      else if (r.direction.toLowerCase()==='outgoing') outgoing[i]+=v;
+      if (r.direction==='incoming') incoming[i]+=v;
+      else if (r.direction==='outgoing') outgoing[i]+=v;
     });
   }
   if (dir==='Incoming') return {labels:monthLabels, series:incoming, alt:outgoing};
   if (dir==='Outgoing') return {labels:monthLabels, series:outgoing, alt:incoming};
   return {labels:monthLabels, series: incoming.map((v,i)=>v+outgoing[i]), incoming, outgoing};
 }
+
 function computeKPIs(){
   const idx = +monthRange.value;
   const month = monthLabels[idx];
   const prevIdx = Math.max(0, idx-1), prevMonth = monthLabels[prevIdx];
   const selPoint = pointSel.value;
   const sum = (dir, m) => rows
-    .filter(r => (selPoint==='__ALL__'||r.point===selPoint) && r.direction.toLowerCase()===dir)
+    .filter(r => (selPoint==='__ALL__'||r.point===selPoint) && r.direction===dir)
     .reduce((s,r)=> s + (r[m]||0), 0);
   const inc = sum('incoming', month), out = sum('outgoing', month);
   const incP = sum('incoming', prevMonth), outP = sum('outgoing', prevMonth);
@@ -359,6 +369,32 @@ function computeKPIs(){
   kpiOutgoingDelta.textContent = delta(out,outP);
   kpiTotalDelta.textContent = delta(total,totalP);
   kpiNetDelta.textContent = delta(net,netP);
+}
+
+/* NEW: sums for bottom bar */
+function updateCountBottom(){
+  if (!monthLabels.length) return;
+  const selPoint = pointSel.value;
+  const month = selectedMonthLabel();
+
+  const sumMonth = (dir) => rows
+    .filter(r => (selPoint==='__ALL__' || r.point===selPoint) && r.direction===dir)
+    .reduce((s,r)=> s + (r[month]||0), 0);
+
+  const incSel = sumMonth('incoming');
+  const outSel = sumMonth('outgoing');
+
+  const sumAll = (dir) => rows
+    .filter(r => (selPoint==='__ALL__' || r.point===selPoint) && r.direction===dir)
+    .reduce((s,r)=> s + monthLabels.reduce((t,m)=> t + (r[m]||0), 0), 0);
+
+  const incAll = sumAll('incoming');
+  const outAll = sumAll('outgoing');
+
+  if (countSelectedEl)
+    countSelectedEl.textContent = `Selected month (${month}) — Incoming: ${fmt(incSel)} • Outgoing: ${fmt(outSel)} • Total: ${fmt(incSel+outSel)}`;
+  if (countCumulativeEl)
+    countCumulativeEl.textContent = `All months — Incoming: ${fmt(incAll)} • Outgoing: ${fmt(outAll)} • Total: ${fmt(incAll+outAll)}`;
 }
 
 /* counts map */
@@ -375,15 +411,15 @@ function renderMarkers(){
   const byPoint = new Map();
   for (const r of rows){
     if (selPoint!=='__ALL__' && r.point!==selPoint) continue;
-    const v = (dir==='Both')? (r[month]||0) : (r.direction.toLowerCase()===dir.toLowerCase()? (r[month]||0) : 0);
+    const v = (dir==='Both')? (r[month]||0) : (r.direction===dir.toLowerCase()? (r[month]||0) : 0);
     byPoint.set(r.point,(byPoint.get(r.point)||0)+v);
   }
   const col = markerColor();
   for (const p of points){
     if (!byPoint.has(p.point)) continue;
     const v = byPoint.get(p.point);
-    const inc = rows.find(r=>r.point===p.point && r.direction.toLowerCase()==='incoming')?.[month]||0;
-    const out = rows.find(r=>r.point===p.point && r.direction.toLowerCase()==='outgoing')?.[month]||0;
+    const inc = rows.find(r=>r.point===p.point && r.direction==='incoming')?.[month]||0;
+    const out = rows.find(r=>r.point===p.point && r.direction==='outgoing')?.[month]||0;
     const c = L.circleMarker([p.lat,p.lon],{radius:scaleRadius(v),color:col,weight:1.5,fillColor:col,fillOpacity:.25}).addTo(map);
     c.bindPopup(`
       <div style="font-weight:800;margin-bottom:6px">${p.point}</div>
@@ -441,8 +477,8 @@ function renderCharts(){
   // Build & sort the bar series (desc)
   const items=[];
   for (const p of points){
-    const inc = rows.find(r=>r.point===p.point && r.direction.toLowerCase()==='incoming')?.[month]||0;
-    const out = rows.find(r=>r.point===p.point && r.direction.toLowerCase()==='outgoing')?.[month]||0;
+    const inc = rows.find(r=>r.point===p.point && r.direction==='incoming')?.[month]||0;
+    const out = rows.find(r=>r.point===p.point && r.direction==='outgoing')?.[month]||0;
     const val = dir==='Incoming'?inc:(dir==='Outgoing'?out:inc+out);
     items.push({name:p.point, val});
   }
@@ -463,7 +499,7 @@ function populatePointDropdown(){
 }
 function refreshAll(){
   chipSelection.textContent = `${pointSel.value==='__ALL__'?'All Points':pointSel.value} • ${directionSel.value} • ${selectedMonthLabel()}`;
-  computeKPIs(); renderMarkers(); renderCharts();
+  computeKPIs(); renderMarkers(); renderCharts(); updateCountBottom();
 }
 function initChartsAndMap(){ initMap(); initCharts(); refreshAll(); }
 
@@ -657,7 +693,17 @@ function initChartsAndMap(){ initMap(); initCharts(); refreshAll(); }
       console.error('After normalization, no valid rows remained.'); return;
     }
 
-    // Totals for stats
+    // Totals for point scaling & stats
+    const destinationTotals = new Map(), originTotals = new Map();
+    for (const d of data){
+      destinationTotals.set(d.e_locality_id, (destinationTotals.get(d.e_locality_id) || 0) + d.e_Volume);
+      originTotals.set(d.s_state_id, (originTotals.get(d.s_state_id) || 0) + d.e_Volume);
+    }
+    data.forEach(d => {
+      d.e_totalVolume = destinationTotals.get(d.e_locality_id) || d.e_Volume;
+      d.s_totalVolume = originTotals.get(d.s_state_id) || d.e_Volume;
+    });
+
     const totalPairs = data.length;
     const totalVolume = data.reduce((s,d)=> s + (d.e_Volume||0), 0);
 
@@ -722,26 +768,10 @@ function initChartsAndMap(){ initMap(); initCharts(); refreshAll(); }
       return rMin + (rMax - rMin) * t;
     }
 
-    // Precompute totals for point scaling
-    const destinationTotals = new Map(), originTotals = new Map();
-    for (const d of data){
-      destinationTotals.set(d.e_locality_id, (destinationTotals.get(d.e_locality_id) || 0) + d.e_Volume);
-      originTotals.set(d.s_state_id, (originTotals.get(d.s_state_id) || 0) + d.e_Volume);
-    }
-    data.forEach(d => {
-      d.e_totalVolume = destinationTotals.get(d.e_locality_id) || d.e_Volume;
-      d.s_totalVolume = originTotals.get(d.s_state_id) || d.e_Volume;
-    });
+    if (HasClass) flowmapLayer = new L.CanvasFlowmapLayer(fc, options).addTo(flowMap);
+    else flowmapLayer = L.canvasFlowmapLayer(fc, options).addTo(flowMap);
 
-    // Create layer
-    if (HasClass) flowmapLayer = new L.CanvasFlowmapLayer({ type:'FeatureCollection', features: data.map(d => ({
-      type:'Feature', geometry:{ type:'Point', coordinates:[d.s_lon, d.s_lat] }, properties:d
-    })) }, options).addTo(flowMap);
-    else flowmapLayer = L.canvasFlowmapLayer({ type:'FeatureCollection', features: data.map(d => ({
-      type:'Feature', geometry:{ type:'Point', coordinates:[d.s_lon, d.s_lat] }, properties:d
-    })) }, options).addTo(flowMap);
-
-    // Animation: start + kick (prevents stuck loops on some builds)
+    // Animation: start + kick
     setAnimation(flowmapLayer, true); kickAnimation(flowmapLayer);
 
     // Optional initial focus
@@ -761,7 +791,7 @@ function initChartsAndMap(){ initMap(); initCharts(); refreshAll(); }
       });
     }
 
-    // Update bottom stats
+    // Flow bottom stats
     if (flowStatsEl){
       flowStatsEl.textContent = `OD pairs: ${formatNumber(totalPairs)} • Total displaced across flows: ${formatNumber(totalVolume)}`;
     }
