@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
-  <title>Sudan — Flow Monitoring Dashboard</title>
+  <title>Sudan — Flow Monitoring Dashboard (IOM)</title>
 
   <!-- Leaflet -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="anonymous"/>
@@ -22,21 +22,41 @@
 
   <style>
     :root{
-      --brand-primary:#0033A0; --brand-accent:#418FDE;
-      --surface:#f5f7fa; --panel:#ffffff; --ink:#1f2937; --muted:#6b7280; --border:#e5e7eb; --chip:#eef2ff;
-      --ok:#2BB673; --warn:#FF8C42; --both:#7A5CFA;
+      /* IOM brand */
+      --iom-blue:#0033A0;           /* IOM Blue (primary) */
+      --iom-bright-blue:#00A3E0;    /* Bright accent blue */
+      --iom-light:#E6F4FA;          /* Light chip bg */
+      --iom-ink:#0f172a;
+
+      /* App palette (aligned to IOM) */
+      --brand-primary: var(--iom-blue);
+      --brand-accent:  var(--iom-bright-blue);
+      --surface:#f5f7fa; --panel:#ffffff; --ink:var(--iom-ink); --muted:#6b7280; --border:#e5e7eb; --chip:var(--iom-light);
+
+      /* Data colors */
+      --ok:#2BB673;     /* incoming (green) */
+      --warn:#FF8C42;   /* outgoing (orange) */
+      --both:#0033A0;   /* total/both uses IOM blue */
+
+      /* Flow warm ramp kept for contrast against blue basemap */
       --brand-warm1:#FFB81C; --brand-warm2:#FF671F; --brand-warm3:#D22630;
     }
     *{box-sizing:border-box}
     html,body{height:100%}
     body{margin:0;font-family:"Open Sans",system-ui,Segoe UI,Roboto,Arial,sans-serif;color:var(--ink);background:var(--surface)}
-    header{background:linear-gradient(90deg,var(--brand-primary),var(--brand-accent));color:#fff;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;position:sticky;top:0;z-index:10}
-    header .title{font-weight:800;letter-spacing:.2px;font-size:20px}
-    header .subtitle{opacity:.9;font-weight:600;font-size:12px}
-    .chip{padding:6px 10px;border-radius:999px;background:var(--chip);font-size:12px;font-weight:700;color:#4537ff;border:1px solid #dadcff}
+
+    header{
+      background:linear-gradient(90deg,var(--brand-primary),var(--brand-accent));
+      color:#fff;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;position:sticky;top:0;z-index:10
+    }
+    .brand{display:flex;align-items:center;gap:10px}
+    .brand img{height:28px;width:auto;display:block;filter: brightness(0) invert(1);} /* white-on-blue */
+    header .title{font-weight:800;letter-spacing:.2px;font-size:18px}
+    header .subtitle{opacity:.95;font-weight:600;font-size:12px}
+    .chip{padding:6px 10px;border-radius:999px;background:var(--chip);font-size:12px;font-weight:700;color:var(--brand-primary);border:1px solid #cfe7f4}
     .container{padding:16px;max-width:1400px;margin:0 auto;display:grid;grid-template-columns:1fr;gap:16px}
 
-    /* Controls (NOT sticky per request) */
+    /* Controls (NOT sticky) */
     .controls{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:12px;display:grid;grid-template-columns:1.1fr 1.4fr 2fr auto;gap:12px}
     @media(max-width:980px){.controls{grid-template-columns:1fr 1fr}}
     @media(max-width:640px){.controls{grid-template-columns:1fr}}
@@ -48,14 +68,12 @@
     .btn{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:12px;border:1px solid var(--border);background:#fff;font-weight:700;font-size:12px;cursor:pointer}
     .btn.small{padding:6px 10px;border-radius:10px}
     .btn:active{transform:translateY(1px)}
-    .btn:focus-visible, .control select:focus-visible, input[type="range"]:focus-visible{
-      outline:2px solid var(--brand-accent); outline-offset:2px;
-    }
+    .btn:focus-visible, .control select:focus-visible, input[type="range"]:focus-visible{outline:2px solid var(--brand-accent); outline-offset:2px;}
 
     /* KPI grids + tabs */
     .kpi-panel{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:12px}
     .tabbar{display:flex;gap:8px;margin-bottom:8px}
-    .tabbar .btn[aria-pressed="true"]{background:#eef2ff;border-color:#cfd8ff}
+    .tabbar .btn[aria-pressed="true"]{background:#eaf3ff;border-color:#cfe0ff}
     .kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
     @media(max-width:900px){.kpis{grid-template-columns:repeat(2,1fr)}}
     @media(max-width:520px){.kpis{grid-template-columns:1fr}}
@@ -63,7 +81,6 @@
     .kpi .label{font-size:12px;color:var(--muted)}
     .kpi .value{font-size:22px;font-weight:800;margin-top:4px}
     .kpi .delta{font-size:12px;margin-top:6px;color:var(--muted)}
-    .kpi .value[aria-live]{display:inline-block;min-width:2ch}
     .kpi.ok .value{color:var(--ok)} .kpi.warn .value{color:var(--warn)} .kpi.both .value{color:var(--both)}
 
     /* Panels */
@@ -100,9 +117,13 @@
 </head>
 <body>
   <header>
-    <div>
-      <div class="title">Sudan — Flow Monitoring Dashboard</div>
-      <div class="subtitle" id="hdrSub">Interactive map, KPIs & flows</div>
+    <div class="brand">
+      <!-- Replace src with your local asset if preferred: assets/iom-logo.svg -->
+      <img src="https://upload.wikimedia.org/wikipedia/commons/1/1c/International_Organization_for_Migration_logo.svg" alt="IOM logo" />
+      <div>
+        <div class="title">IOM • Sudan — Flow Monitoring Dashboard</div>
+        <div class="subtitle" id="hdrSub">Interactive map, KPIs & flows</div>
+      </div>
     </div>
     <div class="chip" id="chipSelection">Loading…</div>
   </header>
@@ -540,7 +561,7 @@ function renderMarkers(){
         <div><b>${month}</b></div>
         <div>Incoming: <b style="color:var(--ok)">${fmt(inc)}</b></div>
         <div>Outgoing: <b style="color:var(--warn)">${fmt(out)}</b></div>
-        <div>Total: <b>${fmt(inc+out)}</b></div>
+        <div>Total: <b style="color:var(--both)">${fmt(inc+out)}</b></div>
       </div>
     `);
     markers.push(c);
@@ -671,7 +692,7 @@ function stepMonth(dir=+1){
     const infoChip = document.createElement('div');
     infoChip.className = 'chip';
     infoChip.innerHTML = `<i class="fas fa-database"></i> ${monthLabels[0]} → ${monthLabels.at(-1)} • ${(path.split('/').pop())}`;
-    document.querySelector('header .title').after(infoChip);
+    document.querySelector('.brand').after(infoChip);
 
     populatePointDropdown();
 
@@ -884,8 +905,7 @@ function stepMonth(dir=+1){
     });
 
     const totalPairs = data.length;
-    theTotal = data.reduce((s,d)=> s + (d.e_Volume||0), 0);
-    const totalVolume = theTotal;
+    const totalVolume = data.reduce((s,d)=> s + (d.e_Volume||0), 0);
 
     // Build GeoJSON of origins
     const fc = { type:'FeatureCollection', features: data.map(d => ({
