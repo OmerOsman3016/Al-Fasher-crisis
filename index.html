@@ -9,7 +9,7 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="anonymous"/>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin="anonymous"></script>
 
-  <!-- CanvasFlowmapLayer (local with CDN fallback in script) -->
+  <!-- CanvasFlowmapLayer (local; flow script adds CDN fallback) -->
   <script src="./src/CanvasFlowmapLayer.js"></script>
 
   <!-- Chart.js & PapaParse -->
@@ -132,7 +132,7 @@
       <div class="kpi"><div class="label">Net flow (In − Out)</div><div class="value" id="kpiNet">0</div><div class="delta" id="kpiNetDelta">vs prev. month: —</div></div>
     </section>
 
-    <!-- NEW: KPIs (cumulative across all months, respects Point filter) -->
+    <!-- KPIs (cumulative across all months, respects Point filter) -->
     <section class="kpis" aria-label="Cumulative KPIs">
       <div class="kpi ok"><div class="label">Cumulative Incoming (all months)</div><div class="value" id="cumIncoming">0</div></div>
       <div class="kpi warn"><div class="label">Cumulative Outgoing (all months)</div><div class="value" id="cumOutgoing">0</div></div>
@@ -227,7 +227,7 @@ const chipSelection = $('#chipSelection'), hdrSub = $('#hdrSub'), tsSubtitle = $
 const kpiIncoming = $('#kpiIncoming'), kpiOutgoing = $('#kpiOutgoing'), kpiTotal = $('#kpiTotal'), kpiNet = $('#kpiNet');
 const kpiIncomingDelta = $('#kpiIncomingDelta'), kpiOutgoingDelta = $('#kpiOutgoingDelta'), kpiTotalDelta = $('#kpiTotalDelta'), kpiNetDelta = $('#kpiNetDelta');
 
-// NEW cumulative KPI nodes
+// Cumulative KPI nodes
 const cumIncoming = $('#cumIncoming'), cumOutgoing = $('#cumOutgoing'), cumTotal = $('#cumTotal'), cumNet = $('#cumNet');
 
 let rows = [], points = [], monthCols = [], monthLabels = [];
@@ -372,7 +372,7 @@ function computeKPIs(){
   kpiNetDelta.textContent = delta(net,netP);
 }
 
-/* NEW: cumulative KPIs (all months; respects Point filter) */
+/* cumulative KPIs (all months; respects Point filter) */
 function computeCumulativeKPIs(){
   const selPoint = pointSel.value;
   const sumAll = (dir) => rows
@@ -448,24 +448,26 @@ function initCharts(){
 function renderCharts(){
   const dir = directionSel.value, selPoint = pointSel.value, month = selectedMonthLabel();
   const agg = aggregateTimeSeries(dir, selPoint);
+
   tsChart.data.labels = agg.labels;
-  if (dir==='Both'){
+
+  if (dir === 'Both') {
+    // Only Incoming & Outgoing (no Total line)
     tsChart.data.datasets = [
-      {label:'Incoming',data:agg.incoming,borderColor:getCss('--ok'),backgroundColor:getCss('--ok'),tension:.25},
-      {label:'Outgoing',data:agg.outgoing,borderColor:getCss('--warn'),backgroundColor:getCss('--warn'),tension:.25},
-      {label:'Total',data:agg.series,borderColor:getCss('--both'),backgroundColor:getCss('--both'),tension:.25}
+      { label: 'Incoming', data: agg.incoming, borderColor: getCss('--ok'),  backgroundColor: getCss('--ok'),  tension: .25 },
+      { label: 'Outgoing', data: agg.outgoing, borderColor: getCss('--warn'), backgroundColor: getCss('--warn'), tension: .25 }
     ];
   } else {
-    const c = dir==='Incoming'?getCss('--ok'):getCss('--warn');
+    const c = dir==='Incoming' ? getCss('--ok') : getCss('--warn');
     tsChart.data.datasets = [
-      {label:dir,data:agg.series,borderColor:c,backgroundColor:c,tension:.25},
-      {label:(dir==='Incoming'?'Outgoing':'Incoming'),data:agg.alt,borderColor:getCss('--muted'),backgroundColor:getCss('--muted'),borderDash:[6,4],tension:.25}
+      { label: dir, data: agg.series, borderColor: c, backgroundColor: c, tension: .25 },
+      { label: (dir==='Incoming' ? 'Outgoing' : 'Incoming'), data: agg.alt, borderColor: getCss('--muted'), backgroundColor: getCss('--muted'), borderDash:[6,4], tension: .25 }
     ];
   }
   tsChart.update();
   tsSubtitle.textContent = `${selPoint==='__ALL__'?'All points':selPoint} • ${dir} direction${dir==='Both'?'s':''}`;
 
-  // Build & sort the bar series (desc)
+  // Bar chart (selected month by point)
   const items=[];
   for (const p of points){
     const inc = rows.find(r=>r.point===p.point && r.direction==='incoming')?.[month]||0;
