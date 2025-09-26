@@ -23,9 +23,9 @@
   <style>
     :root{
       /* IOM brand */
-      --iom-blue:#0033A0;           /* IOM Blue (primary) */
-      --iom-bright-blue:#00A3E0;    /* Bright accent blue */
-      --iom-light:#E6F4FA;          /* Light chip bg */
+      --iom-blue:#0033A0;
+      --iom-bright-blue:#00A3E0;
+      --iom-light:#E6F4FA;
       --iom-ink:#0f172a;
 
       /* App palette (aligned to IOM) */
@@ -34,11 +34,11 @@
       --surface:#f5f7fa; --panel:#ffffff; --ink:var(--iom-ink); --muted:#6b7280; --border:#e5e7eb; --chip:var(--iom-light);
 
       /* Data colors */
-      --ok:#2BB673;     /* incoming (green) */
-      --warn:#FF8C42;   /* outgoing (orange) */
-      --both:#0033A0;   /* total/both uses IOM blue */
+      --ok:#2BB673;     /* incoming */
+      --warn:#FF8C42;   /* outgoing */
+      --both:#0033A0;   /* IOM blue for total/both */
 
-      /* Flow warm ramp kept for contrast against blue basemap */
+      /* Flow warm ramp */
       --brand-warm1:#FFB81C; --brand-warm2:#FF671F; --brand-warm3:#D22630;
     }
     *{box-sizing:border-box}
@@ -50,7 +50,7 @@
       color:#fff;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;position:sticky;top:0;z-index:10
     }
     .brand{display:flex;align-items:center;gap:10px}
-    .brand img{height:28px;width:auto;display:block;filter: brightness(0) invert(1);} /* white-on-blue */
+    .brand img{height:28px;width:auto;display:block;filter: brightness(0) invert(1);}
     header .title{font-weight:800;letter-spacing:.2px;font-size:18px}
     header .subtitle{opacity:.95;font-weight:600;font-size:12px}
     .chip{padding:6px 10px;border-radius:999px;background:var(--chip);font-size:12px;font-weight:700;color:var(--brand-primary);border:1px solid #cfe7f4}
@@ -113,12 +113,15 @@
     .pill{background:#f8fafc;border:1px solid var(--border);padding:6px 10px;border-radius:999px;font-weight:700}
 
     .empty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#777;font-size:12px;pointer-events:none}
+
+    /* Leaflet divIcon for border points */
+    .bp-icon{background:transparent;border:none}
+    .bp-icon svg{display:block;filter:drop-shadow(0 2px 4px rgba(0,0,0,.25))}
   </style>
 </head>
 <body>
   <header>
     <div class="brand">
-      <!-- Replace src with your local asset if preferred: assets/iom-logo.svg -->
       <img src="https://upload.wikimedia.org/wikipedia/commons/1/1c/International_Organization_for_Migration_logo.svg" alt="IOM logo" />
       <div>
         <div class="title">IOM • Sudan — Flow Monitoring Dashboard</div>
@@ -196,7 +199,7 @@
       <div class="panel">
         <header>
           <div>
-            <div class="title">Counts Map — Circle size by selected month & direction</div>
+            <div class="title">Counts Map — Icon size by selected month & direction</div>
             <div class="subtitle">Click a marker for details</div>
           </div>
           <div class="actions">
@@ -494,50 +497,70 @@ function computeCumulativeKPIs(){
 }
 
 /* Counts map (Mapbox + fallback) */
+let mapboxBase, cartoLight, osm;
 function initMap(){
   map = L.map('map',{zoomControl:true,scrollWheelZoom:true}).setView([15.5,30],5);
 
-  const cartoLight = L.tileLayer(
+  cartoLight = L.tileLayer(
     'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
     { attribution: '&copy; OpenStreetMap & CartoDB' }
   );
-  const osm = L.tileLayer(
+  osm = L.tileLayer(
     'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
     { attribution: '&copy; OpenStreetMap' }
   );
 
-  let mapbox;
   if (MAPBOX_TOKEN_COUNTS && MAPBOX_STYLE_COUNTS) {
-    mapbox = L.tileLayer(
+    mapboxBase = L.tileLayer(
       `https://api.mapbox.com/styles/v1/${MAPBOX_STYLE_COUNTS}/tiles/{z}/{x}/{y}?access_token=${MAPBOX_TOKEN_COUNTS}`,
       { tileSize: 512, zoomOffset: -1, attribution: '&copy; Mapbox & OpenStreetMap' }
     );
-
     let switched = false;
-    mapbox.on('tileerror', () => {
+    mapboxBase.on('tileerror', () => {
       if (switched) return;
       switched = true;
-      try { map.removeLayer(mapbox); } catch {}
+      try { map.removeLayer(mapboxBase); } catch {}
       cartoLight.addTo(map);
     });
-
-    mapbox.addTo(map);
+    mapboxBase.addTo(map);
   } else {
     cartoLight.addTo(map);
   }
 
   L.control.layers(
-    {
-      'Mapbox': mapbox || null,
-      'Carto Light': cartoLight,
-      'OSM': osm
-    }
+    { 'Mapbox': mapboxBase || null, 'Carto Light': cartoLight, 'OSM': osm }
   ).addTo(map);
 
   renderMarkers();
 }
+
+/* marker helpers */
 function scaleRadius(v){ const r=Math.sqrt(v)*0.35; return Math.max(5,Math.min(r,50)); }
 function markerColor(){ return directionSel.value==='Incoming'?getCss('--ok'):(directionSel.value==='Outgoing'?getCss('--warn'):getCss('--both')); }
+
+// Build a scalable border-point (checkpoint gate) icon
+function makeBorderPointIcon(value, color){
+  const r = scaleRadius(value);
+  const size = Math.round(Math.max(18, Math.min(r*2+8, 64)));
+  const sw = Math.max(1, Math.round(size/16));
+  const stroke = '#fff';
+
+  const html = `
+  <svg width="${size}" height="${size}" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+    <rect x="8"  y="18" width="6" height="34" fill="${color}" stroke="${stroke}" stroke-width="${sw}"/>
+    <rect x="50" y="18" width="6" height="34" fill="${color}" stroke="${stroke}" stroke-width="${sw}"/>
+    <rect x="14" y="12" width="36" height="10" rx="2" fill="${color}" opacity=".95" stroke="${stroke}" stroke-width="${sw}"/>
+    <rect x="20" y="36" width="24" height="6" rx="2" fill="${color}" opacity=".85" stroke="${stroke}" stroke-width="${sw}"/>
+  </svg>`;
+
+  return L.divIcon({
+    className: 'bp-icon',
+    html,
+    iconSize: [size, size],
+    iconAnchor: [size/2, size/2]
+  });
+}
+
 function renderMarkers(){
   (markers||[]).forEach(m=>m.remove()); markers=[];
   const month = selectedMonthLabel(), dir = directionSel.value, selPoint = pointSel.value;
@@ -553,8 +576,10 @@ function renderMarkers(){
     const v = byPoint.get(p.point);
     const inc = rows.find(r=>r.point===p.point && r.direction==='incoming')?.[month]||0;
     const out = rows.find(r=>r.point===p.point && r.direction==='outgoing')?.[month]||0;
-    const c = L.circleMarker([p.lat,p.lon],{radius:scaleRadius(v),color:col,weight:1.5,fillColor:col,fillOpacity:.25}).addTo(map);
-    c.bindPopup(`
+
+    const icon = makeBorderPointIcon(v, col);
+    const m = L.marker([p.lat, p.lon], { icon }).addTo(map);
+    m.bindPopup(`
       <div style="font-weight:800;margin-bottom:6px">${p.point}</div>
       <div style="font-size:12px;color:#555">Code: ${p.code}</div>
       <div style="margin-top:6px;font-size:13px">
@@ -564,7 +589,7 @@ function renderMarkers(){
         <div>Total: <b style="color:var(--both)">${fmt(inc+out)}</b></div>
       </div>
     `);
-    markers.push(c);
+    markers.push(m);
   }
   if (pointSel.value!=='__ALL__'){
     const p = points.find(x=>x.point===pointSel.value); if(p) map.setView([p.lat,p.lon],7);
@@ -600,7 +625,7 @@ function renderCharts(){
   const dir = directionSel.value, selPoint = pointSel.value, month = selectedMonthLabel();
   const agg = aggregateTimeSeries(dir, selPoint);
 
-  // Time series: only Incoming & Outgoing (no "Total")
+  // Time series: only Incoming & Outgoing (no "Total" line)
   tsChart.data.labels = agg.labels;
   if (dir === 'Both') {
     tsChart.data.datasets = [
