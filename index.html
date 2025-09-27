@@ -199,7 +199,7 @@
       <div class="panel">
         <header>
           <div>
-            <div class="title">Counts Map — Icon shows people IN / OUT</div>
+            <div class="title">Counts Map — OCHA Cross-Border Point icon</div>
             <div class="subtitle">Click a marker for details</div>
           </div>
           <div class="actions">
@@ -540,71 +540,41 @@ function initMap(){
 function scaleRadius(v){ const r=Math.sqrt(v)*0.35; return Math.max(5,Math.min(r,50)); }
 function markerColor(){ return directionSel.value==='Incoming'?getCss('--ok'):(directionSel.value==='Outgoing'?getCss('--warn'):getCss('--both')); }
 
-/* NEW icon: two people + arrows (IN green, OUT orange). 
-   - If Direction=Incoming: IN vivid, OUT muted.
-   - If Direction=Outgoing: OUT vivid, IN muted.
-   - If Direction=Both: both vivid. */
-function makeBorderPointIcon(value, accentColor){
-  const r = scaleRadius(value);
-  const size = Math.round(Math.max(26, Math.min(r*2+12, 80))); // scale with value
-  const stroke = 'rgba(15,23,42,.12)'; // subtle outline
-  const sw = Math.max(1, Math.round(size/28));
-  const inCol  = getCss('--ok')   || '#2BB673';
-  const outCol = getCss('--warn') || '#FF8C42';
-  const muted  = '#cbd5e1';
+/* OCHA cross-border point icon (UNOCHA blue + white arrows across border line) */
+function makeOchaBorderPointIcon(value){
+  const r = Math.sqrt(value)*0.35;
+  const size = Math.round(Math.max(28, Math.min(r*2 + 14, 72)));
 
-  const dir = (directionSel?.value || 'Both');
-  const showIn  = dir==='Incoming' || dir==='Both';
-  const showOut = dir==='Outgoing' || dir==='Both';
-  const colIn   = showIn  ? inCol  : muted;
-  const colOut  = showOut ? outCol : muted;
+  const OCHA_BLUE = '#1F69B3';
+  const RING      = '#ffffff';
+  const SYMBOL    = '#ffffff';
 
-  // simple stick-figure proportions
-  const headR = Math.max(3, Math.round(size*0.10));
-  const bodyW = Math.max(4, Math.round(size*0.10));
-  const bodyH = Math.max(10, Math.round(size*0.28));
-  const baseY = Math.round(size*0.62);
-  const gapX  = Math.round(size*0.14);
+  const cx = size/2, cy = size/2;
+  const radius = Math.round(size*0.46);
+  const ringW  = Math.max(2, Math.round(size*0.04));
 
-  // positions
-  const cxL = Math.round(size*0.28); // left person center
-  const cxR = Math.round(size*0.72); // right person center
-  const headY = Math.round(size*0.28);
-
-  // arrows
-  const ay = Math.round(size*0.78);
-  const arrowLW = Math.max(2, Math.round(size*0.05));
-  const inAX1 = Math.round(size*0.10), inAX2 = Math.round(size*0.42);   // → arrow (incoming)
-  const outAX1= Math.round(size*0.58), outAX2= Math.round(size*0.90);   // → arrow (outgoing to the right)
+  const lineW   = Math.max(3, Math.round(size*0.07));
+  const borderX = Math.round(size*0.50);
+  const arrowY1 = Math.round(size*0.40);
+  const arrowY2 = Math.round(size*0.60);
+  const padX    = Math.round(size*0.14);
+  const arrowLen= Math.round(size*0.22);
+  const head    = Math.round(lineW*1.8);
 
   const html = `
-  <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
-    <!-- white badge with thin outline in accent -->
-    <rect x="1.5" y="1.5" width="${size-3}" height="${size-3}" rx="${Math.round(size*0.18)}" fill="#ffffff" stroke="${accentColor||'#E5E7EB'}" stroke-width="${sw}"/>
-
-    <!-- Left person (Incoming) -->
-    <circle cx="${cxL}" cy="${headY}" r="${headR}" fill="${colIn}"/>
-    <rect x="${cxL - bodyW/2}" y="${headY + headR + 2}" width="${bodyW}" height="${bodyH}" rx="${Math.max(2, Math.round(bodyW/3))}" fill="${colIn}"/>
-    <!-- arms/legs -->
-    <path d="M ${cxL-bodyW-gapX/3} ${baseY-8} L ${cxL} ${headY+headR+6} L ${cxL+bodyW+gapX/3} ${baseY-8}" stroke="${colIn}" stroke-width="${Math.max(2, Math.round(bodyW/2))}" stroke-linecap="round" fill="none"/>
-    <path d="M ${cxL-bodyW/2} ${baseY} L ${cxL} ${baseY-6} L ${cxL+bodyW/2} ${baseY}" stroke="${colIn}" stroke-width="${Math.max(2, Math.round(bodyW/2))}" stroke-linecap="round" fill="none"/>
-
-    <!-- Right person (Outgoing) -->
-    <circle cx="${cxR}" cy="${headY}" r="${headR}" fill="${colOut}"/>
-    <rect x="${cxR - bodyW/2}" y="${headY + headR + 2}" width="${bodyW}" height="${bodyH}" rx="${Math.max(2, Math.round(bodyW/3))}" fill="${colOut}"/>
-    <path d="M ${cxR-bodyW-gapX/3} ${baseY-8} L ${cxR} ${headY+headR+6} L ${cxR+bodyW+gapX/3} ${baseY-8}" stroke="${colOut}" stroke-width="${Math.max(2, Math.round(bodyW/2))}" stroke-linecap="round" fill="none"/>
-    <path d="M ${cxR-bodyW/2} ${baseY} L ${cxR} ${baseY-6} L ${cxR+bodyW/2} ${baseY}" stroke="${colOut}" stroke-width="${Math.max(2, Math.round(bodyW/2))}" stroke-linecap="round" fill="none"/>
-
-    <!-- Incoming arrow (→) -->
-    <path d="M ${inAX1} ${ay} H ${inAX2}" stroke="${colIn}" stroke-width="${arrowLW}" stroke-linecap="round" fill="none"/>
-    <path d="M ${inAX2- Math.round(arrowLW*2)} ${ay - Math.round(arrowLW*2)} L ${inAX2} ${ay} L ${inAX2- Math.round(arrowLW*2)} ${ay + Math.round(arrowLW*2)}" stroke="${colIn}" stroke-width="${arrowLW}" stroke-linecap="round" fill="none"/>
-
-    <!-- Outgoing arrow (→ to the right/out) -->
-    <path d="M ${outAX1} ${ay} H ${outAX2}" stroke="${colOut}" stroke-width="${arrowLW}" stroke-linecap="round" fill="none"/>
-    <path d="M ${outAX2- Math.round(arrowLW*2)} ${ay - Math.round(arrowLW*2)} L ${outAX2} ${ay} L ${outAX2- Math.round(arrowLW*2)} ${ay + Math.round(arrowLW*2)}" stroke="${colOut}" stroke-width="${arrowLW}" stroke-linecap="round" fill="none"/>
-
-    <!-- subtle inner divider -->
-    <line x1="${size/2}" y1="${headY- headR - 4}" x2="${size/2}" y2="${ay - 10}" stroke="${stroke}" stroke-width="${Math.max(1, Math.round(sw/1.5))}" stroke-dasharray="4 ${Math.max(2, Math.round(sw))}"/>
+  <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <circle cx="${cx}" cy="${cy}" r="${radius}" fill="${OCHA_BLUE}" />
+    <circle cx="${cx}" cy="${cy}" r="${radius - ringW/2}" fill="none" stroke="${RING}" stroke-width="${ringW}" opacity=".9"/>
+    <line x1="${borderX}" y1="${Math.round(size*0.22)}" x2="${borderX}" y2="${Math.round(size*0.78)}"
+          stroke="${SYMBOL}" stroke-width="${lineW}" stroke-linecap="round" opacity="0.95"/>
+    <line x1="${padX}" y1="${arrowY1}" x2="${padX + arrowLen}" y2="${arrowY1}"
+          stroke="${SYMBOL}" stroke-width="${lineW}" stroke-linecap="round"/>
+    <path d="M ${padX + arrowLen - head} ${arrowY1 - head} L ${padX + arrowLen} ${arrowY1} L ${padX + arrowLen - head} ${arrowY1 + head}"
+          fill="none" stroke="${SYMBOL}" stroke-width="${lineW}" stroke-linecap="round" stroke-linejoin="round"/>
+    <line x1="${size - padX}" y1="${arrowY2}" x2="${size - padX - arrowLen}" y2="${arrowY2}"
+          stroke="${SYMBOL}" stroke-width="${lineW}" stroke-linecap="round"/>
+    <path d="M ${size - padX - arrowLen + head} ${arrowY2 - head} L ${size - padX - arrowLen} ${arrowY2} L ${size - padX - arrowLen + head} ${arrowY2 + head}"
+          fill="none" stroke="${SYMBOL}" stroke-width="${lineW}" stroke-linecap="round" stroke-linejoin="round"/>
   </svg>`;
 
   return L.divIcon({
@@ -624,14 +594,13 @@ function renderMarkers(){
     const v = (dir==='Both')? (r[month]||0) : (r.direction===dir.toLowerCase()? (r[month]||0) : 0);
     byPoint.set(r.point,(byPoint.get(r.point)||0)+v);
   }
-  const col = markerColor();
   for (const p of points){
     if (!byPoint.has(p.point)) continue;
     const v = byPoint.get(p.point);
     const inc = rows.find(r=>r.point===p.point && r.direction==='incoming')?.[month]||0;
     const out = rows.find(r=>r.point===p.point && r.direction==='outgoing')?.[month]||0;
 
-    const icon = makeBorderPointIcon(v, col);
+    const icon = makeOchaBorderPointIcon(v);
     const m = L.marker([p.lat, p.lon], { icon }).addTo(map);
     m.bindPopup(`
       <div style="font-weight:800;margin-bottom:6px">${p.point}</div>
@@ -984,7 +953,7 @@ function stepMonth(dir=+1){
     });
 
     const totalPairs = data.length;
-    theTotal = data.reduce((s,d)=> s + (d.e_Volume||0), 0);
+    const totalVolume = data.reduce((s,d)=> s + (d.e_Volume||0), 0);
 
     // Build GeoJSON of origins
     const fc = { type:'FeatureCollection', features: data.map(d => ({
@@ -1066,7 +1035,7 @@ function stepMonth(dir=+1){
     });
 
     if (flowStatsEl){
-      flowStatsEl.textContent = `OD pairs: ${formatNumber(totalPairs)} • Total displaced across flows: ${formatNumber(theTotal)}`;
+      flowStatsEl.textContent = `OD pairs: ${formatNumber(totalPairs)} • Total displaced across flows: ${formatNumber(totalVolume)}`;
     }
 
     hideOverlay(); setAnimButtonState(); setFlowsButtonState(); setPointsButtonState();
