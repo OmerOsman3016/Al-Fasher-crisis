@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html> 
 <html lang="en" data-app="fmc-dashboard">
 <head>
   <meta charset="utf-8" />
@@ -117,6 +117,49 @@
     /* Leaflet divIcon for border points */
     .bp-icon{background:transparent;border:none}
     .bp-icon svg{display:block;filter:drop-shadow(0 2px 4px rgba(0,0,0,.25))}
+
+    /* ========= Spacing & Rhythm Overrides (added) ========= */
+    :root{
+      --space-1:4px; --space-2:8px; --space-3:12px; --space-4:16px;
+      --space-5:20px; --space-6:24px; --space-7:32px;
+      --radius-1:12px; --radius-2:14px; --radius-3:18px;
+    }
+    html, body { line-height: 1.5; letter-spacing:.1px; }
+    header{ padding: var(--space-4) var(--space-6) !important; gap: var(--space-3) !important; }
+    .container{ padding: var(--space-6) var(--space-7) !important; gap: var(--space-6) !important; max-width: 1440px !important; }
+    .controls{ padding: var(--space-4) !important; gap: var(--space-4) !important; border-radius: var(--radius-2) !important; }
+    .control{ padding: var(--space-3) var(--space-4) !important; gap: var(--space-2) !important; border-radius: var(--radius-2) !important; }
+    .range-row{ gap: var(--space-3) !important; }
+    .range-under{ margin-top: var(--space-2) !important; }
+    .btn{ padding: 10px 14px !important; border-radius: 12px !important; }
+    .btn.small{ padding: 8px 12px !important; border-radius: 10px !important; }
+    .chip{ padding: 7px 12px !important; }
+    .kpi-panel{ padding: var(--space-4) !important; border-radius: var(--radius-2) !important; }
+    .tabbar{ gap: var(--space-3) !important; margin-bottom: var(--space-3) !important; }
+    .kpis{ gap: var(--space-4) !important; }
+    .kpi{ padding: var(--space-4) !important; border-radius: var(--radius-2) !important; }
+    .kpi .value{ margin-top: var(--space-2) !important; }
+    .kpi .delta{ margin-top: var(--space-2) !important; }
+    .main{ gap: var(--space-5) !important; }
+    .panel{ border-radius: var(--radius-2) !important; min-height: 380px !important; }
+    .panel header{ padding: var(--space-4) var(--space-5) !important; gap: var(--space-3) !important; }
+    .panel-body{ padding: var(--space-4); }
+    .legend{ top: var(--space-3) !important; left: var(--space-3) !important; padding: var(--space-3) !important; border-radius: var(--radius-1) !important; }
+    #info-panel{ top: var(--space-3) !important; left: var(--space-3) !important; padding: var(--space-4) !important; border-radius: var(--radius-1) !important; }
+    .flow-ctrls{ top: var(--space-3) !important; right: var(--space-3) !important; gap: var(--space-3) !important; }
+    .flow-bottom{ padding: var(--space-3) var(--space-4) !important; gap: var(--space-3) !important; }
+    .footer-note{ padding: var(--space-5) 0 !important; }
+    #map, #flowMap{ margin-bottom: 0 !important; }
+    @media (max-width: 1100px){
+      .container{ gap: var(--space-5) !important; }
+      .panel header{ padding: var(--space-4) !important; }
+    }
+    @media (max-width: 640px){
+      header{ padding: var(--space-4) !important; }
+      .container{ padding: var(--space-4) !important; gap: var(--space-4) !important; }
+      .controls{ gap: var(--space-3) !important; }
+      .flow-ctrls{ right: var(--space-2) !important; }
+    }
   </style>
 </head>
 <body>
@@ -230,7 +273,7 @@
             <button class="btn small" id="downloadTs"><i class="fas fa-image"></i> PNG</button>
           </div>
         </header>
-        <div style="position:relative;padding:10px">
+        <div class="panel-body" style="position:relative">
           <canvas id="tsChart" height="300" aria-label="Time series chart"></canvas>
           <div class="empty" id="tsEmpty" hidden>No data</div>
         </div>
@@ -257,7 +300,7 @@
           <button class="btn small" id="downloadBar"><i class="fas fa-image"></i> PNG</button>
         </div>
       </header>
-      <div style="position:relative;padding:10px">
+      <div class="panel-body" style="position:relative">
         <canvas id="barChart" height="260" aria-label="By point bar chart"></canvas>
         <div class="empty" id="barEmpty" hidden>No data</div>
       </div>
