@@ -1,47 +1,29 @@
 <!DOCTYPE html>
-<html lang="en" data-app="fmc-dashboard">
+<html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-  <title>Sudan — Flow Monitoring Dashboard (IOM)</title>
-
-  <!-- Leaflet CSS & JS -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Map Debug + Dashboard</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="anonymous" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin="anonymous"></script>
-
-  <!-- CanvasFlowmapLayer (local, fallback in script) -->
-  <script src="./src/CanvasFlowmapLayer.js"></script>
-
-  <!-- Chart.js & PapaParse -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-
-  <!-- Icons & Font -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/css/libs/font-awesome/6.5.2/css/all.min.css" />
   <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700;800&display=swap" rel="stylesheet" />
 
   <style>
     :root {
-      --iom-blue: #0033A0;
-      --iom-bright-blue: #00A3E0;
-      --iom-light: #E6F4FA;
-      --iom-ink: #0f172a;
-      --brand-primary: var(--iom-blue);
-      --brand-accent: var(--iom-bright-blue);
       --surface: #f5f7fa;
       --panel: #ffffff;
-      --ink: var(--iom-ink);
-      --muted: #6b7280;
       --border: #e5e7eb;
-      --chip-bg: var(--iom-light);
-
+      --ink: #0f172a;
+      --muted: #6b7280;
+      --brand-primary: #0033A0;
+      --brand-accent: #00A3E0;
+      --chip-bg: #E6F4FA;
       --color-ok: #2BB673;
       --color-warn: #FF8C42;
-      --color-both: var(--iom-blue);
-
-      --brand-warm1: #FFB81C;
-      --brand-warm2: #FF671F;
-      --brand-warm3: #D22630;
+      --color-both: #0033A0;
 
       --sp-1: 4px;
       --sp-2: 8px;
@@ -55,67 +37,33 @@
       --radius-2: 12px;
       --radius-3: 16px;
     }
-
-    *, *::before, *::after {
-      box-sizing: border-box;
-    }
-    html, body {
-      height: 100%;
-      margin: 0;
-      font-family: "Open Sans", system-ui, Segoe UI, Roboto, Arial, sans-serif;
-      color: var(--ink);
-      background-color: var(--surface);
-      line-height: 1.5;
-      letter-spacing: 0.1px;
-    }
-
-    a {
-      color: inherit;
-      text-decoration: none;
-    }
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { height:100%; margin:0; font-family: "Open Sans", sans-serif; background: var(--surface); color: var(--ink); }
+    a { color: inherit; text-decoration: none; }
 
     header {
       background: linear-gradient(90deg, var(--brand-primary), var(--brand-accent));
       color: #fff;
       padding: var(--sp-4) var(--sp-6);
       display: flex;
-      align-items: center;
       justify-content: space-between;
+      align-items: center;
       flex-wrap: wrap;
-      gap: var(--sp-3);
+      z-index: 50;
       position: sticky;
       top: 0;
-      z-index: 50; /* high to stay over map */
     }
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: var(--sp-3);
-    }
-    .brand img {
-      height: 28px;
-      width: auto;
-      filter: brightness(0) invert(1);
-      display: block;
-    }
-    .title {
-      font-size: 1.15rem;
-      font-weight: 800;
-      letter-spacing: 0.2px;
-    }
-    .subtitle {
-      font-size: 0.9rem;
-      font-weight: 600;
-      opacity: 0.9;
-    }
+    .brand { display: flex; align-items: center; gap: var(--sp-3); }
+    .brand img { height: 28px; filter: brightness(0) invert(1); }
+    .title { font-size:1.15rem; font-weight:800; }
+    .subtitle { font-size:0.9rem; font-weight:600; opacity:0.9; }
     .chip {
-      display: inline-block;
+      display:inline-block;
       padding: var(--sp-2) var(--sp-3);
       border-radius: var(--radius-3);
-      background-color: var(--chip-bg);
-      font-size: 0.85rem;
-      font-weight: 700;
-      color: var(--brand-primary);
+      background: var(--chip-bg);
+      font-weight:700;
+      font-size:0.85rem;
       border: 1px solid #cfe7f4;
     }
 
@@ -131,53 +79,36 @@
     }
 
     .controls {
-      background-color: var(--panel);
+      background: var(--panel);
       border: 1px solid var(--border);
       border-radius: var(--radius-2);
       padding: var(--sp-4);
       display: grid;
       grid-template-columns: 1.1fr 1.4fr 2fr auto;
       gap: var(--sp-4);
-      z-index: 50;
       position: relative;
+      z-index: 50;
     }
     @media (max-width: 980px) {
-      .controls {
-        grid-template-columns: 1fr 1fr;
-      }
+      .controls { grid-template-columns: 1fr 1fr; }
     }
     @media (max-width: 640px) {
-      .controls {
-        grid-template-columns: 1fr;
-      }
+      .controls { grid-template-columns: 1fr; }
     }
     .control {
       display: flex;
       flex-direction: column;
       gap: var(--sp-2);
-      background-color: var(--panel);
+      background: var(--panel);
       border: 1px solid var(--border);
       border-radius: var(--radius-2);
       padding: var(--sp-3) var(--sp-4);
     }
-    .control label {
-      font-size: 0.8rem;
-      color: var(--muted);
+    .control label { font-size: 0.8rem; color: var(--muted); }
+    .control select, .control input[type="range"] {
+      width:100%; border:none; background:transparent; font:inherit; color: var(--ink);
     }
-    .control select,
-    .control input[type="range"] {
-      width: 100%;
-      border: none;
-      outline: none;
-      background: transparent;
-      font: inherit;
-      color: var(--ink);
-    }
-    .range-row {
-      display: flex;
-      align-items: center;
-      gap: var(--sp-3);
-    }
+    .range-row { display: flex; align-items: center; gap: var(--sp-3); }
     .range-under {
       display: flex;
       justify-content: space-between;
@@ -186,26 +117,24 @@
       margin-top: var(--sp-2);
     }
     .btn {
-      display: inline-flex;
-      align-items: center;
+      display:inline-flex;
+      align-items:center;
       gap: var(--sp-2);
       padding: 0.6em 1em;
       border-radius: var(--radius-2);
-      border: 1px solid var(--border);
+      border:1px solid var(--border);
       background: var(--panel);
-      font-weight: 700;
-      font-size: 0.85rem;
-      cursor: pointer;
+      font-weight:700;
+      font-size:0.85rem;
+      cursor:pointer;
       transition: transform 0.1s;
     }
     .btn.small {
-      padding: 0.4em 0.8em;
+      padding:0.4em 0.8em;
+      font-size:0.8rem;
       border-radius: var(--radius-1);
-      font-size: 0.8rem;
     }
-    .btn:active {
-      transform: translateY(1px);
-    }
+    .btn:active { transform: translateY(1px); }
     .btn:focus-visible,
     .control select:focus-visible,
     .control input[type="range"]:focus-visible {
@@ -215,86 +144,66 @@
 
     .kpi-panel {
       background: var(--panel);
-      border: 1px solid var(--border);
+      border:1px solid var(--border);
       border-radius: var(--radius-2);
       padding: var(--sp-4);
-      z-index: 50;
       position: relative;
+      z-index: 50;
     }
-    .tabbar {
-      display: flex;
-      gap: var(--sp-3);
-      margin-bottom: var(--sp-3);
-    }
+    .tabbar { display:flex; gap: var(--sp-3); margin-bottom: var(--sp-3); }
     .tabbar .btn[aria-pressed="true"] {
       background: #eaf3ff;
       border-color: #cfe0ff;
     }
     .kpis {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
+      display:grid;
+      grid-template-columns: repeat(3,1fr);
       gap: var(--sp-4);
     }
-    @media (max-width: 900px) {
-      .kpis {
-        grid-template-columns: repeat(2, 1fr);
-      }
-    }
-    @media (max-width: 520px) {
-      .kpis {
-        grid-template-columns: 1fr;
-      }
-    }
+    @media (max-width:900px) { .kpis { grid-template-columns: repeat(2,1fr); } }
+    @media (max-width:520px) { .kpis { grid-template-columns: 1fr; } }
     .kpi {
       background: var(--panel);
-      border: 1px solid var(--border);
+      border:1px solid var(--border);
       border-radius: var(--radius-2);
       padding: var(--sp-4);
     }
     .kpi .label {
-      font-size: 0.8rem;
+      font-size:0.8rem;
       color: var(--muted);
-      display: flex;
-      align-items: center;
+      display:flex;
+      align-items:center;
       gap: var(--sp-2);
     }
     .kpi .value {
-      font-size: 1.5rem;
-      font-weight: 800;
+      font-size:1.5rem;
+      font-weight:800;
       margin-top: var(--sp-2);
     }
     .kpi .delta {
-      font-size: 0.8rem;
+      font-size:0.8rem;
       margin-top: var(--sp-2);
       color: var(--muted);
     }
-    .kpi.ok .value {
-      color: var(--color-ok);
-    }
-    .kpi.warn .value {
-      color: var(--color-warn);
-    }
-    .kpi.both .value {
-      color: var(--color-both);
-    }
+    .kpi.ok .value { color: var(--color-ok); }
+    .kpi.warn .value { color: var(--color-warn); }
+    .kpi.both .value { color: var(--color-both); }
 
     .main {
       display: grid;
       grid-template-columns: 1.4fr 1fr;
       gap: var(--sp-5);
     }
-    @media (max-width: 1100px) {
-      .main {
-        grid-template-columns: 1fr;
-      }
+    @media (max-width:1100px) {
+      .main { grid-template-columns: 1fr; }
     }
 
     .panel {
       background: var(--panel);
-      border: 1px solid var(--border);
+      border:1px solid var(--border);
       border-radius: var(--radius-2);
       overflow: hidden;
-      display: flex;
+      display:flex;
       flex-direction: column;
       min-height: 380px;
       position: relative;
@@ -302,41 +211,24 @@
     }
     .panel header {
       background: var(--panel);
-      border-bottom: 1px solid var(--border);
+      border-bottom:1px solid var(--border);
       padding: var(--sp-4) var(--sp-5);
-      display: flex;
-      align-items: center;
+      display:flex;
       justify-content: space-between;
+      align-items: center;
       gap: var(--sp-3);
       flex-wrap: wrap;
     }
-    .panel header .title {
-      font-size: 1rem;
-      font-weight: 800;
-    }
+    .panel header .title { font-size:1rem; font-weight:800; }
     .panel header .subtitle {
-      font-size: 0.85rem;
-      color: var(--muted);
-      font-weight: 600;
-      display: flex;
-      gap: var(--sp-2);
-      flex-wrap: wrap;
-      align-items: center;
+      font-size:0.85rem; color: var(--muted); font-weight:600;
+      display:flex; gap: var(--sp-2); flex-wrap: wrap; align-items:center;
     }
-    .panel header .actions {
-      display: flex;
-      gap: var(--sp-3);
-      align-items: center;
-    }
-    .panel-body {
-      padding: var(--sp-4);
-      flex: 1;
-      position: relative;
-    }
+    .panel header .actions { display:flex; gap: var(--sp-3); align-items:center; }
+    .panel-body { padding: var(--sp-4); flex:1; position: relative; }
 
-    /* Map & layering fixes */
-    #map,
-    #flowMap {
+    /* Map Layer & Overlays */
+    #map, #flowMap {
       position: relative;
       z-index: 0;
       pointer-events: auto;
@@ -350,7 +242,6 @@
       pointer-events: auto;
       background: var(--panel);
     }
-
     .legend {
       top: var(--sp-3);
       left: var(--sp-3);
@@ -358,28 +249,20 @@
       border-radius: var(--radius-1);
       padding: var(--sp-3);
       font-size: 0.85rem;
-      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+      box-shadow: 0 6px 18px rgba(0,0,0,0.06);
     }
     .legend .row {
-      display: flex;
-      align-items: center;
-      gap: var(--sp-2);
-      margin: var(--sp-1) 0;
+      display:flex; align-items:center; gap: var(--sp-2); margin: var(--sp-1) 0;
     }
     .dot {
-      width: 12px;
-      height: 12px;
+      width: 12px; height:12px;
       border-radius: 50%;
-      display: inline-block;
+      display:inline-block;
     }
 
     .flow-ctrls {
-      top: var(--sp-3);
-      right: var(--sp-3);
-      display: flex;
-      gap: var(--sp-3);
-      flex-wrap: wrap;
-      z-index: 100;
+      top: var(--sp-3); right: var(--sp-3);
+      display:flex; gap: var(--sp-3); flex-wrap: wrap;
     }
     #loading-overlay {
       position: absolute;
@@ -387,53 +270,41 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      background: rgba(255, 255, 255, 0.85);
+      background: rgba(255,255,255,0.85);
       z-index: 200;
       font-weight: 700;
       color: #444;
-      pointer-events: none; /* so overlay doesn’t block map once hidden */
+      pointer-events: none;
     }
     #info-panel {
-      top: var(--sp-3);
-      left: var(--sp-3);
+      top: var(--sp-3); left: var(--sp-3);
       max-width: 320px;
       z-index: 150;
-      border: 1px solid var(--border);
+      border:1px solid var(--border);
       border-radius: var(--radius-1);
       padding: var(--sp-4);
       font-size: 0.85rem;
-      color: #333;
-      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.08);
+      color:#333;
+      box-shadow: 0 10px 24px rgba(0,0,0,0.08);
     }
-    #info-panel h4 {
-      margin: 0 0 var(--sp-2);
-    }
+    #info-panel h4 { margin: 0 0 var(--sp-2); }
     .flow-bottom {
-      bottom: 0;
-      left: 0;
-      right: 0;
-      border-top: 1px solid var(--border);
+      bottom: 0; left: 0; right: 0;
+      border-top:1px solid var(--border);
       padding: var(--sp-3) var(--sp-4);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: var(--sp-3);
-      flex-wrap: wrap;
-      font-size: 0.85rem;
-      z-index: 100;
+      display:flex; align-items:center; justify-content: space-between;
+      gap: var(--sp-3); flex-wrap: wrap;
+      font-size:0.85rem;
     }
     .flow-bottom .legend-row {
-      display: flex;
-      align-items: center;
-      gap: var(--sp-3);
-      flex-wrap: wrap;
+      display:flex; align-items:center; gap: var(--sp-3); flex-wrap: wrap;
     }
     .pill {
       background: var(--surface);
-      border: 1px solid var(--border);
+      border:1px solid var(--border);
       padding: var(--sp-2) var(--sp-3);
       border-radius: var(--radius-3);
-      font-weight: 700;
+      font-weight:700;
     }
 
     .empty {
@@ -443,7 +314,7 @@
       align-items: center;
       justify-content: center;
       color: #777;
-      font-size: 0.9rem;
+      font-size:0.9rem;
       pointer-events: none;
     }
 
@@ -453,24 +324,31 @@
     }
     .bp-icon svg {
       display: block;
-      filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.25));
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.25));
     }
 
     .footer-note {
       color: var(--muted);
-      font-size: 0.85rem;
-      text-align: center;
+      font-size:0.85rem;
+      text-align:center;
       padding: var(--sp-5) 0;
       position: relative;
       z-index: 10;
+    }
+
+    /* Aggressive override to allow map clicks */
+    .container, .panel, .controls, .kpi-panel {
+      pointer-events: none;
+    }
+    .controls *, .panel header *, .panel-body *, #info-panel *, .flow-ctrls *, .legend * {
+      pointer-events: auto;
     }
   </style>
 </head>
 <body>
   <header>
     <div class="brand">
-      <img src="https://upload.wikimedia.org/wikipedia/commons/1/1c/International_Organization_for_Migration_logo.svg"
-           alt="IOM logo" />
+      <img src="https://upload.wikimedia.org/wikipedia/commons/1/1c/International_Organization_for_Migration_logo.svg" alt="IOM logo" />
       <div>
         <div class="title">IOM • Sudan — Flow Monitoring Dashboard</div>
         <div class="subtitle" id="hdrSub">Interactive map, KPIs & flows</div>
@@ -485,8 +363,8 @@
         <label for="direction">Direction</label>
         <select id="direction" aria-label="Direction">
           <option value="Both" selected>Both</option>
-          <option value="Incoming">Incoming</option>
-          <option value="Outgoing">Outgoing</option>
+          <option>Incoming</option>
+          <option>Outgoing</option>
         </select>
       </div>
       <div class="control">
@@ -498,9 +376,9 @@
       <div class="control">
         <label for="month">Month</label>
         <div class="range-row">
-          <button class="btn small" id="monthPrev" title="Previous month">‹</button>
-          <input id="month" type="range" min="0" max="0" step="1" value="0" aria-label="Month" />
-          <button class="btn small" id="monthNext" title="Next month">›</button>
+          <button class="btn small" id="monthPrev" title="Prev">‹</button>
+          <input id="month" type="range" min="0" max="0" value="0" />
+          <button class="btn small" id="monthNext" title="Next">›</button>
           <button class="btn small" id="monthPlay" title="Play"><i class="fas fa-play"></i></button>
         </div>
         <div class="range-under">
@@ -511,7 +389,7 @@
       </div>
       <div class="control" style="align-items: flex-start; justify-content: center;">
         <label>&nbsp;</label>
-        <div style="display: flex; gap: var(--sp-3); flex-wrap: wrap;">
+        <div style="display:flex; gap: var(--sp-3); flex-wrap: wrap;">
           <button class="btn small" id="resetFilters"><i class="fas fa-rotate-left"></i> Reset</button>
           <button class="btn small" id="downloadCsvBtn"><i class="fas fa-file-arrow-down"></i> CSV</button>
         </div>
@@ -525,33 +403,33 @@
       </div>
       <section class="kpis" id="kpi-month">
         <div class="kpi ok">
-          <div class="label"><i class="fas fa-log-in"></i> Incoming (selected month)</div>
-          <div class="value" id="kpiIncoming" aria-live="polite">0</div>
-          <div class="delta" id="kpiIncomingDelta">vs prev. month: —</div>
+          <div class="label"><i class="fas fa-log-in"></i> Incoming (month)</div>
+          <div class="value" id="kpiIncoming">0</div>
+          <div class="delta" id="kpiIncomingDelta">vs prev: —</div>
         </div>
         <div class="kpi warn">
-          <div class="label"><i class="fas fa-log-out"></i> Outgoing (selected month)</div>
-          <div class="value" id="kpiOutgoing" aria-live="polite">0</div>
-          <div class="delta" id="kpiOutgoingDelta">vs prev. month: —</div>
+          <div class="label"><i class="fas fa-log-out"></i> Outgoing (month)</div>
+          <div class="value" id="kpiOutgoing">0</div>
+          <div class="delta" id="kpiOutgoingDelta">vs prev: —</div>
         </div>
         <div class="kpi both">
-          <div class="label"><i class="fas fa-arrows-left-right"></i> Total flow (selected month)</div>
-          <div class="value" id="kpiTotal" aria-live="polite">0</div>
-          <div class="delta" id="kpiTotalDelta">vs prev. month: —</div>
+          <div class="label"><i class="fas fa-arrows-left-right"></i> Total (month)</div>
+          <div class="value" id="kpiTotal">0</div>
+          <div class="delta" id="kpiTotalDelta">vs prev: —</div>
         </div>
       </section>
       <section class="kpis" id="kpi-cum" hidden>
         <div class="kpi ok">
-          <div class="label"><i class="fas fa-log-in"></i> Cumulative Incoming</div>
-          <div class="value" id="cumIncoming" aria-live="polite">0</div>
+          <div class="label"><i class="fas fa-log-in"></i> Cum Incoming</div>
+          <div class="value" id="cumIncoming">0</div>
         </div>
         <div class="kpi warn">
-          <div class="label"><i class="fas fa-log-out"></i> Cumulative Outgoing</div>
-          <div class="value" id="cumOutgoing" aria-live="polite">0</div>
+          <div class="label"><i class="fas fa-log-out"></i> Cum Outgoing</div>
+          <div class="value" id="cumOutgoing">0</div>
         </div>
         <div class="kpi both">
-          <div class="label"><i class="fas fa-arrows-left-right"></i> Cumulative Total</div>
-          <div class="value" id="cumTotal" aria-live="polite">0</div>
+          <div class="label"><i class="fas fa-arrows-left-right"></i> Cum Total</div>
+          <div class="value" id="cumTotal">0</div>
         </div>
       </section>
     </section>
@@ -560,8 +438,8 @@
       <div class="panel">
         <header>
           <div>
-            <div class="title">Counts Map — OCHA Cross‑Border Point icon</div>
-            <div class="subtitle">Click a marker for details</div>
+            <div class="title">Counts Map</div>
+            <div class="subtitle">Click marker for info</div>
           </div>
           <div class="actions">
             <span class="chip"><i class="fas fa-calendar"></i> <span id="ctxMonth">—</span></span>
@@ -580,7 +458,7 @@
       <div class="panel">
         <header>
           <div>
-            <div class="title">Time Series — Aggregated by month</div>
+            <div class="title">Time Series</div>
             <div class="subtitle">
               <span class="chip">Point: <span id="ctxPoint">All</span></span>
               <span class="chip">Dir: <span id="ctxDir">Both</span></span>
@@ -591,7 +469,7 @@
           </div>
         </header>
         <div class="panel-body">
-          <canvas id="tsChart" height="300" aria-label="Time series chart"></canvas>
+          <canvas id="tsChart" height="300"></canvas>
           <div class="empty" id="tsEmpty" hidden>No data</div>
         </div>
       </div>
@@ -600,13 +478,13 @@
     <section class="panel">
       <header>
         <div>
-          <div class="title">By Point — Selected Month (sorted)</div>
+          <div class="title">By Point</div>
           <div class="subtitle" id="barSubtitle">—</div>
         </div>
         <div class="actions">
-          <label class="chip" style="display: flex; align-items: center; gap: var(--sp-2);">
+          <label class="chip" style="display:flex; align-items:center; gap: var(--sp-2);">
             Top
-            <select id="topN" style="border: none; background: transparent; font: inherit;">
+            <select id="topN" style="border:none; background:transparent; font:inherit;">
               <option>10</option>
               <option>20</option>
               <option>50</option>
@@ -617,7 +495,7 @@
         </div>
       </header>
       <div class="panel-body">
-        <canvas id="barChart" height="260" aria-label="By point bar chart"></canvas>
+        <canvas id="barChart" height="260"></canvas>
         <div class="empty" id="barEmpty" hidden>No data</div>
       </div>
     </section>
@@ -625,8 +503,8 @@
     <section class="panel">
       <header>
         <div>
-          <div class="title">Flow Map — Animated Origins → Destinations</div>
-          <div class="subtitle">Toggle flows/points & play/pause animation</div>
+          <div class="title">Flow Map</div>
+          <div class="subtitle">Toggle / animate flows</div>
         </div>
       </header>
       <div class="flow-wrap">
@@ -634,14 +512,14 @@
         <div id="loading-overlay">Loading flows…</div>
         <div id="info-panel">
           <h4>How to use</h4>
-          <ul style="margin: 0 0 var(--sp-2) var(--sp-2); padding: 0;">
-            <li>Click lines or points to focus flows</li>
+          <ul style="margin:0 0 var(--sp-2) var(--sp-2); padding:0;">
+            <li>Click lines or points to focus</li>
             <li><strong>Space</strong>: Play/Pause • <strong>F</strong>: Flows • <strong>P</strong>: Points • <strong>R</strong>: Reset</li>
           </ul>
           <button class="btn small" id="close-info"><i class="fas fa-xmark"></i> Hide</button>
         </div>
         <div class="flow-ctrls">
-          <button class="btn small" id="reset-view" title="Reset view"><i class="fas fa-crosshairs"></i> Reset</button>
+          <button class="btn small" id="reset-view"><i class="fas fa-crosshairs"></i> Reset</button>
           <button class="btn small" id="toggle-animation" aria-pressed="true"><i id="animation-icon" class="fas fa-pause"></i> <span id="animation-text">Pause</span></button>
           <button class="btn small" id="toggle-flows" aria-pressed="true"><i class="fas fa-wave-square"></i> <span id="flows-text">Hide Flows</span></button>
           <button class="btn small" id="toggle-points" aria-pressed="true"><i class="fas fa-location-dot"></i> <span id="points-text">Hide Points</span></button>
@@ -651,23 +529,23 @@
         <div class="legend-row">
           <span class="dot" style="background: #FF671F"></span> Origins
           <span class="dot" style="background: #418FDE; margin-left: var(--sp-3)"></span> Destinations
-          <span class="pill" title="Line width is proportional to volume">Line width ∝ volume</span>
+          <span class="pill" title="Line width ∝ volume">Line width ∝ volume</span>
         </div>
         <div id="flowStats" class="pill">Loading…</div>
       </div>
     </section>
 
     <div class="footer-note">
-      Sources: data/FM - Data.cleaned.csv (fallback: data/FM - Data.csv), data/IDPs_Pathway.csv, data/sudan_states.geojson.<br />
+      Sources: data/FM‑Data.cleaned.csv, data/IDPs_Pathway.csv, data/sudan_states.geojson. <br />
       Built with Leaflet, CanvasFlowmapLayer & Chart.js.
     </div>
   </div>
 
   <script>
-    // Your existing JavaScript (CSV load, charts, map, flow) goes here unchanged,
-    // but now the CSS ensures the map is not blocked by other elements.
+    // (Copy your full JS logic here, unchanged, as in prior version.)
+    // This HTML file now includes the CSS override that tries to force map interactivity.
     //
-    // Just copy your JS logic below:
+    // Start your JS code below:
     const CSV_PATHS = ["data/FM - Data.cleaned.csv", "data/FM - Data.csv"];
     const $ = s => document.querySelector(s);
 
@@ -716,7 +594,6 @@
       if (n >= 50 && n <= 99) return 1900 + n;
       return n;
     }
-
     function fmt(n) {
       return Number(n || 0).toLocaleString("en-US");
     }
@@ -726,7 +603,6 @@
     function selectedMonthLabel() {
       return monthLabels[+monthRange.value] || monthLabels[0];
     }
-
     function debounce(fn, ms) {
       let t;
       return (...a) => {
@@ -734,7 +610,6 @@
         t = setTimeout(() => fn(...a), ms);
       };
     }
-
     function sanitizeKeys(obj) {
       const out = {};
       for (const k of Object.keys(obj)) {
@@ -748,7 +623,6 @@
       const n = Number(String(v).replace(/[, \t\r\n]+/g, "").trim());
       return isFinite(n) ? n : 0;
     }
-
     function detectMonths(keys) {
       const rxYY = /^(\d{2})-(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)$/i;
       const rxYYYY = /^(20\d{2})-(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)$/i;
@@ -772,7 +646,6 @@
       candidates.sort((a, b) => a.sort - b.sort);
       return { found: candidates.map(c => c.raw), pretty: candidates.map(c => c.pretty) };
     }
-
     function parseCsv(path) {
       return new Promise((resolve, reject) => {
         Papa.parse(path, {
@@ -784,7 +657,6 @@
         });
       });
     }
-
     async function loadCsv() {
       let lastErr;
       for (const p of CSV_PATHS) {
@@ -799,7 +671,6 @@
       }
       throw lastErr || new Error("Failed to load any CSV.");
     }
-
     function normalizeData(csvRows) {
       if (!csvRows.length) throw new Error("CSV is empty.");
       const first = csvRows[0];
@@ -852,7 +723,6 @@
       }
       points = [...seen.values()].sort((a, b) => a.point.localeCompare(b.point));
     }
-
     function aggregateTimeSeries(dir, selPoint) {
       const incoming = Array(monthLabels.length).fill(0);
       const outgoing = Array(monthLabels.length).fill(0);
@@ -868,7 +738,6 @@
       if (dir === "Outgoing") return { labels: monthLabels, series: outgoing, alt: incoming };
       return { labels: monthLabels, incoming, outgoing };
     }
-
     function computeKPIs() {
       const idx = +monthRange.value;
       const month = monthLabels[idx];
@@ -894,14 +763,13 @@
 
       const delta = (c, p) =>
         p
-          ? `vs prev. month: ${(c - p) > 0 ? "▲" : (c - p) < 0 ? "▼" : "•"} ${(((c - p) / p) * 100).toFixed(1)}%`
-          : "vs prev. month: —";
+          ? `vs prev: ${(c - p) > 0 ? "▲" : (c - p) < 0 ? "▼" : "•"} ${(((c - p) / p) * 100).toFixed(1)}%`
+          : "vs prev: —";
 
       kpiIncomingDelta.textContent = delta(inc, incP);
       kpiOutgoingDelta.textContent = delta(out, outP);
       kpiTotalDelta.textContent = delta(total, totalP);
     }
-
     function computeCumulativeKPIs() {
       const selPoint = pointSel.value;
       const sumAll = dir =>
@@ -920,7 +788,6 @@
       cumOutgoing.textContent = fmt(outAll);
       cumTotal.textContent = fmt(incAll + outAll);
     }
-
     let mapboxBase, cartoLight, osm;
     function initMap() {
       map = L.map("map", { zoomControl: true, scrollWheelZoom: true }).setView([15.5, 30], 5);
@@ -932,8 +799,7 @@
         attribution: "&copy; OpenStreetMap"
       });
 
-      const MAPBOX_TOKEN_COUNTS =
-        "pk.eyJ1Ijoib21lcm9zbWFuIiwiYSI6ImUxZDBkODBlNjQxMDE2M2Y3OTQ3MWIwNTJkMjgzZTI3In0.ekCHuxRflTOO0RpQ6rQR7Q";
+      const MAPBOX_TOKEN_COUNTS = "pk.eyJ1Ijoib21lcm9zbWFuIiwiYSI6ImUxZDBkODBlNjQxMDE2M2Y3OTQ3MWIwNTJkMjgzZTI3In0.ekCHuxRflTOO0RpQ6rQR7Q";
       const MAPBOX_STYLE_COUNTS = "omerosman/cm8oy6is4006101si7ll3bs4h";
 
       if (MAPBOX_TOKEN_COUNTS && MAPBOX_STYLE_COUNTS) {
@@ -945,9 +811,7 @@
         mapboxBase.on("tileerror", () => {
           if (switched) return;
           switched = true;
-          try {
-            map.removeLayer(mapboxBase);
-          } catch {}
+          try { map.removeLayer(mapboxBase); } catch {}
           cartoLight.addTo(map);
         });
         mapboxBase.addTo(map);
@@ -963,7 +827,6 @@
 
       renderMarkers();
     }
-
     function scaleRadius(v) {
       const r = Math.sqrt(v) * 0.35;
       return Math.max(5, Math.min(r, 50));
@@ -975,15 +838,13 @@
         ? getCss("--color-warn")
         : getCss("--color-both");
     }
-
     function makeOchaBorderPointIcon(value) {
       const r = Math.sqrt(value) * 0.35;
       const size = Math.round(Math.max(28, Math.min(r * 2 + 14, 72)));
       const OCHA_BLUE = "#1F69B3";
       const RING = "#ffffff";
       const SYMBOL = "#ffffff";
-      const cx = size / 2,
-        cy = size / 2;
+      const cx = size / 2, cy = size / 2;
       const radius = Math.round(size * 0.46);
       const ringW = Math.max(2, Math.round(size * 0.04));
       const lineW = Math.max(3, Math.round(size * 0.07));
@@ -1009,41 +870,26 @@
           <path d="M ${size - padX - arrowLen + head} ${arrowY2 - head} L ${size - padX - arrowLen} ${arrowY2} L ${size - padX - arrowLen + head} ${arrowY2 + head}"
                 fill="none" stroke="${SYMBOL}" stroke-width="${lineW}" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>`;
-
-      return L.divIcon({
-        className: "bp-icon",
-        html,
-        iconSize: [size, size],
-        iconAnchor: [size / 2, size / 2]
-      });
+      return L.divIcon({ className: "bp-icon", html, iconSize: [size, size], iconAnchor: [size/2, size/2] });
     }
-
     function renderMarkers() {
       (markers || []).forEach(m => m.remove());
       markers = [];
-
       const month = selectedMonthLabel();
       const dir = directionSel.value;
       const selPoint = pointSel.value;
-
       const byPoint = new Map();
       for (const r of rows) {
         if (selPoint !== "__ALL__" && r.point !== selPoint) continue;
-        const v =
-          dir === "Both"
-            ? (r[month] || 0)
-            : r.direction === dir.toLowerCase()
-            ? (r[month] || 0)
-            : 0;
+        const v = dir === "Both" ? (r[month] || 0)
+          : (r.direction === dir.toLowerCase() ? (r[month] || 0) : 0);
         byPoint.set(r.point, (byPoint.get(r.point) || 0) + v);
       }
-
       for (const p of points) {
         if (!byPoint.has(p.point)) continue;
         const v = byPoint.get(p.point);
         const inc = rows.find(r => r.point === p.point && r.direction === "incoming")?.[month] || 0;
         const out = rows.find(r => r.point === p.point && r.direction === "outgoing")?.[month] || 0;
-
         const icon = makeOchaBorderPointIcon(v);
         const m = L.marker([p.lat, p.lon], { icon }).addTo(map);
         m.bindPopup(`
@@ -1054,11 +900,9 @@
             <div>Incoming: <b style="color:var(--color-ok)">${fmt(inc)}</b></div>
             <div>Outgoing: <b style="color:var(--color-warn)">${fmt(out)}</b></div>
             <div>Total: <b style="color:var(--color-both)">${fmt(inc + out)}</b></div>
-          </div>
-        `);
+          </div>`);
         markers.push(m);
       }
-
       if (pointSel.value !== "__ALL__") {
         const p = points.find(x => x.point === pointSel.value);
         if (p) map.setView([p.lat, p.lon], 7);
@@ -1075,14 +919,9 @@
         options: {
           responsive: true,
           maintainAspectRatio: false,
-          plugins: {
-            legend: { display: true, labels: { boxWidth: 10 } }
-          },
+          plugins: { legend: { display: true, labels: { boxWidth: 10 } } },
           interaction: { mode: "index", intersect: false },
-          scales: {
-            x: { ticks: { maxRotation: 0, autoSkip: true } },
-            y: { beginAtZero: true }
-          }
+          scales: { x: { ticks: { maxRotation:0, autoSkip:true } }, y: { beginAtZero:true } }
         }
       });
       barChart = new Chart(document.getElementById("barChart"), {
@@ -1093,7 +932,7 @@
           maintainAspectRatio: false,
           indexAxis: "y",
           plugins: { legend: { display: false } },
-          scales: { y: { beginAtZero: true } }
+          scales: { y: { beginAtZero:true } }
         }
       });
       renderCharts();
@@ -1112,77 +951,48 @@
       tsChart.data.labels = agg.labels;
       if (dir === "Both") {
         tsChart.data.datasets = [
-          {
-            label: "Incoming",
-            data: agg.incoming,
-            borderColor: getCss("--color-ok"),
-            backgroundColor: getCss("--color-ok"),
-            tension: 0.25
-          },
-          {
-            label: "Outgoing",
-            data: agg.outgoing,
-            borderColor: getCss("--color-warn"),
-            backgroundColor: getCss("--color-warn"),
-            tension: 0.25
-          }
+          { label:"Incoming", data:agg.incoming, borderColor:getCss("--color-ok"), backgroundColor:getCss("--color-ok"), tension:0.25 },
+          { label:"Outgoing", data:agg.outgoing, borderColor:getCss("--color-warn"), backgroundColor:getCss("--color-warn"), tension:0.25 }
         ];
       } else {
         const c = dir === "Incoming" ? getCss("--color-ok") : getCss("--color-warn");
         tsChart.data.datasets = [
-          {
-            label: dir,
-            data: dir === "Incoming" ? agg.incoming : agg.outgoing,
-            borderColor: c,
-            backgroundColor: c,
-            tension: 0.25
-          },
-          {
-            label: dir === "Incoming" ? "Outgoing" : "Incoming",
-            data: dir === "Incoming" ? agg.outgoing : agg.incoming,
-            borderColor: getCss("--muted"),
-            backgroundColor: getCss("--muted"),
-            borderDash: [6, 4],
-            tension: 0.25
-          }
+          { label: dir, data: (dir==="Incoming" ? agg.incoming : agg.outgoing), borderColor: c, backgroundColor: c, tension: 0.25 },
+          { label: dir==="Incoming"? "Outgoing":"Incoming",
+            data: (dir==="Incoming" ? agg.outgoing : agg.incoming),
+            borderColor: getCss("--muted"), backgroundColor: getCss("--muted"),
+            borderDash: [6,4], tension: 0.25 }
         ];
       }
       tsChart.update();
       ctxPoint.textContent = selPoint === "__ALL__" ? "All" : selPoint;
       ctxDir.textContent = dir;
-      setEmpty(
-        tsEmpty,
-        tsChart.data.datasets.every(
-          d => (d.data || []).reduce((a, b) => a + (+b || 0), 0) === 0
-        )
-      );
+      setEmpty(tsEmpty, tsChart.data.datasets.every(d => (d.data||[]).reduce((a,b)=>a+(+b||0),0) === 0));
 
       const month = selectedMonthLabel();
       let items = [];
       for (const p of points) {
         const inc = rows.find(r => r.point === p.point && r.direction === "incoming")?.[month] || 0;
         const out = rows.find(r => r.point === p.point && r.direction === "outgoing")?.[month] || 0;
-        const val = dir === "Incoming" ? inc : dir === "Outgoing" ? out : inc + out;
+        const val = dir === "Incoming"? inc : dir === "Outgoing"? out : inc + out;
         items.push({ name: p.point, val });
       }
-      items.sort((a, b) => b.val - a.val);
+      items.sort((a,b)=>b.val - a.val);
       const topNVal = topNSel.value === "All" ? items.length : Math.min(+topNSel.value, items.length);
       const topItems = items.slice(0, topNVal);
 
       barChart.data.labels = topItems.map(d => d.name);
-      const col = dir === "Incoming"
-        ? getCss("--color-ok")
-        : dir === "Outgoing"
-        ? getCss("--color-warn")
-        : getCss("--color-both");
+      const col = dir === "Incoming"? getCss("--color-ok") :
+                  dir === "Outgoing"? getCss("--color-warn") :
+                  getCss("--color-both");
       barChart.data.datasets[0].data = topItems.map(d => d.val);
       barChart.data.datasets[0].borderColor = col;
       barChart.data.datasets[0].backgroundColor = col;
       barChart.update();
 
       document.getElementById("barSubtitle").textContent =
-        `${month} • ${dir} direction${dir === "Both" ? "s" : ""} • Top ${topNSel.value}`;
-      setEmpty(barEmpty, topItems.reduce((s, d) => s + d.val, 0) === 0);
+        `${month} • ${dir} direction${dir==="Both" ? "s": ""} • Top ${topNSel.value}`;
+      setEmpty(barEmpty, topItems.reduce((s, d)=> s + d.val, 0) === 0);
     }
 
     function populatePointDropdown() {
@@ -1196,9 +1006,8 @@
     }
 
     function refreshHeaderChips() {
-      chipSelection.textContent = `${pointSel.value === "__ALL__" ? "All Points" : pointSel.value} • ${
-        directionSel.value
-      } • ${selectedMonthLabel()}`;
+      chipSelection.textContent =
+        `${pointSel.value === "__ALL__" ? "All Points": pointSel.value} • ${directionSel.value} • ${selectedMonthLabel()}`;
       ctxMonth.textContent = selectedMonthLabel();
       ctxDirMap.textContent = directionSel.value;
     }
@@ -1314,7 +1123,7 @@
         setPlayUI();
       } catch (err) {
         console.error(err);
-        hdrSub.textContent = "Failed to load/parse CSV. Check data/FM - Data.cleaned.csv (or FM - Data.csv).";
+        hdrSub.textContent = "Failed to load/parse CSV.";
         chipSelection.textContent = "Error loading data";
       }
     })();
