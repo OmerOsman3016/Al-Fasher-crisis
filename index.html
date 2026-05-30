@@ -1,1154 +1,456 @@
 <!DOCTYPE html>
-<html lang="en" data-app="fmc-dashboard">
+<html lang="en" dir="ltr">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
-  <title>Sudan — Flow Monitoring Dashboard (IOM)</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Talabak | طلبك — Order Anything, Anytime, Anywhere</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=Sora:wght@400;500;600&family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --cream:#FBF5EC;
+  --paper:#FFFDF8;
+  --ink:#231A12;
+  --ink-soft:#5B4D40;
+  --espresso:#1E140D;
+  --tangerine:#F75316;
+  --tangerine-deep:#D63D08;
+  --gold:#FFB02E;
+  --herb:#1E9E5A;
+  --line:#E7DCC9;
+  --shadow:rgba(40,25,10,.14);
+  --r:22px;
+  --display:'Bricolage Grotesque',sans-serif;
+  --body:'Sora',sans-serif;
+  --ar:'Tajawal',sans-serif;
+}
+html[dir="rtl"]{--display:var(--ar);--body:var(--ar);}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  font-family:var(--body);background:var(--cream);color:var(--ink);
+  overflow-x:hidden;line-height:1.55;-webkit-font-smoothing:antialiased;
+}
+body::before{
+  content:"";position:fixed;inset:0;z-index:9999;pointer-events:none;opacity:.035;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+.wrap{max-width:1200px;margin:0 auto;padding:0 26px}
+h1,h2,h3{font-family:var(--display);font-weight:800;line-height:1.02;letter-spacing:-.02em}
+html[dir="rtl"] h1,html[dir="rtl"] h2,html[dir="rtl"] h3{letter-spacing:0;line-height:1.2}
+a{text-decoration:none;color:inherit}
+.acc{color:var(--tangerine)}
 
-  <!-- Leaflet CSS & JS -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="anonymous" />
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin="anonymous"></script>
+/* ---------- NAV ---------- */
+header{position:fixed;top:0;left:0;right:0;z-index:100;transition:.4s}
+.nav{display:flex;align-items:center;justify-content:space-between;
+  margin:16px auto;max-width:1200px;padding:12px 22px;border-radius:50px;
+  background:rgba(255,253,248,.7);backdrop-filter:blur(14px);
+  border:1px solid var(--line);transition:.4s;box-shadow:0 8px 30px rgba(40,25,10,.05)}
+header.shrink .nav{margin-top:8px;padding:8px 22px;box-shadow:0 10px 34px rgba(40,25,10,.1)}
+.brand{display:flex;align-items:center;gap:10px;font-family:var(--display);font-weight:800;font-size:22px}
+.logo-mark{width:34px;height:34px;border-radius:11px;background:linear-gradient(135deg,var(--tangerine),var(--gold));
+  display:grid;place-items:center;color:#fff;font-size:18px;box-shadow:0 6px 16px rgba(247,83,22,.4);transform:rotate(-6deg)}
+.brand .ar{font-family:var(--ar);color:var(--tangerine)}
+.nav-links{display:flex;gap:30px;font-size:14.5px;font-weight:500}
+.nav-links a{position:relative;color:var(--ink-soft);transition:.25s}
+.nav-links a:hover{color:var(--ink)}
+.nav-links a::after{content:"";position:absolute;left:0;bottom:-5px;height:2px;width:0;background:var(--tangerine);transition:.28s;border-radius:2px}
+.nav-links a:hover::after{width:100%}
+.nav-right{display:flex;align-items:center;gap:14px}
+.lang{font-family:var(--display);font-weight:600;font-size:13px;border:1px solid var(--line);background:none;
+  border-radius:40px;padding:8px 14px;cursor:pointer;color:var(--ink);transition:.25s}
+.lang:hover{background:var(--ink);color:var(--cream)}
+.btn{font-family:var(--body);font-weight:600;font-size:14.5px;border:none;cursor:pointer;border-radius:40px;
+  padding:12px 22px;transition:.3s;display:inline-flex;align-items:center;gap:8px}
+.btn-primary{background:var(--tangerine);color:#fff;box-shadow:0 8px 22px rgba(247,83,22,.35)}
+.btn-primary:hover{background:var(--tangerine-deep);transform:translateY(-2px);box-shadow:0 12px 28px rgba(247,83,22,.45)}
+.menu-toggle{display:none}
 
-  <!-- CanvasFlowmapLayer (local fallback) -->
-  <script src="./src/CanvasFlowmapLayer.js"></script>
+/* ---------- HERO ---------- */
+.hero{position:relative;padding:170px 0 90px;overflow:hidden}
+.blob{position:absolute;border-radius:50%;filter:blur(70px);opacity:.5;z-index:0}
+.b1{width:520px;height:520px;background:radial-gradient(circle,#FFD08A,transparent 70%);top:-120px;right:-100px;animation:float1 14s ease-in-out infinite}
+.b2{width:460px;height:460px;background:radial-gradient(circle,#FFB3A0,transparent 70%);bottom:-160px;left:-120px;animation:float2 17s ease-in-out infinite}
+@keyframes float1{50%{transform:translate(-40px,40px) scale(1.08)}}
+@keyframes float2{50%{transform:translate(40px,-30px) scale(1.1)}}
+.hero-grid{position:relative;z-index:2;display:grid;grid-template-columns:1.05fr .95fr;gap:40px;align-items:center}
+.eyebrow{display:inline-flex;align-items:center;gap:9px;background:var(--paper);border:1px solid var(--line);
+  border-radius:40px;padding:8px 16px;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:24px}
+.eyebrow .dot{width:8px;height:8px;border-radius:50%;background:var(--herb);box-shadow:0 0 0 0 rgba(30,158,90,.5);animation:pulse 2s infinite}
+@keyframes pulse{70%{box-shadow:0 0 0 9px rgba(30,158,90,0)}}
+.hero h1{font-size:clamp(42px,6.4vw,82px)}
+.hero h1 .line{display:block;overflow:hidden}
+.hero h1 .line span{display:block;transform:translateY(110%);animation:rise .9s cubic-bezier(.2,.8,.2,1) forwards}
+.hero h1 .l2 span{animation-delay:.12s}.hero h1 .l3 span{animation-delay:.24s}
+@keyframes rise{to{transform:translateY(0)}}
+.hero p.lede{font-size:18px;color:var(--ink-soft);max-width:460px;margin:24px 0 10px;opacity:0;animation:fade .8s .55s forwards}
+.hero .slogan-ar{font-family:var(--ar);font-weight:700;color:var(--tangerine);font-size:20px;margin-bottom:30px;opacity:0;animation:fade .8s .68s forwards;direction:rtl}
+html[dir="rtl"] .hero .slogan-ar{font-family:var(--body)}
+@keyframes fade{to{opacity:1}}
+.cta-row{display:flex;gap:14px;flex-wrap:wrap;opacity:0;animation:fade .8s .8s forwards}
+.store{display:flex;align-items:center;gap:11px;background:var(--ink);color:var(--cream);border-radius:16px;padding:11px 20px;transition:.3s}
+.store:hover{transform:translateY(-3px);background:var(--espresso)}
+.store svg{width:24px;height:24px;flex:none}
+.store small{display:block;font-size:10px;opacity:.7;letter-spacing:.04em}
+.store b{font-family:var(--display);font-size:16px;font-weight:600;line-height:1.1}
+.hero-stats{display:flex;gap:30px;margin-top:42px;opacity:0;animation:fade .8s 1s forwards}
+.hero-stats .s b{font-family:var(--display);font-size:30px;display:block;color:var(--ink)}
+.hero-stats .s span{font-size:13px;color:var(--ink-soft)}
 
-  <!-- Chart.js & PapaParse -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+/* phone */
+.phone-stage{position:relative;display:grid;place-items:center;min-height:560px}
+.phone{position:relative;width:285px;height:580px;background:var(--espresso);border-radius:44px;padding:13px;
+  box-shadow:0 40px 80px -20px rgba(40,25,10,.5),0 0 0 2px rgba(255,255,255,.04) inset;
+  animation:hover 6s ease-in-out infinite;z-index:3}
+@keyframes hover{50%{transform:translateY(-16px)}}
+.screen{width:100%;height:100%;background:var(--cream);border-radius:32px;overflow:hidden;position:relative;display:flex;flex-direction:column}
+.notch{position:absolute;top:11px;left:50%;transform:translateX(-50%);width:90px;height:7px;background:#000;border-radius:10px;z-index:5}
+.app-top{padding:30px 18px 14px;background:linear-gradient(135deg,var(--tangerine),var(--gold));color:#fff}
+.app-top small{font-size:10px;opacity:.85}
+.app-top h4{font-family:var(--display);font-size:18px;margin-top:2px}
+.app-search{margin-top:12px;background:rgba(255,255,255,.95);border-radius:12px;padding:9px 12px;font-size:11px;color:#9a8e80;display:flex;align-items:center;gap:7px}
+.app-cats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:14px}
+.app-cats .c{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:9px 4px;text-align:center;font-size:8.5px;color:var(--ink-soft)}
+.app-cats .c .ic{font-size:18px;display:block;margin-bottom:3px}
+.app-card{margin:2px 14px 12px;background:var(--paper);border:1px solid var(--line);border-radius:16px;overflow:hidden}
+.app-card .img{height:74px;background:linear-gradient(120deg,#FFD9A0,#FF9D6B)}
+.app-card .meta{padding:9px 11px}
+.app-card .meta b{font-family:var(--display);font-size:12px}
+.app-card .meta p{font-size:9px;color:var(--ink-soft);margin-top:2px}
+.app-track{margin:auto 14px 16px;background:var(--espresso);border-radius:16px;padding:12px;color:#fff}
+.app-track .tt{font-size:9px;opacity:.7}.app-track .tn{font-family:var(--display);font-size:12px;margin:2px 0 9px}
+.bar{height:5px;background:rgba(255,255,255,.18);border-radius:5px;overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--gold),var(--tangerine));border-radius:5px;animation:load 3.5s ease-in-out infinite}
+@keyframes load{0%{width:8%}60%{width:78%}100%{width:78%}}
+/* floating chips */
+.chip{position:absolute;background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:10px 14px;
+  display:flex;align-items:center;gap:9px;font-weight:600;font-size:13px;box-shadow:0 14px 30px var(--shadow);z-index:4}
+.chip .e{font-size:20px}
+.chip.c1{top:60px;left:-6px;animation:bob 5s ease-in-out infinite}
+.chip.c2{top:240px;right:-18px;animation:bob 6s ease-in-out .8s infinite}
+.chip.c3{bottom:70px;left:-22px;animation:bob 5.5s ease-in-out .4s infinite}
+@keyframes bob{50%{transform:translateY(-14px)}}
 
-  <!-- Icons & Font -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/css/libs/font-awesome/6.5.2/css/all.min.css" />
-  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700;800&display=swap" rel="stylesheet" />
+/* ---------- MARQUEE ---------- */
+.marquee{background:var(--ink);color:var(--cream);padding:20px 0;overflow:hidden;white-space:nowrap;transform:rotate(-1.4deg) scale(1.04);margin:30px 0}
+.track{display:inline-flex;gap:50px;animation:scroll 24s linear infinite;font-family:var(--display);font-size:24px;font-weight:600}
+.track span{display:inline-flex;align-items:center;gap:50px}
+.track .star{color:var(--gold)}
+@keyframes scroll{to{transform:translateX(-50%)}}
 
-  <style>
-    :root {
-      --iom-blue: #0033A0;
-      --iom-bright-blue: #00A3E0;
-      --surface: #f5f7fa;
-      --panel: #ffffff;
-      --ink: #0f172a;
-      --muted: #6b7280;
-      --border: #e5e7eb;
-      --chip-bg: #E6F4FA;
+/* ---------- SECTIONS ---------- */
+section{position:relative}
+.sec{padding:90px 0}
+.sec-head{max-width:640px;margin:0 auto 56px;text-align:center}
+.kicker{font-family:var(--display);font-weight:600;font-size:13px;letter-spacing:.16em;text-transform:uppercase;color:var(--tangerine);margin-bottom:14px;display:block}
+.sec-head h2{font-size:clamp(30px,4.4vw,50px)}
+.sec-head p{color:var(--ink-soft);margin-top:16px;font-size:17px}
 
-      --color-ok: #2BB673;
-      --color-warn: #FF8C42;
-      --color-both: var(--iom-blue);
+.reveal{opacity:0;transform:translateY(34px);transition:.8s cubic-bezier(.2,.8,.2,1)}
+.reveal.in{opacity:1;transform:none}
 
-      --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px; --sp-5: 20px; --sp-6: 24px; --sp-7: 32px;
-      --radius-1: 8px; --radius-2: 12px; --radius-3: 16px;
-    }
+.features{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
+.fcard{background:var(--paper);border:1px solid var(--line);border-radius:var(--r);padding:30px;transition:.4s;position:relative;overflow:hidden}
+.fcard::before{content:"";position:absolute;inset:0;background:linear-gradient(160deg,rgba(247,83,22,.06),transparent 60%);opacity:0;transition:.4s}
+.fcard:hover{transform:translateY(-7px);border-color:var(--tangerine);box-shadow:0 26px 50px -18px var(--shadow)}
+.fcard:hover::before{opacity:1}
+.ficon{width:54px;height:54px;border-radius:16px;display:grid;place-items:center;font-size:26px;margin-bottom:20px;
+  background:linear-gradient(135deg,#FFE6C2,#FFC98C)}
+.fcard:nth-child(2) .ficon{background:linear-gradient(135deg,#CDEFD9,#9FE0B8)}
+.fcard:nth-child(3) .ficon{background:linear-gradient(135deg,#FFD6CC,#FFB09E)}
+.fcard:nth-child(4) .ficon{background:linear-gradient(135deg,#FFE9B8,#FFD37A)}
+.fcard:nth-child(5) .ficon{background:linear-gradient(135deg,#D8E7FF,#AFC8FF)}
+.fcard:nth-child(6) .ficon{background:linear-gradient(135deg,#EDD9FF,#D2AEFF)}
+.fcard h3{font-size:21px;margin-bottom:9px}
+.fcard p{color:var(--ink-soft);font-size:15px}
 
-    *, *::before, *::after {
-      box-sizing: border-box;
-    }
-    html, body {
-      height: 100%;
-      margin: 0;
-      font-family: "Open Sans", system-ui, Segoe UI, Roboto, Arial, sans-serif;
-      color: var(--ink);
-      background-color: var(--surface);
-      line-height: 1.5;
-    }
+/* HOW */
+.how{background:var(--espresso);color:var(--cream);border-radius:40px;margin:0 26px}
+.how .sec-head h2{color:var(--cream)}.how .sec-head p{color:#c9bbab}
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:26px;position:relative}
+.route{position:absolute;top:46px;left:8%;right:8%;height:2px;z-index:0}
+.step{position:relative;z-index:2;text-align:center}
+.step .num{width:92px;height:92px;margin:0 auto 22px;border-radius:50%;background:rgba(255,255,255,.05);
+  border:1px solid rgba(255,255,255,.14);display:grid;place-items:center;font-size:40px;position:relative}
+.step .num b{position:absolute;top:-6px;right:-6px;width:28px;height:28px;border-radius:50%;background:var(--tangerine);
+  color:#fff;font-family:var(--display);font-size:13px;display:grid;place-items:center;border:3px solid var(--espresso)}
+.step h3{font-size:21px;color:#fff;margin-bottom:8px}
+.step p{color:#c9bbab;font-size:14.5px;max-width:240px;margin:0 auto}
 
-    header {
-      background: linear-gradient(90deg, var(--iom-blue), var(--iom-bright-blue));
-      color: white;
-      padding: var(--sp-4) var(--sp-6);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      flex-wrap: wrap;
-      gap: var(--sp-3);
-      position: sticky;
-      top: 0;
-      z-index: 1000;
-    }
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: var(--sp-3);
-    }
-    .brand img {
-      height: 28px;
-      filter: brightness(0) invert(1);
-      display: block;
-    }
-    .title {
-      font-size: 1.15rem;
-      font-weight: 800;
-      letter-spacing: 0.2px;
-    }
-    .subtitle {
-      font-size: 0.9rem;
-      font-weight: 600;
-      opacity: 0.9;
-    }
-    .chip {
-      display: inline-block;
-      padding: var(--sp-2) var(--sp-3);
-      border-radius: var(--radius-3);
-      background-color: var(--chip-bg);
-      font-size: 0.85rem;
-      font-weight: 700;
-      border: 1px solid #cfe7f4;
-      color: var(--iom-blue);
-    }
+/* STATS */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:20px}
+.stat{text-align:center;padding:34px 16px;background:var(--paper);border:1px solid var(--line);border-radius:var(--r)}
+.stat b{font-family:var(--display);font-size:clamp(36px,4.6vw,56px);background:linear-gradient(135deg,var(--tangerine),var(--gold));
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;display:block;line-height:1}
+.stat span{color:var(--ink-soft);font-size:14px;margin-top:8px;display:block}
 
-    .container {
-      max-width: 1440px;
-      margin: 0 auto;
-      padding: var(--sp-6) var(--sp-7);
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: var(--sp-6);
-      position: relative;
-    }
+/* CTA */
+.cta-final{margin:90px 26px 0;background:linear-gradient(135deg,var(--tangerine),var(--tangerine-deep));
+  border-radius:40px;padding:70px 40px;text-align:center;color:#fff;position:relative;overflow:hidden}
+.cta-final::after{content:"🛵";position:absolute;font-size:200px;opacity:.08;right:4%;top:50%;transform:translateY(-50%)}
+.cta-final h2{font-size:clamp(30px,4.6vw,52px);color:#fff}
+.cta-final p{max-width:520px;margin:18px auto 32px;font-size:18px;opacity:.95}
+.cta-final .store{background:#fff;color:var(--ink)}
+.cta-final .cta-row{justify-content:center;opacity:1;animation:none}
 
-    .controls {
-      background: var(--panel);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-2);
-      padding: var(--sp-4);
-      display: grid;
-      grid-template-columns: 1.1fr 1.4fr 2fr auto;
-      gap: var(--sp-4);
-      position: relative;
-      z-index: 900;
-    }
-    @media(max-width:980px){ .controls { grid-template-columns: 1fr 1fr; } }
-    @media(max-width:640px){ .controls { grid-template-columns: 1fr; } }
-    .control {
-      display: flex;
-      flex-direction: column;
-      gap: var(--sp-2);
-      background: var(--panel);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-2);
-      padding: var(--sp-3) var(--sp-4);
-    }
-    .control label { font-size: 0.8rem; color: var(--muted); }
-    .control select, .control input[type="range"] {
-      width: 100%; border: none; background: transparent; font: inherit; color: var(--ink); outline: none;
-    }
-    .range-row { display: flex; align-items: center; gap: var(--sp-3); }
-    .range-under {
-      display: flex; justify-content: space-between;
-      font-size: 0.75rem; color: var(--muted); margin-top: var(--sp-2);
-    }
-    .btn {
-      display: inline-flex;
-      align-items: center;
-      gap: var(--sp-2);
-      padding: 0.6em 1em;
-      border-radius: var(--radius-2);
-      border: 1px solid var(--border);
-      background: var(--panel);
-      font-weight: 700;
-      font-size: 0.85rem;
-      cursor: pointer;
-      transition: transform 0.1s;
-    }
-    .btn.small {
-      padding: 0.4em 0.8em;
-      border-radius: var(--radius-1);
-      font-size: 0.8rem;
-    }
-    .btn:active { transform: translateY(1px); }
-    .btn:focus-visible, .control select:focus-visible, .control input[type="range"]:focus-visible {
-      outline: 2px solid var(--iom-bright-blue);
-      outline-offset: 2px;
-    }
+/* FOOTER */
+footer{background:var(--espresso);color:#c9bbab;padding:70px 0 30px;margin-top:90px}
+.foot-grid{display:grid;grid-template-columns:1.6fr 1fr 1fr 1fr;gap:30px;margin-bottom:46px}
+footer .brand{color:#fff;margin-bottom:16px}
+.foot-grid p{font-size:14px;max-width:300px}
+.foot-grid h4{font-family:var(--display);color:#fff;font-size:15px;margin-bottom:16px;letter-spacing:.04em}
+.foot-grid a{display:block;font-size:14px;margin-bottom:11px;transition:.25s}
+.foot-grid a:hover{color:var(--tangerine);transform:translateX(4px)}
+html[dir="rtl"] .foot-grid a:hover{transform:translateX(-4px)}
+.foot-bot{border-top:1px solid rgba(255,255,255,.1);padding-top:24px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;font-size:13px}
+.foot-bot .ar{font-family:var(--ar);color:var(--gold)}
+html[dir="rtl"] .foot-bot .ar{font-family:var(--body)}
 
-    /* KPI Panel */
-    .kpi-panel {
-      background: var(--panel);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-2);
-      padding: var(--sp-4);
-      position: relative;
-      z-index: 900;
-    }
-    .tabbar {
-      display: flex;
-      gap: var(--sp-3);
-      margin-bottom: var(--sp-3);
-    }
-    .tabbar .btn[aria-pressed="true"] {
-      background: #eaf3ff;
-      border-color: #cfe0ff;
-    }
-    .kpis {
-      display: grid;
-      grid-template-columns: repeat(3,1fr);
-      gap: var(--sp-4);
-    }
-    @media(max-width:900px){ .kpis { grid-template-columns: repeat(2,1fr); } }
-    @media(max-width:520px){ .kpis { grid-template-columns: 1fr; } }
-    .kpi {
-      background: var(--panel);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-2);
-      padding: var(--sp-4);
-    }
-    .kpi .label {
-      font-size: 0.8rem; color: var(--muted);
-      display: flex; align-items: center; gap: var(--sp-2);
-    }
-    .kpi .value {
-      font-size: 1.5rem; font-weight: 800; margin-top: var(--sp-2);
-    }
-    .kpi .delta {
-      font-size: 0.8rem; margin-top: var(--sp-2); color: var(--muted);
-    }
-    .kpi.ok .value { color: var(--color-ok); }
-    .kpi.warn .value { color: var(--color-warn); }
-    .kpi.both .value { color: var(--color-both); }
-
-    .main {
-      display: grid;
-      grid-template-columns: 1.4fr 1fr;
-      gap: var(--sp-5);
-    }
-    @media(max-width:1100px){ .main { grid-template-columns: 1fr; } }
-
-    .panel {
-      background: var(--panel);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-2);
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      min-height: 380px;
-      position: relative;
-      z-index: 10;
-    }
-    .panel header {
-      background: var(--panel);
-      border-bottom: 1px solid var(--border);
-      padding: var(--sp-4) var(--sp-5);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: var(--sp-3);
-      flex-wrap: wrap;
-    }
-    .panel header .title {
-      font-size: 1rem; font-weight: 800;
-    }
-    .panel header .subtitle {
-      font-size: 0.85rem; color: var(--muted); font-weight: 600;
-      display: flex; gap: var(--sp-2); flex-wrap: wrap; align-items: center;
-    }
-    .panel header .actions {
-      display: flex; gap: var(--sp-3); align-items: center;
-    }
-    .panel-body {
-      padding: var(--sp-4);
-      flex: 1;
-      position: relative;
-    }
-
-    /* Map containers */
-    #map, #flowMap {
-      position: relative;
-      z-index: 0;
-      pointer-events: auto;
-    }
-
-    /* Overlay UI on map */
-    .legend, .flow-ctrls, #info-panel, .flow-bottom {
-      position: absolute;
-      z-index: 1000;
-      background: var(--panel);
-      pointer-events: auto;
-    }
-    .legend {
-      top: var(--sp-3);
-      left: var(--sp-3);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-1);
-      padding: var(--sp-3);
-      font-size: 0.85rem;
-      box-shadow: 0 6px 18px rgba(0,0,0,0.06);
-    }
-    .legend .row {
-      display: flex; align-items: center; gap: var(--sp-2); margin: var(--sp-1) 0;
-    }
-    .dot {
-      width: 12px; height:12px; border-radius:50%; display:inline-block;
-    }
-    .flow-ctrls {
-      top: var(--sp-3); right: var(--sp-3);
-      display: flex; gap: var(--sp-3); flex-wrap: wrap;
-    }
-    #loading-overlay {
-      position: absolute;
-      inset: 0;
-      display: flex; align-items: center; justify-content: center;
-      background: rgba(255,255,255,0.85);
-      z-index: 1100;
-      font-weight: 700;
-      color: #444;
-      pointer-events: none;
-    }
-    #info-panel {
-      top: var(--sp-3); left: var(--sp-3);
-      max-width: 320px;
-      z-index: 1050;
-      border: 1px solid var(--border);
-      border-radius: var(--radius-1);
-      padding: var(--sp-4);
-      font-size: 0.85rem;
-      color: #333;
-      box-shadow: 0 10px 24px rgba(0,0,0,0.08);
-    }
-    #info-panel h4 {
-      margin: 0 0 var(--sp-2);
-    }
-    .flow-bottom {
-      bottom: 0; left: 0; right: 0;
-      border-top: 1px solid var(--border);
-      padding: var(--sp-3) var(--sp-4);
-      display: flex; align-items: center; justify-content: space-between;
-      gap: var(--sp-3); flex-wrap: wrap;
-      font-size: 0.85rem;
-    }
-    .flow-bottom .legend-row {
-      display: flex; align-items: center; gap: var(--sp-3); flex-wrap: wrap;
-    }
-    .pill {
-      background: var(--surface); border: 1px solid var(--border);
-      padding: var(--sp-2) var(--sp-3); border-radius: var(--radius-3);
-      font-weight: 700;
-    }
-
-    .empty {
-      position: absolute;
-      inset: 0;
-      display: flex; align-items: center; justify-content: center;
-      color: #777; font-size: 0.9rem;
-      pointer-events: none;
-    }
-
-    .bp-icon {
-      background: transparent; border: none;
-    }
-    .bp-icon svg {
-      display: block;
-      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.25));
-    }
-
-    .footer-note {
-      color: var(--muted);
-      font-size: 0.85rem;
-      text-align: center;
-      padding: var(--sp-5) 0;
-      position: relative;
-      z-index: 10;
-    }
-
-    /* Force map get events when UI is layered */
-    .container, .panel, .controls, .kpi-panel {
-      pointer-events: none;
-    }
-    .controls *, .panel header *, .panel-body *, #info-panel *, .flow-ctrls *, .legend * {
-      pointer-events: auto;
-    }
-  </style>
+@media(max-width:900px){
+  .nav-links{display:none}
+  .hero-grid,.features,.steps,.stats,.foot-grid{grid-template-columns:1fr}
+  .route{display:none}
+  .phone-stage{margin-top:30px}
+  .stats{grid-template-columns:1fr 1fr}
+  .hero{padding-top:140px}
+}
+</style>
 </head>
 <body>
-  <header>
-    <div class="brand">
-      <img src="https://upload.wikimedia.org/wikipedia/commons/1/1c/International_Organization_for_Migration_logo.svg" alt="IOM logo" />
-      <div>
-        <div class="title">IOM • Sudan — Flow Monitoring Dashboard</div>
-        <div class="subtitle" id="hdrSub">Interactive map, KPIs & flows</div>
+
+<header id="header">
+  <nav class="nav wrap">
+    <a class="brand" href="#"><span class="logo-mark">🛵</span> Talabak <span class="ar">طلبك</span></a>
+    <div class="nav-links">
+      <a href="#features" data-en="Why Talabak" data-ar="لماذا طلبك">Why Talabak</a>
+      <a href="#how" data-en="How it works" data-ar="كيف يعمل">How it works</a>
+      <a href="#categories" data-en="Categories" data-ar="الأقسام">Categories</a>
+      <a href="#download" data-en="Get the app" data-ar="حمّل التطبيق">Get the app</a>
+    </div>
+    <div class="nav-right">
+      <button class="lang" id="lang">العربية</button>
+      <button class="btn btn-primary" data-en="Order now" data-ar="اطلب الآن">Order now</button>
+    </div>
+  </nav>
+</header>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="blob b1"></div><div class="blob b2"></div>
+  <div class="hero-grid wrap">
+    <div class="hero-copy">
+      <span class="eyebrow"><span class="dot"></span><span data-en="Sudan's all-in-one delivery app" data-ar="تطبيق التوصيل الأول في السودان">Sudan's all-in-one delivery app</span></span>
+      <h1>
+        <span class="line l1"><span data-en="Order anything." data-ar="اطلب أي شيء،">Order anything.</span></span>
+        <span class="line l2"><span data-en="Anytime." data-ar="في أي وقت،">Anytime.</span></span>
+        <span class="line l3"><span class="acc" data-en="Anywhere." data-ar="في أي مكان.">Anywhere.</span></span>
+      </h1>
+      <p class="lede" data-en="Food, groceries, bakery, pharmacy and local shops — delivered fast to your door across Khartoum. One app for everything you need." data-ar="مطاعم، بقالة، مخابز، صيدليات ومتاجر محلية — توصيل سريع لباب بيتك في كل أنحاء الخرطوم. تطبيق واحد لكل ما تحتاجه.">Food, groceries, bakery, pharmacy and local shops — delivered fast to your door across Khartoum. One app for everything you need.</p>
+      <div class="cta-row">
+        <a class="store" href="https://play.google.com/store/apps/details?id=app.talabak.user" target="_blank">
+          <svg viewBox="0 0 512 512" fill="currentColor"><path d="M325.3 234.3L104.6 13l280.8 161.2-60.1 60.1zM47 0C34 6.8 25.3 19.2 25.3 35.3v441.3c0 16.1 8.7 28.5 21.7 35.3l256.6-256L47 0zm425.2 225.6l-58.9-34.1-65.7 64.5 65.7 64.5 60.1-34.1c18-14.3 18-46.5-1.2-60.8zM104.6 499l280.8-161.2-60.1-60.1L104.6 499z"/></svg>
+          <span><small data-en="GET IT ON" data-ar="حمّل من">GET IT ON</small><b>Google Play</b></span>
+        </a>
+        <a class="store" href="#download">
+          <svg viewBox="0 0 384 512" fill="currentColor"><path d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zm-56.6-164.2c27.3-32.4 24.8-61.9 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3z"/></svg>
+          <span><small data-en="DOWNLOAD ON THE" data-ar="حمّل من">DOWNLOAD ON THE</small><b>App Store</b></span>
+        </a>
+      </div>
+      <p class="slogan-ar">طلبك — اطلب أي شيء، في أي وقت، في أي مكان.</p>
+      <div class="hero-stats">
+        <div class="s"><b class="count" data-target="500">0</b><span data-en="App downloads" data-ar="تحميل">App downloads</span></div>
+        <div class="s"><b class="count" data-target="5">0</b><span data-en="Categories" data-ar="أقسام">Categories</span></div>
+        <div class="s"><b data-en="24/7" data-ar="٢٤/٧">24/7</b><span data-en="Always open" data-ar="مفتوح دائماً">Always open</span></div>
       </div>
     </div>
-    <div class="chip" id="chipSelection">Loading…</div>
-  </header>
 
-  <div class="container">
-    <!-- Controls -->
-    <section class="controls">
-      <div class="control">
-        <label for="direction">Direction</label>
-        <select id="direction" aria-label="Direction">
-          <option value="Both" selected>Both</option>
-          <option value="Incoming">Incoming</option>
-          <option value="Outgoing">Outgoing</option>
-        </select>
-      </div>
-      <div class="control">
-        <label for="point">Border Point</label>
-        <select id="point" aria-label="Border Point">
-          <option value="__ALL__" selected>All points</option>
-        </select>
-      </div>
-      <div class="control">
-        <label for="month">Month</label>
-        <div class="range-row">
-          <button class="btn small" id="monthPrev" title="Previous month">‹</button>
-          <input id="month" type="range" min="0" max="0" step="1" value="0" aria-label="Month" />
-          <button class="btn small" id="monthNext" title="Next month">›</button>
-          <button class="btn small" id="monthPlay" title="Play"><i class="fas fa-play"></i></button>
-        </div>
-        <div class="range-under">
-          <span id="lblFirst">—</span>
-          <span id="lblCurrent">—</span>
-          <span id="lblLast">—</span>
-        </div>
-      </div>
-      <div class="control" style="align-items:flex-start; justify-content:center;">
-        <label>&nbsp;</label>
-        <div style="display:flex; gap: var(--sp-3); flex-wrap: wrap;">
-          <button class="btn small" id="resetFilters"><i class="fas fa-rotate-left"></i> Reset</button>
-          <button class="btn small" id="downloadCsvBtn"><i class="fas fa-file-arrow-down"></i> CSV</button>
-        </div>
-      </div>
-    </section>
-
-    <!-- KPI Tabs / Display -->
-    <section class="kpi-panel">
-      <div class="tabbar">
-        <button class="btn small" data-kpi="month" aria-pressed="true">This month</button>
-        <button class="btn small" data-kpi="cum" aria-pressed="false">Cumulative</button>
-      </div>
-      <section class="kpis" id="kpi-month">
-        <div class="kpi ok">
-          <div class="label"><i class="fas fa-log-in"></i> Incoming (selected month)</div>
-          <div class="value" id="kpiIncoming" aria-live="polite">0</div>
-          <div class="delta" id="kpiIncomingDelta">vs prev. month: —</div>
-        </div>
-        <div class="kpi warn">
-          <div class="label"><i class="fas fa-log-out"></i> Outgoing (selected month)</div>
-          <div class="value" id="kpiOutgoing" aria-live="polite">0</div>
-          <div class="delta" id="kpiOutgoingDelta">vs prev. month: —</div>
-        </div>
-        <div class="kpi both">
-          <div class="label"><i class="fas fa-arrows-left-right"></i> Total flow (selected month)</div>
-          <div class="value" id="kpiTotal" aria-live="polite">0</div>
-          <div class="delta" id="kpiTotalDelta">vs prev. month: —</div>
-        </div>
-      </section>
-      <section class="kpis" id="kpi-cum" hidden>
-        <div class="kpi ok">
-          <div class="label"><i class="fas fa-log-in"></i> Cumulative Incoming</div>
-          <div class="value" id="cumIncoming" aria-live="polite">0</div>
-        </div>
-        <div class="kpi warn">
-          <div class="label"><i class="fas fa-log-out"></i> Cumulative Outgoing</div>
-          <div class="value" id="cumOutgoing" aria-live="polite">0</div>
-        </div>
-        <div class="kpi both">
-          <div class="label"><i class="fas fa-arrows-left-right"></i> Cumulative Total</div>
-          <div class="value" id="cumTotal" aria-live="polite">0</div>
-        </div>
-      </section>
-    </section>
-
-    <!-- Main charts / map section -->
-    <section class="main">
-      <div class="panel">
-        <header>
-          <div>
-            <div class="title">Counts Map — OCHA Border Points</div>
-            <div class="subtitle">Click a marker for details</div>
+    <div class="phone-stage">
+      <div class="chip c1"><span class="e">🍔</span><span data-en="Food" data-ar="طعام">Food</span></div>
+      <div class="chip c2"><span class="e">💊</span><span data-en="Pharmacy" data-ar="صيدلية">Pharmacy</span></div>
+      <div class="chip c3"><span class="e">🛒</span><span data-en="Groceries" data-ar="بقالة">Groceries</span></div>
+      <div class="phone">
+        <div class="screen">
+          <div class="notch"></div>
+          <div class="app-top">
+            <small data-en="Deliver to · Khartoum" data-ar="التوصيل إلى · الخرطوم">Deliver to · Khartoum</small>
+            <h4 data-en="Good evening 👋" data-ar="مساء الخير 👋">Good evening 👋</h4>
+            <div class="app-search">🔍 <span data-en="Search food, shops, pharmacy…" data-ar="ابحث عن طعام، متاجر، صيدلية…">Search food, shops, pharmacy…</span></div>
           </div>
-          <div class="actions">
-            <span class="chip"><i class="fas fa-calendar"></i> <span id="ctxMonth">—</span></span>
-            <span class="chip"><i class="fas fa-arrows-left-right-to-line"></i> <span id="ctxDirMap">—</span></span>
+          <div class="app-cats">
+            <div class="c"><span class="ic">🍔</span><span data-en="Food" data-ar="طعام">Food</span></div>
+            <div class="c"><span class="ic">🛒</span><span data-en="Grocery" data-ar="بقالة">Grocery</span></div>
+            <div class="c"><span class="ic">🥐</span><span data-en="Bakery" data-ar="مخبز">Bakery</span></div>
+            <div class="c"><span class="ic">💊</span><span data-en="Pharmacy" data-ar="صيدلية">Pharmacy</span></div>
           </div>
-        </header>
-        <div class="panel-body" style="position: relative;">
-          <div id="map"></div>
-          <div class="legend">
-            <div class="row"><span class="dot" style="background: var(--color-ok)"></span> Incoming</div>
-            <div class="row"><span class="dot" style="background: var(--color-warn)"></span> Outgoing</div>
-            <div class of="row"><span class="dot" style="background: var(--color-both)"></span> Both</div>
+          <div class="app-card">
+            <div class="img"></div>
+            <div class="meta"><b data-en="Featured restaurant" data-ar="مطعم مميز">Featured restaurant</b><p data-en="Free delivery · 25–35 min" data-ar="توصيل مجاني · ٢٥–٣٥ دقيقة">Free delivery · 25–35 min</p></div>
+          </div>
+          <div class="app-track">
+            <div class="tt" data-en="ORDER ON THE WAY" data-ar="الطلب في الطريق">ORDER ON THE WAY</div>
+            <div class="tn" data-en="Arriving in 12 min 🛵" data-ar="يصل خلال ١٢ دقيقة 🛵">Arriving in 12 min 🛵</div>
+            <div class="bar"><i></i></div>
           </div>
         </div>
       </div>
-
-      <div class="panel">
-        <header>
-          <div>
-            <div class="title">Time Series — Aggregated by month</div>
-            <div class="subtitle">
-              <span class="chip">Point: <span id="ctxPoint">All</span></span>
-              <span class="chip">Dir: <span id="ctxDir">Both</span></span>
-            </div>
-          </div>
-          <div class="actions">
-            <button class="btn small" id="downloadTs"><i class="fas fa-image"></i> PNG</button>
-          </div>
-        </header>
-        <div class="panel-body">
-          <canvas id="tsChart" height="300" aria-label="Time series chart"></canvas>
-          <div class="empty" id="tsEmpty" hidden>No data</div>
-        </div>
-      </div>
-    </section>
-
-    <section class="panel">
-      <header>
-        <div>
-          <div class="title">By Point — Selected Month</div>
-          <div class="subtitle" id="barSubtitle">—</div>
-        </div>
-        <div class="actions">
-          <label class="chip" style="display: flex; align-items: center; gap: var(--sp-2);">
-            Top
-            <select id="topN" style="border: none; background: transparent; font: inherit;">
-              <option>10</option>
-              <option>20</option>
-              <option>50</option>
-              <option selected>All</option>
-            </select>
-          </label>
-          <button class="btn small" id="downloadBar"><i class="fas fa-image"></i> PNG</button>
-        </div>
-      </header>
-      <div class="panel-body">
-        <canvas id="barChart" height="260" aria-label="By point bar chart"></canvas>
-        <div class="empty" id="barEmpty" hidden>No data</div>
-      </div>
-    </section>
-
-    <section class="panel">
-      <header>
-        <div>
-          <div class="title">Flow Map — Animated OD</div>
-          <div class="subtitle">Toggle flows / play animation</div>
-        </div>
-      </header>
-      <div class="flow-wrap">
-        <div id="flowMap"></div>
-        <div id="loading-overlay">Loading flows…</div>
-        <div id="info-panel">
-          <h4>How to use</h4>
-          <ul style="margin:0 0 var(--sp-2) var(--sp-2); padding:0;">
-            <li>Click lines or points to focus flows</li>
-            <li><strong>Space</strong>: Play/Pause • <strong>F</strong>: Flows • <strong>P</strong>: Points • <strong>R</strong>: Reset</li>
-          </ul>
-          <button class="btn small" id="close-info"><i class="fas fa-xmark"></i> Hide</button>
-        </div>
-        <div class="flow-ctrls">
-          <button class="btn small" id="reset-view"><i class="fas fa-crosshairs"></i> Reset</button>
-          <button class="btn small" id="toggle-animation" aria-pressed="true"><i id="animation-icon" class="fas fa-pause"></i> <span id="animation-text">Pause</span></button>
-          <button class="btn small" id="toggle-flows" aria-pressed="true"><i class="fas fa-wave-square"></i> <span id="flows-text">Hide Flows</span></button>
-          <button class="btn small" id="toggle-points" aria-pressed="true"><i class="fas fa-location-dot"></i> <span id="points-text">Hide Points</span></button>
-        </div>
-      </div>
-      <div class="flow-bottom">
-        <div class="legend-row">
-          <span class="dot" style="background:#FF671F"></span> Origins
-          <span class="dot" style="background:#418FDE; margin-left: var(--sp-3)"></span> Destinations
-          <span class="pill" title="Line width ∝ volume">Line width ∝ volume</span>
-        </div>
-        <div id="flowStats" class="pill">Loading…</div>
-      </div>
-    </section>
-
-    <div class="footer-note">
-      Sources: data/FM - Data.cleaned.csv (fallback: data/FM - Data.csv), data/IDPs_Pathway.csv, data/sudan_states.geojson.<br />
-      Built with Leaflet, CanvasFlowmapLayer & Chart.js.
     </div>
   </div>
+</section>
 
-  <script>
-    // ========== JavaScript logic (as before) ==========
+<!-- MARQUEE -->
+<div class="marquee">
+  <div class="track" id="track">
+    <span data-en="🍔 Restaurants ★ 🛒 Groceries ★ 🥐 Bakeries ★ 💊 Pharmacy ★ 🏪 Local shops ★ 🍰 Desserts ★ ☕ Cafés ★" data-ar="🍔 مطاعم ★ 🛒 بقالات ★ 🥐 مخابز ★ 💊 صيدليات ★ 🏪 متاجر محلية ★ 🍰 حلويات ★ ☕ كافيهات ★">🍔 Restaurants ★ 🛒 Groceries ★ 🥐 Bakeries ★ 💊 Pharmacy ★ 🏪 Local shops ★ 🍰 Desserts ★ ☕ Cafés ★</span>
+  </div>
+</div>
 
-    const CSV_PATHS = ["data/FM - Data.cleaned.csv", "data/FM - Data.csv"];
-    const $ = s => document.querySelector(s);
+<!-- FEATURES -->
+<section class="sec" id="features">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="kicker" data-en="Why Talabak" data-ar="لماذا طلبك">Why Talabak</span>
+      <h2 data-en="Everything you need, in one place" data-ar="كل ما تحتاجه، في مكان واحد">Everything you need, in one place</h2>
+      <p data-en="Built for families, students and busy people across Khartoum — fast, reliable and refreshingly simple." data-ar="مصمم للعائلات والطلاب والمشغولين في كل أنحاء الخرطوم — سريع وموثوق وبسيط.">Built for families, students and busy people across Khartoum — fast, reliable and refreshingly simple.</p>
+    </div>
+    <div class="features">
+      <div class="fcard reveal"><div class="ficon">⚡</div><h3 data-en="Fast delivery" data-ar="توصيل سريع">Fast delivery</h3><p data-en="Hot meals and daily essentials at your door in minutes, not hours." data-ar="وجبات ساخنة واحتياجاتك اليومية لباب بيتك في دقائق.">Hot meals and daily essentials at your door in minutes, not hours.</p></div>
+      <div class="fcard reveal"><div class="ficon">📍</div><h3 data-en="Real-time tracking" data-ar="تتبّع مباشر">Real-time tracking</h3><p data-en="Follow your order live from the shop to your doorstep, every step." data-ar="تابع طلبك مباشرة من المتجر حتى باب بيتك في كل خطوة.">Follow your order live from the shop to your doorstep, every step.</p></div>
+      <div class="fcard reveal"><div class="ficon">🗺️</div><h3 data-en="Khartoum-wide zones" data-ar="تغطية كل الخرطوم">Khartoum-wide zones</h3><p data-en="Multiple delivery zones covering Khartoum and the surrounding areas." data-ar="مناطق توصيل متعددة تغطي الخرطوم والمناطق المحيطة.">Multiple delivery zones covering Khartoum and the surrounding areas.</p></div>
+      <div class="fcard reveal"><div class="ficon">🎁</div><h3 data-en="Offers & free delivery" data-ar="عروض وتوصيل مجاني">Offers & free delivery</h3><p data-en="Regular promotions and free-delivery campaigns that save you more." data-ar="عروض مستمرة وحملات توصيل مجاني توفّر عليك أكثر.">Regular promotions and free-delivery campaigns that save you more.</p></div>
+      <div class="fcard reveal"><div class="ficon">💵</div><h3 data-en="Cash on delivery" data-ar="الدفع عند الاستلام">Cash on delivery</h3><p data-en="Pay your way — cash at the door or in-app, whatever suits you." data-ar="ادفع بطريقتك — نقداً عند الباب أو داخل التطبيق.">Pay your way — cash at the door or in-app, whatever suits you.</p></div>
+      <div class="fcard reveal"><div class="ficon">📱</div><h3 data-en="Effortless ordering" data-ar="طلب سهل">Effortless ordering</h3><p data-en="A clean, mobile-friendly app that makes ordering take just a few taps." data-ar="تطبيق بسيط وسهل يجعل الطلب في نقرات قليلة.">A clean, mobile-friendly app that makes ordering take just a few taps.</p></div>
+    </div>
+  </div>
+</section>
 
-    const directionSel = $("#direction"),
-          pointSel = $("#point"),
-          monthRange = $("#month"),
-          monthPrev = $("#monthPrev"),
-          monthNext = $("#monthNext"),
-          monthPlay = $("#monthPlay"),
-          resetFilters = $("#resetFilters"),
-          lblFirst = $("#lblFirst"),
-          lblCurrent = $("#lblCurrent"),
-          lblLast = $("#lblLast"),
-          downloadCsvBtn = $("#downloadCsvBtn");
+<!-- HOW -->
+<section class="sec how" id="how">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="kicker" style="color:var(--gold)" data-en="How it works" data-ar="كيف يعمل">How it works</span>
+      <h2 data-en="From craving to doorstep in 3 steps" data-ar="من الرغبة حتى باب بيتك في ٣ خطوات">From craving to doorstep in 3 steps</h2>
+    </div>
+    <div class="steps">
+      <svg class="route" viewBox="0 0 800 20" preserveAspectRatio="none">
+        <path id="rp" d="M0 10 H800" stroke="rgba(255,255,255,.18)" stroke-width="2" stroke-dasharray="2 8" fill="none"/>
+        <circle r="6" fill="#FFB02E"><animateMotion dur="3s" repeatCount="indefinite" rotate="auto"><mpath href="#rp"/></animateMotion></circle>
+      </svg>
+      <div class="step reveal"><div class="num">🔎<b>1</b></div><h3 data-en="Browse" data-ar="تصفّح">Browse</h3><p data-en="Explore restaurants, shops and pharmacies near you." data-ar="استكشف المطاعم والمتاجر والصيدليات القريبة منك.">Explore restaurants, shops and pharmacies near you.</p></div>
+      <div class="step reveal"><div class="num">🛍️<b>2</b></div><h3 data-en="Order" data-ar="اطلب">Order</h3><p data-en="Add what you want and check out in a few taps." data-ar="أضف ما تريد وأكمل الطلب في نقرات قليلة.">Add what you want and check out in a few taps.</p></div>
+      <div class="step reveal"><div class="num">🛵<b>3</b></div><h3 data-en="Track & enjoy" data-ar="تابع واستمتع">Track & enjoy</h3><p data-en="Watch it arrive live and get it delivered to your door." data-ar="تابع وصوله مباشرة واستلمه عند باب بيتك.">Watch it arrive live and get it delivered to your door.</p></div>
+    </div>
+  </div>
+</section>
 
-    const chipSelection = $("#chipSelection"),
-          hdrSub = $("#hdrSub"),
-          ctxMonth = $("#ctxMonth"),
-          ctxDirMap = $("#ctxDirMap"),
-          ctxPoint = $("#ctxPoint"),
-          ctxDir = $("#ctxDir");
+<!-- CATEGORIES / STATS -->
+<section class="sec" id="categories">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="kicker" data-en="Trusted & growing" data-ar="ثقة ونمو">Trusted & growing</span>
+      <h2 data-en="A platform Khartoum is ordering from" data-ar="منصّة تطلب منها الخرطوم">A platform Khartoum is ordering from</h2>
+    </div>
+    <div class="stats">
+      <div class="stat reveal"><b class="count" data-target="500" data-suffix="+">0</b><span data-en="App downloads" data-ar="تحميل للتطبيق">App downloads</span></div>
+      <div class="stat reveal"><b class="count" data-target="5">0</b><span data-en="Service categories" data-ar="أقسام خدمية">Service categories</span></div>
+      <div class="stat reveal"><b data-en="1 App" data-ar="تطبيق واحد">1 App</b><span data-en="For all your needs" data-ar="لكل احتياجاتك">For all your needs</span></div>
+      <div class="stat reveal"><b data-en="24/7" data-ar="٢٤/٧">24/7</b><span data-en="Order anytime" data-ar="اطلب في أي وقت">Order anytime</span></div>
+    </div>
+  </div>
+</section>
 
-    const kpiIncoming = $("#kpiIncoming"),
-          kpiOutgoing = $("#kpiOutgoing"),
-          kpiTotal = $("#kpiTotal"),
-          kpiIncomingDelta = $("#kpiIncomingDelta"),
-          kpiOutgoingDelta = $("#kpiOutgoingDelta"),
-          kpiTotalDelta = $("#kpiTotalDelta");
+<!-- CTA -->
+<section id="download">
+  <div class="cta-final reveal">
+    <h2 data-en="Hungry? It's already on its way." data-ar="جعان؟ طلبك في الطريق إليك.">Hungry? It's already on its way.</h2>
+    <p data-en="Download Talabak and get your first order delivered fast — food, groceries, pharmacy and more, across Khartoum." data-ar="حمّل طلبك واحصل على أول طلب بسرعة — طعام، بقالة، صيدلية وأكثر، في كل أنحاء الخرطوم.">Download Talabak and get your first order delivered fast — food, groceries, pharmacy and more, across Khartoum.</p>
+    <div class="cta-row">
+      <a class="store" href="https://play.google.com/store/apps/details?id=app.talabak.user" target="_blank">
+        <svg viewBox="0 0 512 512" fill="currentColor"><path d="M325.3 234.3L104.6 13l280.8 161.2-60.1 60.1zM47 0C34 6.8 25.3 19.2 25.3 35.3v441.3c0 16.1 8.7 28.5 21.7 35.3l256.6-256L47 0zm425.2 225.6l-58.9-34.1-65.7 64.5 65.7 64.5 60.1-34.1c18-14.3 18-46.5-1.2-60.8zM104.6 499l280.8-161.2-60.1-60.1L104.6 499z"/></svg>
+        <span><small data-en="GET IT ON" data-ar="حمّل من">GET IT ON</small><b>Google Play</b></span>
+      </a>
+      <a class="store" href="#">
+        <svg viewBox="0 0 384 512" fill="currentColor"><path d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zm-56.6-164.2c27.3-32.4 24.8-61.9 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3z"/></svg>
+        <span><small data-en="DOWNLOAD ON THE" data-ar="حمّل من">DOWNLOAD ON THE</small><b>App Store</b></span>
+      </a>
+    </div>
+  </div>
+</section>
 
-    const cumIncoming = $("#cumIncoming"),
-          cumOutgoing = $("#cumOutgoing"),
-          cumTotal = $("#cumTotal");
+<!-- FOOTER -->
+<footer>
+  <div class="wrap">
+    <div class="foot-grid">
+      <div>
+        <a class="brand" href="#"><span class="logo-mark">🛵</span> Talabak <span style="color:var(--gold)">طلبك</span></a>
+        <p data-en="Sudan's all-in-one on-demand delivery platform — connecting you with restaurants, shops, bakeries and pharmacies across Khartoum." data-ar="منصّة التوصيل السودانية المتكاملة — تربطك بالمطاعم والمتاجر والمخابز والصيدليات في كل أنحاء الخرطوم.">Sudan's all-in-one on-demand delivery platform — connecting you with restaurants, shops, bakeries and pharmacies across Khartoum.</p>
+      </div>
+      <div>
+        <h4 data-en="Explore" data-ar="استكشف">Explore</h4>
+        <a href="#features" data-en="Why Talabak" data-ar="لماذا طلبك">Why Talabak</a>
+        <a href="#how" data-en="How it works" data-ar="كيف يعمل">How it works</a>
+        <a href="#categories" data-en="Categories" data-ar="الأقسام">Categories</a>
+      </div>
+      <div>
+        <h4 data-en="Company" data-ar="الشركة">Company</h4>
+        <a href="https://talabak.app/" target="_blank" data-en="About us" data-ar="من نحن">About us</a>
+        <a href="#" data-en="Become a partner" data-ar="كن شريكاً">Become a partner</a>
+        <a href="#" data-en="Careers" data-ar="وظائف">Careers</a>
+      </div>
+      <div>
+        <h4 data-en="Get in touch" data-ar="تواصل معنا">Get in touch</h4>
+        <a href="https://talabak.app/" target="_blank">talabak.app</a>
+        <a href="#" data-en="Support" data-ar="الدعم">Support</a>
+        <a href="#download" data-en="Download app" data-ar="حمّل التطبيق">Download app</a>
+      </div>
+    </div>
+    <div class="foot-bot">
+      <span>© 2026 Talabak | طلبك. <span data-en="All rights reserved." data-ar="جميع الحقوق محفوظة.">All rights reserved.</span></span>
+      <span class="ar">اطلب أي شيء، في أي وقت، في أي مكان.</span>
+    </div>
+  </div>
+</footer>
 
-    const downloadTsBtn = $("#downloadTs"),
-          downloadBarBtn = $("#downloadBar"),
-          topNSel = $("#topN");
+<script>
+// Header shrink
+const header=document.getElementById('header');
+addEventListener('scroll',()=>header.classList.toggle('shrink',scrollY>30));
 
-    let rows = [], points = [], monthCols = [], monthLabels = [];
-    let map, markers = [], tsChart, barChart;
-    const tsEmpty = $("#tsEmpty"), barEmpty = $("#barEmpty");
-    const MONTH_IDX = {Jan:1,Feb:2,Mar:3,Apr:4,May:5,Jun:6,Jul:7,Aug:8,Sep:9,Oct:10,Nov:11,Dec:12};
+// Scroll reveal
+const io=new IntersectionObserver((es)=>es.forEach((e,i)=>{
+  if(e.isIntersecting){setTimeout(()=>e.target.classList.add('in'),i*70);io.unobserve(e.target);}
+}),{threshold:.15});
+document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
 
-    function expandYear(two) {
-      const n = +two;
-      if (n >= 0 && n <= 49) return 2000 + n;
-      if (n >= 50 && n <= 99) return 1900 + n;
-      return n;
-    }
-    function fmt(n) {
-      return Number(n || 0).toLocaleString("en-US");
-    }
-    function getCss(v) {
-      return getComputedStyle(document.documentElement).getPropertyValue(v).trim();
-    }
-    function selectedMonthLabel() {
-      return monthLabels[+monthRange.value] || monthLabels[0];
-    }
+// Count up
+function countUp(el){
+  const t=+el.dataset.target,suf=el.dataset.suffix||'';let n=0;
+  const step=Math.max(1,t/60),tick=()=>{n+=step;if(n>=t){el.textContent=t+suf;}else{el.textContent=Math.floor(n)+suf;requestAnimationFrame(tick);}};tick();
+}
+const cio=new IntersectionObserver((es)=>es.forEach(e=>{
+  if(e.isIntersecting){countUp(e.target);cio.unobserve(e.target);}
+}),{threshold:.6});
+document.querySelectorAll('.count').forEach(el=>cio.observe(el));
 
-    function debounce(fn, ms) {
-      let t;
-      return (...args) => {
-        clearTimeout(t);
-        t = setTimeout(() => fn(...args), ms);
-      };
-    }
+// Duplicate marquee content for seamless loop
+const tr=document.getElementById('track');
+tr.innerHTML+=tr.innerHTML;
 
-    function sanitizeKeys(obj) {
-      const out = {};
-      for (const k of Object.keys(obj)) {
-        const nk = String(k).replace(/\u2013|\u2014/g, "-").replace(/\s+/g, " ").trim();
-        out[nk] = obj[k];
-      }
-      return out;
-    }
-    function num(v) {
-      if (v == null) return 0;
-      const n = Number(String(v).replace(/[, \t\r\n]+/g, "").trim());
-      return isFinite(n) ? n : 0;
-    }
-    function detectMonths(keys) {
-      const rxYY = /^(\d{2})-(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)$/i;
-      const rxYYYY = /^(20\d{2})-(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)$/i;
-      const candidates = [];
-      for (const raw of keys) {
-        const k = String(raw).replace(/\u2013|\u2014/g, "-").replace(/\s+/g, "").trim();
-        let y, m;
-        if (rxYY.test(k)) {
-          const [, yy, mm] = k.match(rxYY);
-          y = expandYear(yy);
-          m = mm.substring(0, 3);
-        } else if (rxYYYY.test(k)) {
-          const [, yyyy, mm] = k.match(rxYYYY);
-          y = +yyyy;
-          m = mm.substring(0, 3);
-        }
-        if (y && m) {
-          candidates.push({ raw, pretty: `${y}-${m}`, sort: y * 100 + MONTH_IDX[m] });
-        }
-      }
-      candidates.sort((a, b) => a.sort - b.sort);
-      return { found: candidates.map(c => c.raw), pretty: candidates.map(c => c.pretty) };
-    }
-
-    function parseCsv(path) {
-      return new Promise((resolve, reject) => {
-        Papa.parse(path, {
-          download: true,
-          header: true,
-          skipEmptyLines: true,
-          complete: res => resolve(res.data.map(sanitizeKeys)),
-          error: err => reject(err)
-        });
-      });
-    }
-
-    async function loadCsv() {
-      let lastErr;
-      for (const p of CSV_PATHS) {
-        try {
-          const data = await parseCsv(p);
-          console.log("Loaded CSV:", p, data.length, "rows");
-          return { rows: data, path: p };
-        } catch (err) {
-          console.warn("Failed to load", p, err);
-          lastErr = err;
-        }
-      }
-      throw lastErr || new Error("Failed to load any CSV");
-    }
-
-    function normalizeData(csvRows) {
-      if (!csvRows.length) throw new Error("CSV empty");
-      const first = csvRows[0];
-      const COL = {
-        dir: ["Direction of Movement", "Direction"],
-        name: ["Flow Monitoring Point Name", "Flow Monitoring  Point Name"],
-        code: ["Flow Monitoring Point Code", "Flow Monitoring  Point Code"],
-        lat: ["latitude", "Latitude", "lat"],
-        lon: ["longitude", "Longitude", "lon"]
-      };
-      const pick = arr => arr.find(k => k in first);
-      const kDir = pick(COL.dir);
-      const kName = pick(COL.name);
-      const kCode = pick(COL.code);
-      const kLat = pick(COL.lat);
-      const kLon = pick(COL.lon);
-      if (!kDir || !kName || !kCode || !kLat || !kLon) {
-        console.error("Missing columns:", Object.keys(first));
-        throw new Error("Missing required columns");
-      }
-
-      const allKeys = Object.keys(first);
-      const { found, pretty } = detectMonths(allKeys);
-      if (!found.length) {
-        console.error("No month columns:", allKeys);
-        throw new Error("No month columns detected");
-      }
-      monthCols = found;
-      monthLabels = pretty;
-
-      rows = csvRows.map(r => {
-        const row = {
-          direction: String(r[kDir] || "").trim().toLowerCase(),
-          point: String(r[kName] || "").trim(),
-          code: String(r[kCode] || "").trim(),
-          lat: Number(r[kLat]),
-          lon: Number(r[kLon])
-        };
-        monthCols.forEach((m, i) => {
-          row[monthLabels[i]] = num(r[m]);
-        });
-        return row;
-      });
-
-      const seen = new Map();
-      for (const r of rows) {
-        if (!seen.has(r.point)) {
-          seen.set(r.point, { point: r.point, code: r.code, lat: r.lat, lon: r.lon });
-        }
-      }
-      points = Array.from(seen.values()).sort((a, b) => a.point.localeCompare(b.point));
-    }
-
-    function aggregateTimeSeries(dir, selPoint) {
-      const incoming = Array(monthLabels.length).fill(0);
-      const outgoing = Array(monthLabels.length).fill(0);
-      for (const r of rows) {
-        if (selPoint !== "__ALL__" && r.point !== selPoint) continue;
-        monthLabels.forEach((m, i) => {
-          const v = r[m] || 0;
-          if (r.direction === "incoming") incoming[i] += v;
-          else if (r.direction === "outgoing") outgoing[i] += v;
-        });
-      }
-      if (dir === "Incoming") return { labels: monthLabels, series: incoming, alt: outgoing };
-      if (dir === "Outgoing") return { labels: monthLabels, series: outgoing, alt: incoming };
-      return { labels: monthLabels, incoming, outgoing };
-    }
-
-    function computeKPIs() {
-      const idx = +monthRange.value;
-      const month = monthLabels[idx];
-      const prevIdx = Math.max(0, idx - 1);
-      const prevMonth = monthLabels[prevIdx];
-      const selPoint = pointSel.value;
-      const sum = (direction, m) =>
-        rows
-          .filter(r => (selPoint === "__ALL__" || r.point === selPoint) && r.direction === direction)
-          .reduce((acc, r) => acc + (r[m] || 0), 0);
-      const inc = sum("incoming", month);
-      const out = sum("outgoing", month);
-      const incP = sum("incoming", prevMonth);
-      const outP = sum("outgoing", prevMonth);
-      const total = inc + out;
-      const totalP = incP + outP;
-
-      kpiIncoming.textContent = fmt(inc);
-      kpiOutgoing.textContent = fmt(out);
-      kpiTotal.textContent = fmt(total);
-      const delta = (c, p) =>
-        p
-          ? `vs prev. month: ${(c - p) > 0 ? "▲" : (c - p) < 0 ? "▼" : "•"} ${(((c - p) / p) * 100).toFixed(1)}%`
-          : "vs prev. month: —";
-      kpiIncomingDelta.textContent = delta(inc, incP);
-      kpiOutgoingDelta.textContent = delta(out, outP);
-      kpiTotalDelta.textContent = delta(total, totalP);
-    }
-
-    function computeCumulativeKPIs() {
-      const selPoint = pointSel.value;
-      const sumAll = dir =>
-        rows
-          .filter(r => (selPoint === "__ALL__" || r.point === selPoint) && r.direction === dir)
-          .reduce((acc, r) => {
-            return acc + monthLabels.reduce((t, m) => t + (r[m] || 0), 0);
-          }, 0);
-      const incAll = sumAll("incoming");
-      const outAll = sumAll("outgoing");
-      cumIncoming.textContent = fmt(incAll);
-      cumOutgoing.textContent = fmt(outAll);
-      cumTotal.textContent = fmt(incAll + outAll);
-    }
-
-    let mapboxBase, cartoLight, osm;
-    function initMap() {
-      map = L.map("map", { zoomControl: true, scrollWheelZoom: true }).setView([15.5, 30], 5);
-
-      cartoLight = L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
-        attribution: '&copy; OpenStreetMap & CartoDB'
-      });
-      osm = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        attribution: '&copy; OpenStreetMap'
-      });
-
-      const MAPBOX_TOKEN_COUNTS = 'pk.eyJ1Ijoib21lcm9zbWFuIiwiYSI6ImUxZDBkODBlNjQxMDE2M2Y3OTQ3MWIwNTJkMjgzZTI3In0.ekCHuxRflTOO0RpQ6rQR7Q';
-      const MAPBOX_STYLE_COUNTS = 'omerosman/cm8oy6is4006101si7ll3bs4h';
-
-      if (MAPBOX_TOKEN_COUNTS && MAPBOX_STYLE_COUNTS) {
-        mapboxBase = L.tileLayer(
-          `https://api.mapbox.com/styles/v1/${MAPBOX_STYLE_COUNTS}/tiles/{z}/{x}/{y}?access_token=${MAPBOX_TOKEN_COUNTS}`,
-          { tileSize: 512, zoomOffset: -1, attribution: '&copy; Mapbox & OpenStreetMap' }
-        );
-        let switched = false;
-        mapboxBase.on('tileerror', () => {
-          if (switched) return;
-          switched = true;
-          map.removeLayer(mapboxBase);
-          cartoLight.addTo(map);
-        });
-        mapboxBase.addTo(map);
-      } else {
-        cartoLight.addTo(map);
-      }
-
-      const baseLayers = {};
-      if (mapboxBase) baseLayers['Mapbox'] = mapboxBase;
-      baseLayers['Carto Light'] = cartoLight;
-      baseLayers['OSM'] = osm;
-      L.control.layers(baseLayers).addTo(map);
-
-      renderMarkers();
-    }
-
-    function scaleRadius(v) {
-      const r = Math.sqrt(v) * 0.35;
-      return Math.max(5, Math.min(r, 50));
-    }
-    function markerColor() {
-      return directionSel.value === 'Incoming'
-        ? getCss('--color-ok')
-        : directionSel.value === 'Outgoing'
-        ? getCss('--color-warn')
-        : getCss('--color-both');
-    }
-
-    function makeOchaBorderPointIcon(value) {
-      const r = Math.sqrt(value) * 0.35;
-      const size = Math.round(Math.max(28, Math.min(r * 2 + 14, 72)));
-      const OCHA_BLUE = '#1F69B3', RING = '#ffffff', SYMBOL = '#ffffff';
-      const cx = size / 2, cy = size / 2;
-      const radius = Math.round(size * 0.46);
-      const ringW = Math.max(2, Math.round(size * 0.04));
-      const lineW = Math.max(3, Math.round(size * 0.07));
-      const borderX = Math.round(size * 0.50);
-      const arrowY1 = Math.round(size * 0.40), arrowY2 = Math.round(size * 0.60);
-      const padX = Math.round(size * 0.14);
-      const arrowLen = Math.round(size * 0.22);
-      const head = Math.round(lineW * 1.8);
-
-      const html = `
-        <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-          <circle cx="${cx}" cy="${cy}" r="${radius}" fill="${OCHA_BLUE}" />
-          <circle cx="${cx}" cy="${cy}" r="${radius - ringW/2}" fill="none" stroke="${RING}" stroke-width="${ringW}" opacity=".9"/>
-          <line x1="${borderX}" y1="${Math.round(size * 0.22)}" x2="${borderX}" y2="${Math.round(size * 0.78)}"
-                stroke="${SYMBOL}" stroke-width="${lineW}" stroke-linecap="round" opacity="0.95"/>
-          <line x1="${padX}" y1="${arrowY1}" x2="${padX + arrowLen}" y2="${arrowY1}"
-                stroke="${SYMBOL}" stroke-width="${lineW}" stroke-linecap="round"/>
-          <path d="M ${padX + arrowLen - head} ${arrowY1 - head} L ${padX + arrowLen} ${arrowY1} L ${padX + arrowLen - head} ${arrowY1 + head}"
-                fill="none" stroke="${SYMBOL}" stroke-width="${lineW}" stroke-linecap="round" stroke-linejoin="round"/>
-          <line x1="${size - padX}" y1="${arrowY2}" x2="${size - padX - arrowLen}" y2="${arrowY2}"
-                stroke="${SYMBOL}" stroke-width="${lineW}" stroke-linecap="round"/>
-          <path d="M ${size - padX - arrowLen + head} ${arrowY2 - head} L ${size - padX - arrowLen} ${arrowY2} L ${size - padX - arrowLen + head} ${arrowY2 + head}"
-                fill="none" stroke="${SYMBOL}" stroke-width="${lineW}" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>`;
-      return L.divIcon({ className: 'bp-icon', html, iconSize: [size, size], iconAnchor: [size/2, size/2] });
-    }
-
-    function renderMarkers() {
-      (markers || []).forEach(m => m.remove());
-      markers = [];
-
-      const month = selectedMonthLabel();
-      const dir = directionSel.value;
-      const selPoint = pointSel.value;
-
-      const byPoint = new Map();
-      for (const r of rows) {
-        if (selPoint !== '__ALL__' && r.point !== selPoint) continue;
-        const v = (dir === 'Both')
-          ? (r[month] || 0)
-          : (r.direction === dir.toLowerCase() ? (r[month] || 0) : 0);
-        byPoint.set(r.point, (byPoint.get(r.point) || 0) + v);
-      }
-
-      for (const p of points) {
-        if (!byPoint.has(p.point)) continue;
-        const v = byPoint.get(p.point);
-        const inc = rows.find(r => r.point === p.point && r.direction === 'incoming')?.[month] || 0;
-        const out = rows.find(r => r.point === p.point && r.direction === 'outgoing')?.[month] || 0;
-
-        const icon = makeOchaBorderPointIcon(v);
-        const m = L.marker([p.lat, p.lon], { icon }).addTo(map);
-        m.bindPopup(`
-          <div style="font-weight:800;margin-bottom:6px">${p.point}</div>
-          <div style="font-size:12px;color:#555">Code: ${p.code}</div>
-          <div style="margin-top:6px;font-size:13px">
-            <div><b>${month}</b></div>
-            <div>Incoming: <b style="color:var(--color-ok)">${fmt(inc)}</b></div>
-            <div>Outgoing: <b style="color:var(--color-warn)">${fmt(out)}</b></div>
-            <div>Total: <b style="color:var(--color-both)">${fmt(inc + out)}</b></div>
-          </div>
-        `);
-        markers.push(m);
-      }
-
-      if (pointSel.value !== '__ALL__') {
-        const p = points.find(x => x.point === pointSel.value);
-        if (p) map.setView([p.lat, p.lon], 7);
-      } else if (markers.length) {
-        const group = L.featureGroup(markers);
-        map.fitBounds(group.getBounds().pad(0.15));
-      }
-    }
-
-    function initCharts() {
-      tsChart = new Chart(document.getElementById('tsChart'), {
-        type: 'line',
-        data: { labels: [], datasets: [] },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { display: true, labels: { boxWidth: 10 } } },
-          interaction: { mode: 'index', intersect: false },
-          scales: {
-            x: { ticks: { maxRotation: 0, autoSkip: true } },
-            y: { beginAtZero: true }
-          }
-        }
-      });
-      barChart = new Chart(document.getElementById('barChart'), {
-        type: 'bar',
-        data: { labels: [], datasets: [ { label: 'Flow', data: [] } ] },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          indexAxis: 'y',
-          plugins: { legend: { display: false } },
-          scales: { y: { beginAtZero: true } }
-        }
-      });
-      renderCharts();
-    }
-
-    function setEmpty(el, show, msg = 'No data') {
-      el.textContent = msg;
-      el.hidden = !show;
-    }
-
-    function renderCharts() {
-      const dir = directionSel.value;
-      const sel = pointSel.value;
-      const agg = aggregateTimeSeries(dir, sel);
-
-      tsChart.data.labels = agg.labels;
-      if (dir === 'Both') {
-        tsChart.data.datasets = [
-          { label: 'Incoming', data: agg.incoming, borderColor: getCss('--color-ok'), backgroundColor: getCss('--color-ok'), tension: .25 },
-          { label: 'Outgoing', data: agg.outgoing, borderColor: getCss('--color-warn'), backgroundColor: getCss('--color-warn'), tension: .25 }
-        ];
-      } else {
-        const c = dir === 'Incoming' ? getCss('--color-ok') : getCss('--color-warn');
-        tsChart.data.datasets = [
-          { label: dir, data: dir === 'Incoming' ? agg.incoming : agg.outgoing, borderColor: c, backgroundColor: c, tension: .25 },
-          { label: dir === 'Incoming' ? 'Outgoing' : 'Incoming',
-            data: dir === 'Incoming' ? agg.outgoing : agg.incoming,
-            borderColor: getCss('--muted'), backgroundColor: getCss('--muted'), borderDash: [6,4], tension: .25 }
-        ];
-      }
-      tsChart.update();
-      ctxPoint.textContent = sel === '__ALL__' ? 'All' : sel;
-      ctxDir.textContent = dir;
-      setEmpty(tsEmpty, tsChart.data.datasets.every(ds => (ds.data || []).reduce((a,b)=>a+(+b||0), 0) === 0));
-
-      const month = selectedMonthLabel();
-      let items = [];
-      for (const p of points) {
-        const inc = rows.find(r => r.point === p.point && r.direction === 'incoming')?.[month] || 0;
-        const out = rows.find(r => r.point === p.point && r.direction === 'outgoing')?.[month] || 0;
-        const val = dir === 'Incoming' ? inc : dir === 'Outgoing' ? out : inc + out;
-        items.push({ name: p.point, val });
-      }
-      items.sort((a, b) => b.val - a.val);
-      const topNVal = topNSel.value === 'All' ? items.length : Math.min(+topNSel.value, items.length);
-      const topItems = items.slice(0, topNVal);
-
-      barChart.data.labels = topItems.map(d => d.name);
-      const col = dir === 'Incoming' ? getCss('--color-ok') : dir === 'Outgoing' ? getCss('--color-warn') : getCss('--color-both');
-      barChart.data.datasets[0].data = topItems.map(d => d.val);
-      barChart.data.datasets[0].borderColor = col;
-      barChart.data.datasets[0].backgroundColor = col;
-      barChart.update();
-
-      document.getElementById('barSubtitle').textContent =
-        `${month} • ${dir} direction${dir === 'Both' ? 's' : ''} • Top ${topNSel.value}`;
-      setEmpty(barEmpty, topItems.reduce((s, d) => s + d.val, 0) === 0);
-    }
-
-    function populatePointDropdown() {
-      pointSel.innerHTML = '<option value="__ALL__" selected>All points</option>';
-      points.forEach(p => {
-        const o = document.createElement('option');
-        o.value = p.point;
-        o.textContent = p.point;
-        pointSel.appendChild(o);
-      });
-    }
-
-    function refreshHeaderChips() {
-      chipSelection.textContent =
-        `${pointSel.value === '__ALL__' ? 'All Points' : pointSel.value} • ${directionSel.value} • ${selectedMonthLabel()}`;
-      ctxMonth.textContent = selectedMonthLabel();
-      ctxDirMap.textContent = directionSel.value;
-    }
-
-    function refreshAll() {
-      refreshHeaderChips();
-      computeKPIs();
-      computeCumulativeKPIs();
-      renderMarkers();
-      renderCharts();
-    }
-
-    function initChartsAndMap() {
-      initMap();
-      initCharts();
-      refreshAll();
-    }
-
-    let monthPlaying = false, monthTimer = null;
-    function setPlayUI() {
-      monthPlay.innerHTML = `<i class="fas fa-${monthPlaying ? 'pause' : 'play'}"></i>`;
-      monthPlay.title = monthPlaying ? 'Pause' : 'Play';
-    }
-
-    function stepMonth(dir = +1) {
-      const nxt = +monthRange.value + dir;
-      if (nxt > +monthRange.max) monthRange.value = monthRange.min;
-      else if (nxt < +monthRange.min) monthRange.value = monthRange.max;
-      else monthRange.value = nxt;
-      lblCurrent.textContent = selectedMonthLabel();
-      refreshAll();
-    }
-
-    (async function init() {
-      try {
-        const { rows: csv, path } = await loadCsv();
-        window.__csvPath = path;
-        normalizeData(csv);
-
-        monthRange.max = Math.max(0, monthLabels.length - 1);
-        monthRange.value = monthRange.max;
-        lblFirst.textContent = monthLabels[0];
-        lblLast.textContent = monthLabels[monthLabels.length - 1];
-        lblCurrent.textContent = selectedMonthLabel();
-
-        const infoChip = document.createElement('div');
-        infoChip.className = 'chip';
-        infoChip.innerHTML = `<i class="fas fa-database"></i> ${monthLabels[0]} → ${monthLabels.at(-1)} • ${path.split('/').pop()}`;
-        document.querySelector('.brand').after(infoChip);
-
-        populatePointDropdown();
-
-        const debounced = debounce(refreshAll, 60);
-        directionSel.addEventListener('change', debounced);
-        pointSel.addEventListener('change', debounced);
-        monthRange.addEventListener('input', () => {
-          lblCurrent.textContent = selectedMonthLabel();
-          debounced();
-        });
-
-        monthPrev.addEventListener('click', () => stepMonth(-1));
-        monthNext.addEventListener('click', () => stepMonth(+1));
-        monthPlay.addEventListener('click', () => {
-          monthPlaying = !monthPlaying;
-          setPlayUI();
-          if (monthPlaying) {
-            monthTimer = setInterval(() => stepMonth(+1), 900);
-          } else {
-            clearInterval(monthTimer);
-          }
-        });
-
-        resetFilters.addEventListener('click', () => {
-          directionSel.value = 'Both';
-          pointSel.value = '__ALL__';
-          monthRange.value = monthRange.max;
-          lblCurrent.textContent = selectedMonthLabel();
-          refreshAll();
-        });
-        downloadCsvBtn.addEventListener('click', async () => {
-          const active = window.__csvPath || CSV_PATHS[0];
-          const res = await fetch(active);
-          const blob = await res.blob();
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = active.split('/').pop();
-          a.click();
-          URL.revokeObjectURL(url);
-        });
-        topNSel.addEventListener('change', renderCharts);
-
-        document.querySelectorAll('.tabbar .btn').forEach(b => {
-          b.addEventListener('click', () => {
-            document.querySelectorAll('.tabbar .btn').forEach(x => x.setAttribute('aria-pressed', 'false'));
-            b.setAttribute('aria-pressed', 'true');
-            const show = b.dataset.kpi;
-            document.getElementById('kpi-month').hidden = show !== 'month';
-            document.getElementById('kpi-cum').hidden = show !== 'cum';
-          });
-        });
-
-        function downloadPNG(chart, name) {
-          const link = document.createElement('a');
-          link.href = chart.toBase64Image();
-          link.download = `${name}.png`;
-          link.click();
-        }
-        downloadTsBtn.addEventListener('click', () => downloadPNG(tsChart, 'time_series'));
-        downloadBarBtn.addEventListener('click', () => downloadPNG(barChart, 'by_point'));
-
-        initChartsAndMap();
-        setPlayUI();
-      } catch (err) {
-        console.error('Init error:', err);
-        hdrSub.textContent = 'Failed to load or parse CSV.';
-        chipSelection.textContent = 'Error loading';
-      }
-    })();
-  </script>
+// Language toggle
+let ar=false;
+const langBtn=document.getElementById('lang');
+langBtn.addEventListener('click',()=>{
+  ar=!ar;
+  document.documentElement.lang=ar?'ar':'en';
+  document.documentElement.dir=ar?'rtl':'ltr';
+  langBtn.textContent=ar?'English':'العربية';
+  document.querySelectorAll('[data-en]').forEach(el=>{
+    const v=ar?el.dataset.ar:el.dataset.en;if(v!==undefined)el.textContent=v;
+  });
+  // rebuild marquee after text swap
+  const base=tr.querySelector('span').outerHTML;tr.innerHTML=base+base;
+});
+</script>
 </body>
 </html>
